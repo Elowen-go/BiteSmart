@@ -91,7 +91,7 @@
     <update id="decrementOrders">
         UPDATE delivery_driver
         SET current_orders = current_orders - 1,
-            status = CASE WHEN current_orders - 1 <= 0 THEN 10 ELSE 20 END,
+            status = CASE WHEN current_orders - 1 &lt;= 0 THEN 10 ELSE 20 END,
             total_deliveries = total_deliveries + 1,
             update_time = NOW()
         WHERE id = #{id} AND current_orders > 0 AND deleted = 0
