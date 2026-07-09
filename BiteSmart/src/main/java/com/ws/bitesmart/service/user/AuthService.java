@@ -10,12 +10,13 @@ import com.ws.bitesmart.dto.response.LoginResponseDTO;
 import com.ws.bitesmart.entity.user.SysUser;
 import com.ws.bitesmart.exception.BusinessException;
 import com.ws.bitesmart.mapper.user.SysUserMapper;
-import io.jsonwebtoken.Claims;
 import com.ws.bitesmart.service.system.OperateLogService;
+import io.jsonwebtoken.Claims;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -56,7 +57,7 @@ public class AuthService {
      */
     @Transactional
     public LoginResponseDTO register(RegisterRequestDTO request) {
-        // 1. 检查用户名唯一性
+        // 1. 检查用户名唯一性（业务层先查一次）
         SysUser existUser = sysUserMapper.findByUsername(request.getUsername());
         if (existUser != null) {
             throw new BusinessException(ResultCodeEnum.USERNAME_EXISTS);
@@ -76,7 +77,12 @@ public class AuthService {
         user.setStatus(Constant.STATUS_NORMAL);
         user.setRegisterSource(10); // PC端注册
 
-        sysUserMapper.insert(user);
+        try {
+            sysUserMapper.insert(user);
+        } catch (DuplicateKeyException e) {
+            // 高并发下两个同时注册同名用户，数据库唯一索引兜底
+            throw new BusinessException(ResultCodeEnum.USERNAME_EXISTS);
+        }
         log.info("新用户注册成功: userId={}, username={}, roleType={}", user.getId(), user.getUsername(), user.getRoleType());
 
         operateLogService.record(user.getId(), user.getUsername(), user.getRoleType(),

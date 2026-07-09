@@ -75,6 +75,7 @@ public class SecurityConfig {
             "/api/common/**",       // 公共数据接口
             "/api/dishes/**",       // 菜品浏览（无需登录）
             "/api/combos/**",       // 套餐浏览（无需登录）
+            "/api/delivery/**",     // 配送轨迹查询（无需登录）
             "/swagger-ui/**",       // Swagger 接口文档页面
             "/v3/api-docs/**",      // OpenAPI 文档接口
             "/webjars/**"           // webjar 静态资源

@@ -73,6 +73,23 @@
         WHERE id = #{id} AND deleted = 0
     </update>
 
+    <!-- 带乐观锁的订单状态更新：仅当当前状态符合预期时才更新 -->
+    <update id="updateStatusWithLock">
+        UPDATE orders
+        SET order_status = #{orderStatus},
+            <if test="payMethod != null">pay_method = #{payMethod},</if>
+            <if test="payAmount != null">pay_amount = #{payAmount},</if>
+            <if test="payTime != null">pay_time = #{payTime},</if>
+            <if test="cancelTime != null">cancel_time = #{cancelTime},</if>
+            <if test="cancelReason != null">cancel_reason = #{cancelReason},</if>
+            <if test="finishTime != null">finish_time = #{finishTime},</if>
+            <if test="deliveryStatus != null">delivery_status = #{deliveryStatus},</if>
+            update_time = NOW()
+        WHERE id = #{id}
+          AND order_status = #{expectedStatus}
+          AND deleted = 0
+    </update>
+
     <!-- 统计某商家在指定时间范围内的已完成订单数（状态=50 已完成） -->
     <select id="countByMerchantAndTime" resultType="int">
         SELECT COUNT(*)

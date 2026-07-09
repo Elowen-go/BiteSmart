@@ -18,7 +18,8 @@ import org.springframework.context.annotation.Configuration;
         "com.ws.bitesmart.mapper.merchant",
         "com.ws.bitesmart.mapper.order",
         "com.ws.bitesmart.mapper.review",
-        "com.ws.bitesmart.mapper.system"
+        "com.ws.bitesmart.mapper.system",
+        "com.ws.bitesmart.mapper.delivery"
 })
 public class MyBatisConfig {
     // MyBatis 配置已在 application.yml 中完成

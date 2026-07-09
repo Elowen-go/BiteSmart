@@ -26,6 +26,9 @@ public interface ReviewMapper {
     /** 查某用户的评价列表 */
     List<Review> findByUserId(@Param("userId") Long userId);
 
+    /** 查某配送员的评价列表 */
+    List<Review> findByDriverId(@Param("driverId") Long driverId);
+
     /** 新增评价 */
     int insert(Review review);
 

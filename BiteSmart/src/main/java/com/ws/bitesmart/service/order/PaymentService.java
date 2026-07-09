@@ -61,14 +61,14 @@ public class PaymentService {
         // 2. 生成模拟交易流水号
         String transactionNo = "MOCK" + UUID.randomUUID().toString().replace("-", "").substring(0, 16).toUpperCase();
 
-        // 3. 更新订单状态为"待接单"(20)，记录支付信息
-        Orders update = new Orders();
-        update.setId(order.getId());
-        update.setOrderStatus(20); // 待接单
-        update.setPayMethod(payMethod);
-        update.setPayAmount(order.getPayAmount());
-        update.setPayTime(LocalDateTime.now());
-        ordersMapper.updateStatus(update);
+        // 3. 更新订单状态为"待接单"(20)，记录支付信息（乐观锁：仅当状态仍为待支付(10)时才更新）
+        int affected = ordersMapper.updateStatusWithLock(
+                order.getId(), 10, 20,
+                payMethod, order.getPayAmount(), LocalDateTime.now(),
+                null, null, null, null);
+        if (affected == 0) {
+            throw new BusinessException(ResultCodeEnum.ORDER_STATUS_ERROR, "订单状态已变更，支付失败");
+        }
 
         // 4. 插入支付流水
         PaymentLog paymentLog = new PaymentLog();

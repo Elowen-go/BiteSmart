@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ws.bitesmart.mapper.delivery.DeliveryTaskMapper">
+
+    <sql id="BaseColumns">
+        id, order_id, order_no, driver_id, merchant_id, merchant_address, merchant_phone,
+        delivery_address, receiver_name, receiver_phone, pickup_code, task_status,
+        current_lat, current_lng, location_update_time,
+        pickup_time, deliver_time, estimated_delivery_time, route_json,
+        exception_reason, create_time, update_time, deleted
+    </sql>
+
+    <!-- 按订单ID查 -->
+    <select id="findByOrderId" resultType="com.ws.bitesmart.entity.delivery.DeliveryTask">
+        SELECT <include refid="BaseColumns"/>
+        FROM delivery_task
+        WHERE order_id = #{orderId} AND deleted = 0
+    </select>
+
+    <!-- 按ID查 -->
+    <select id="findById" resultType="com.ws.bitesmart.entity.delivery.DeliveryTask">
+        SELECT <include refid="BaseColumns"/>
+        FROM delivery_task WHERE id = #{id} AND deleted = 0
+    </select>
+
+    <!-- 按配送员ID查任务列表 -->
+    <select id="findByDriverId" resultType="com.ws.bitesmart.entity.delivery.DeliveryTask">
+        SELECT <include refid="BaseColumns"/>
+        FROM delivery_task
+        WHERE driver_id = #{driverId} AND deleted = 0
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 查询待接单任务 -->
+    <select id="findPending" resultType="com.ws.bitesmart.entity.delivery.DeliveryTask">
+        SELECT <include refid="BaseColumns"/>
+        FROM delivery_task
+        WHERE task_status = 10 AND deleted = 0
+        ORDER BY create_time ASC
+    </select>
+
+    <!-- 按商家ID查配送任务 -->
+    <select id="findByMerchantId" resultType="com.ws.bitesmart.entity.delivery.DeliveryTask">
+        SELECT <include refid="BaseColumns"/>
+        FROM delivery_task
+        WHERE merchant_id = #{merchantId} AND deleted = 0
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 新增配送任务 -->
+    <insert id="insert" parameterType="com.ws.bitesmart.entity.delivery.DeliveryTask">
+        INSERT INTO delivery_task (id, order_id, order_no, driver_id, merchant_id,
+                                   merchant_address, merchant_phone,
+                                   delivery_address, receiver_name, receiver_phone,
+                                   pickup_code, task_status,
+                                   current_lat, current_lng,
+                                   estimated_delivery_time,
+                                   create_time, update_time)
+        VALUES (#{id}, #{orderId}, #{orderNo}, #{driverId}, #{merchantId},
+                #{merchantAddress}, #{merchantPhone},
+                #{deliveryAddress}, #{receiverName}, #{receiverPhone},
+                #{pickupCode}, #{taskStatus},
+                #{currentLat}, #{currentLng},
+                #{estimatedDeliveryTime},
+                NOW(), NOW())
+    </insert>
+
+    <!-- 更新配送任务状态（动态更新状态+时间） -->
+    <update id="updateStatus">
+        UPDATE delivery_task
+        <set>
+            <if test="taskStatus != null">task_status = #{taskStatus},</if>
+            <if test="pickupTime != null">pickup_time = #{pickupTime},</if>
+            <if test="deliverTime != null">deliver_time = #{deliverTime},</if>
+            <if test="driverId != null">driver_id = #{driverId},</if>
+            <if test="exceptionReason != null">exception_reason = #{exceptionReason},</if>
+            update_time = NOW()
+        </set>
+        WHERE id = #{id} AND deleted = 0
+    </update>
+
+    <!-- 带乐观锁的配送任务状态更新：仅当当前状态符合预期时才更新 -->
+    <update id="updateStatusWithLock">
+        UPDATE delivery_task
+        SET task_status = #{newStatus},
+            update_time = NOW()
+        WHERE id = #{id}
+          AND task_status = #{expectedStatus}
+          AND deleted = 0
+    </update>
+
+    <!-- 抢单乐观锁：仅当任务仍为待接单(10)时才分配配送员，返回0表示已被别人抢走 -->
+    <update id="acceptTaskWithLock">
+        UPDATE delivery_task
+        SET driver_id = #{driverId},
+            task_status = 20,
+            update_time = NOW()
+        WHERE id = #{id}
+          AND task_status = 10
+          AND deleted = 0
+    </update>
+
+    <!-- 更新坐标+路线 -->
+    <update id="updateLocation">
+        UPDATE delivery_task
+        SET current_lat = #{lat}, current_lng = #{lng},
+            <if test="routeJson != null">route_json = #{routeJson},</if>
+            location_update_time = NOW(),
+            update_time = NOW()
+        WHERE id = #{id} AND deleted = 0
+    </update>
+
+    <!-- 上报异常：更新任务状态为60，记录异常原因 -->
+    <update id="reportException">
+        UPDATE delivery_task
+        SET task_status = 60,
+            exception_reason = #{reason},
+            update_time = NOW()
+        WHERE id = #{id} AND deleted = 0
+    </update>
+
+</mapper>

@@ -47,12 +47,15 @@
         WHERE id = #{id} AND deleted = 0
     </update>
 
-    <!-- 管理员审核修改状态 -->
+    <!-- 管理员审核修改状态（带乐观锁：仅审核中的商家可变更） -->
     <update id="updateStatus">
         UPDATE merchant
         SET status = #{status},
-            audit_remark = #{auditRemark}
-        WHERE id = #{id} AND deleted = 0
+            audit_remark = #{auditRemark},
+            update_time = NOW()
+        WHERE id = #{id}
+          AND status IN (10, 20, 30)
+          AND deleted = 0
     </update>
 
 </mapper>

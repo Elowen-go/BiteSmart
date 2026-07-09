@@ -4,9 +4,11 @@ import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.ws.bitesmart.common.enums.ResultCodeEnum;
 import com.ws.bitesmart.common.util.SnowflakeUtil;
+import com.ws.bitesmart.entity.delivery.DeliveryDriver;
 import com.ws.bitesmart.entity.order.Orders;
 import com.ws.bitesmart.entity.review.Review;
 import com.ws.bitesmart.exception.BusinessException;
+import com.ws.bitesmart.mapper.delivery.DeliveryDriverMapper;
 import com.ws.bitesmart.mapper.order.OrdersMapper;
 import com.ws.bitesmart.mapper.review.ReviewMapper;
 import lombok.RequiredArgsConstructor;
@@ -17,7 +19,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 评价服务
@@ -32,6 +36,7 @@ public class ReviewService {
 
     private final ReviewMapper reviewMapper;
     private final OrdersMapper ordersMapper;
+    private final DeliveryDriverMapper deliveryDriverMapper;
 
     /**
      * 用户创建评价
@@ -139,4 +144,60 @@ public class ReviewService {
         log.info("商家回复评价成功: reviewId={}, merchantId={}", id, merchantId);
     }
 
+    /**
+     * 配送员查看收到的评价列表
+     *
+     * @param userId 配送员用户ID
+     * @return 评价列表
+     */
+    public List<Review> findByDriverId(Long userId) {
+        DeliveryDriver driver = deliveryDriverMapper.findByUserId(userId);
+        if (driver == null) {
+            throw new BusinessException(ResultCodeEnum.NOT_FOUND, "配送员信息不存在");
+        }
+        return reviewMapper.findByDriverId(driver.getId());
+    }
+
+    /**
+     * 配送员查看配送评分统计
+     *
+     * @param userId 配送员用户ID
+     * @return 包含评分平均值、各分数段数量的统计Map
+     */
+    public Map<String, Object> getDriverRatingStats(Long userId) {
+        DeliveryDriver driver = deliveryDriverMapper.findByUserId(userId);
+        if (driver == null) {
+            throw new BusinessException(ResultCodeEnum.NOT_FOUND, "配送员信息不存在");
+        }
+        List<Review> reviews = reviewMapper.findByDriverId(driver.getId());
+
+        // 过滤出有配送评分的记录
+        List<Review> withRating = reviews.stream()
+                .filter(r -> r.getRatingDelivery() != null)
+                .toList();
+
+        // 计算平均配送评分
+        double avg = withRating.stream()
+                .mapToInt(Review::getRatingDelivery)
+                .average()
+                .orElse(0.0);
+        BigDecimal avgRating = BigDecimal.valueOf(avg).setScale(1, RoundingMode.HALF_UP);
+
+        // 统计各分数段数量（1-5分）
+        long count1 = withRating.stream().filter(r -> r.getRatingDelivery() == 1).count();
+        long count2 = withRating.stream().filter(r -> r.getRatingDelivery() == 2).count();
+        long count3 = withRating.stream().filter(r -> r.getRatingDelivery() == 3).count();
+        long count4 = withRating.stream().filter(r -> r.getRatingDelivery() == 4).count();
+        long count5 = withRating.stream().filter(r -> r.getRatingDelivery() == 5).count();
+
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("averageRating", avgRating);
+        stats.put("totalReviews", withRating.size());
+        stats.put("rating1Count", count1);
+        stats.put("rating2Count", count2);
+        stats.put("rating3Count", count3);
+        stats.put("rating4Count", count4);
+        stats.put("rating5Count", count5);
+        return stats;
+    }
 }

@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ws.bitesmart.mapper.delivery.DeliveryDriverMapper">
+
+    <sql id="BaseColumns">
+        id, user_id, real_name, phone, id_card, vehicle_type, service_area,
+        current_lat, current_lng, status, max_orders, current_orders,
+        avg_rating, total_deliveries, create_time, update_time, deleted
+    </sql>
+
+    <!-- 按用户ID查 -->
+    <select id="findByUserId" resultType="com.ws.bitesmart.entity.delivery.DeliveryDriver">
+        SELECT <include refid="BaseColumns"/>
+        FROM delivery_driver
+        WHERE user_id = #{userId} AND deleted = 0
+    </select>
+
+    <!-- 按ID查 -->
+    <select id="findById" resultType="com.ws.bitesmart.entity.delivery.DeliveryDriver">
+        SELECT <include refid="BaseColumns"/>
+        FROM delivery_driver WHERE id = #{id} AND deleted = 0
+    </select>
+
+    <!-- 查找可接单配送员（状态=10在线 且 current_orders < max_orders） -->
+    <select id="findAvailable" resultType="com.ws.bitesmart.entity.delivery.DeliveryDriver">
+        SELECT <include refid="BaseColumns"/>
+        FROM delivery_driver
+        WHERE status = 10 AND current_orders &lt; max_orders AND deleted = 0
+        ORDER BY current_orders ASC, total_deliveries ASC
+    </select>
+
+    <!-- 新增配送员 -->
+    <insert id="insert" parameterType="com.ws.bitesmart.entity.delivery.DeliveryDriver">
+        INSERT INTO delivery_driver (id, user_id, real_name, phone, id_card, vehicle_type,
+                                     service_area, current_lat, current_lng,
+                                     status, max_orders, current_orders,
+                                     avg_rating, total_deliveries,
+                                     create_time, update_time)
+        VALUES (#{id}, #{userId}, #{realName}, #{phone}, #{idCard}, #{vehicleType},
+                #{serviceArea}, #{currentLat}, #{currentLng},
+                #{status}, #{maxOrders}, #{currentOrders},
+                #{avgRating}, #{totalDeliveries},
+                NOW(), NOW())
+    </insert>
+
+    <!-- 动态更新配送员（只改非空字段） -->
+    <update id="updateById">
+        UPDATE delivery_driver
+        <set>
+            <if test="realName != null">real_name = #{realName},</if>
+            <if test="phone != null">phone = #{phone},</if>
+            <if test="idCard != null">id_card = #{idCard},</if>
+            <if test="vehicleType != null">vehicle_type = #{vehicleType},</if>
+            <if test="serviceArea != null">service_area = #{serviceArea},</if>
+            <if test="currentLat != null">current_lat = #{currentLat},</if>
+            <if test="currentLng != null">current_lng = #{currentLng},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="maxOrders != null">max_orders = #{maxOrders},</if>
+            <if test="currentOrders != null">current_orders = #{currentOrders},</if>
+            <if test="avgRating != null">avg_rating = #{avgRating},</if>
+            <if test="totalDeliveries != null">total_deliveries = #{totalDeliveries},</if>
+            update_time = NOW()
+        </set>
+        WHERE id = #{id} AND deleted = 0
+    </update>
+
+    <!-- 更新状态 -->
+    <update id="updateStatus">
+        UPDATE delivery_driver
+        SET status = #{status}, update_time = NOW()
+        WHERE id = #{id} AND deleted = 0
+    </update>
+
+    <!-- 更新坐标 -->
+    <update id="updateLocation">
+        UPDATE delivery_driver
+        SET current_lat = #{lat}, current_lng = #{lng}, update_time = NOW()
+        WHERE id = #{id} AND deleted = 0
+    </update>
+
+    <!-- 原子增加当前订单数（接单时 +1），返回0表示已达上限 -->
+    <update id="incrementOrders">
+        UPDATE delivery_driver
+        SET current_orders = current_orders + 1,
+            status = CASE WHEN current_orders + 1 >= max_orders THEN 20 ELSE status END,
+            update_time = NOW()
+        WHERE id = #{id} AND current_orders <![CDATA[ < ]]> max_orders AND deleted = 0
+    </update>
+
+    <!-- 原子减少当前订单数（送达时 -1），返回0表示无配送中订单 -->
+    <update id="decrementOrders">
+        UPDATE delivery_driver
+        SET current_orders = current_orders - 1,
+            status = CASE WHEN current_orders - 1 <= 0 THEN 10 ELSE 20 END,
+            total_deliveries = total_deliveries + 1,
+            update_time = NOW()
+        WHERE id = #{id} AND current_orders > 0 AND deleted = 0
+    </update>
+
+</mapper>

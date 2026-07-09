@@ -17,6 +17,7 @@ import com.ws.bitesmart.mapper.dish.DishMapper;
 import com.ws.bitesmart.mapper.order.OrderItemMapper;
 import com.ws.bitesmart.mapper.order.OrdersMapper;
 import com.ws.bitesmart.mapper.order.ShoppingCartMapper;
+import com.ws.bitesmart.service.delivery.DeliveryTaskService;
 import com.ws.bitesmart.service.system.OperateLogService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -53,6 +54,7 @@ public class OrderService {
     private final ComboMapper comboMapper;
     private final ComboDishRelMapper comboDishRelMapper;
     private final OperateLogService operateLogService;
+    private final DeliveryTaskService deliveryTaskService;
 
     /** 订单号序列计数器（确保同一毫秒内不重复） */
     private static final AtomicLong ORDER_NO_SEQ = new AtomicLong(0);
@@ -233,12 +235,15 @@ public class OrderService {
         // 释放锁定库存
         releaseLockedStock(id);
 
-        Orders update = new Orders();
-        update.setId(id);
-        update.setOrderStatus(60);
-        update.setCancelTime(LocalDateTime.now());
-        update.setCancelReason(reason);
-        ordersMapper.updateStatus(update);
+        // 乐观锁更新：仅当当前状态仍为待支付(10)或待接单(20)时才更新为已取消(60)
+        int affected = ordersMapper.updateStatusWithLock(
+                id, order.getOrderStatus(), 60,
+                null, null, null,
+                LocalDateTime.now(), reason,
+                null, null);
+        if (affected == 0) {
+            throw new BusinessException(ResultCodeEnum.ORDER_STATUS_ERROR, "订单状态已变更，取消失败");
+        }
         operateLogService.record(userId, null, null,
                 "取消订单", "OrderService.cancelOrder", null, order.getOrderNo(), null, null, null);
         log.info("订单已取消: orderNo={}, userId={}, reason={}", order.getOrderNo(), userId, reason);
@@ -261,12 +266,15 @@ public class OrderService {
         // 释放锁定库存
         releaseLockedStock(id);
 
-        Orders update = new Orders();
-        update.setId(id);
-        update.setOrderStatus(60);
-        update.setCancelTime(LocalDateTime.now());
-        update.setCancelReason(reason);
-        ordersMapper.updateStatus(update);
+        // 乐观锁更新：仅当当前状态为待接单(20)时才更新为已取消(60)
+        int affected = ordersMapper.updateStatusWithLock(
+                id, 20, 60,
+                null, null, null,
+                LocalDateTime.now(), reason,
+                null, null);
+        if (affected == 0) {
+            throw new BusinessException(ResultCodeEnum.ORDER_STATUS_ERROR, "订单状态已变更，拒单失败");
+        }
         operateLogService.record(merchantId, null, null,
                 "商家拒单", "OrderService.rejectOrder", null, order.getOrderNo(), null, null, null);
         log.info("商家拒单: orderNo={}, merchantId={}, reason={}", order.getOrderNo(), merchantId, reason);
@@ -305,10 +313,14 @@ public class OrderService {
         if (order.getOrderStatus() != 20) {
             throw new BusinessException(ResultCodeEnum.ORDER_STATUS_ERROR, "当前订单状态不允许接单");
         }
-        Orders update = new Orders();
-        update.setId(id);
-        update.setOrderStatus(30);
-        ordersMapper.updateStatus(update);
+        // 乐观锁更新：仅当当前状态为待接单(20)时才更新为备餐中(30)
+        int affected = ordersMapper.updateStatusWithLock(
+                id, 20, 30,
+                null, null, null,
+                null, null, null, null);
+        if (affected == 0) {
+            throw new BusinessException(ResultCodeEnum.ORDER_STATUS_ERROR, "订单状态已变更，接单失败");
+        }
         operateLogService.record(merchantId, null, null,
                 "商家接单", "OrderService.acceptOrder", null, order.getOrderNo(), null, null, null);
         log.info("商家已接单: orderNo={}, merchantId={}", order.getOrderNo(), merchantId);
@@ -330,11 +342,17 @@ public class OrderService {
         if (order.getOrderStatus() != 30) {
             throw new BusinessException(ResultCodeEnum.ORDER_STATUS_ERROR, "当前订单状态不允许操作");
         }
-        Orders update = new Orders();
-        update.setId(id);
-        update.setOrderStatus(40);
-        ordersMapper.updateStatus(update);
-        log.info("出餐完成: orderNo={}, merchantId={}", order.getOrderNo(), merchantId);
+        // 乐观锁更新：仅当当前状态为备餐中(30)时才更新为配送中(40)
+        int affected = ordersMapper.updateStatusWithLock(
+                id, 30, 40,
+                null, null, null,
+                null, null, null, null);
+        if (affected == 0) {
+            throw new BusinessException(ResultCodeEnum.ORDER_STATUS_ERROR, "订单状态已变更，操作失败");
+        }
+        // 自动创建配送任务
+        deliveryTaskService.createTask(order);
+        log.info("出餐完成并创建配送任务: orderNo={}, merchantId={}", order.getOrderNo(), merchantId);
     }
 
     /** 用户查自己的订单 */

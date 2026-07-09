@@ -38,6 +38,14 @@
         ORDER BY create_time DESC
     </select>
 
+    <!-- 查某配送员的评价列表，按时间倒序 -->
+    <select id="findByDriverId" resultType="com.ws.bitesmart.entity.review.Review">
+        SELECT <include refid="BaseColumns"/>
+        FROM review
+        WHERE driver_id = #{driverId} AND deleted = 0
+        ORDER BY create_time DESC
+    </select>
+
     <!-- 新增评价 -->
     <insert id="insert" parameterType="com.ws.bitesmart.entity.review.Review">
         INSERT INTO review (id, order_id, user_id, merchant_id, driver_id, dish_id,

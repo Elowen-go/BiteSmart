@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ws.bitesmart.mapper.delivery.DriverSettlementMapper">
+
+    <sql id="BaseColumns">
+        id, driver_id, delivery_task_id, order_id,
+        delivery_fee, bonus, penalty, settlement_amount,
+        settlement_status, settlement_time,
+        create_time, update_time, deleted
+    </sql>
+
+    <!-- 按配送员ID查所有结算记录 -->
+    <select id="findByDriverId" resultType="com.ws.bitesmart.entity.delivery.DriverSettlement">
+        SELECT <include refid="BaseColumns"/>
+        FROM driver_settlement
+        WHERE driver_id = #{driverId} AND deleted = 0
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 按配送员ID和结算状态查结算记录 -->
+    <select id="findByDriverIdAndStatus" resultType="com.ws.bitesmart.entity.delivery.DriverSettlement">
+        SELECT <include refid="BaseColumns"/>
+        FROM driver_settlement
+        WHERE driver_id = #{driverId} AND settlement_status = #{settlementStatus} AND deleted = 0
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 新增结算记录 -->
+    <insert id="insert" parameterType="com.ws.bitesmart.entity.delivery.DriverSettlement">
+        INSERT INTO driver_settlement (id, driver_id, delivery_task_id, order_id,
+                                       delivery_fee, bonus, penalty, settlement_amount,
+                                       settlement_status, settlement_time,
+                                       create_time, update_time)
+        VALUES (#{id}, #{driverId}, #{deliveryTaskId}, #{orderId},
+                #{deliveryFee}, #{bonus}, #{penalty}, #{settlementAmount},
+                #{settlementStatus}, #{settlementTime},
+                NOW(), NOW())
+    </insert>
+
+</mapper>
