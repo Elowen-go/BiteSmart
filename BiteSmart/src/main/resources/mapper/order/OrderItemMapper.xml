@@ -35,4 +35,22 @@
         </foreach>
     </insert>
 
+    <!-- 热销菜品排行：按菜品聚合销量，取前 N 名 -->
+    <select id="sumQuantityByMerchant" resultType="java.util.Map">
+        SELECT oi.dish_id AS dishId,
+               d.dish_name AS dishName,
+               SUM(oi.quantity) AS totalQuantity
+        FROM order_item oi
+        JOIN orders o ON oi.order_id = o.id
+        LEFT JOIN dish d ON oi.dish_id = d.id
+        WHERE o.merchant_id = #{merchantId}
+          AND o.order_status = 50
+          AND oi.dish_id IS NOT NULL
+          AND o.deleted = 0
+          AND oi.deleted = 0
+        GROUP BY oi.dish_id, d.dish_name
+        ORDER BY totalQuantity DESC
+        LIMIT #{limit}
+    </select>
+
 </mapper>

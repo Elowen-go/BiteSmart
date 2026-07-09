@@ -1,0 +1,40 @@
+package com.ws.bitesmart.mapper.review;
+
+import com.ws.bitesmart.entity.review.Review;
+import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
+
+import java.util.List;
+
+/**
+ * 评价 Mapper
+ *
+ * 支持用户端和商家端的评价查询，以及商家回复、管理员审核等操作。
+ */
+@Mapper
+public interface ReviewMapper {
+
+    /** 根据 ID 查询评价 */
+    Review findById(@Param("id") Long id);
+
+    /** 根据订单 ID 查询评价 */
+    Review findByOrderId(@Param("orderId") Long orderId);
+
+    /** 查某商家的评价列表 */
+    List<Review> findByMerchantId(@Param("merchantId") Long merchantId);
+
+    /** 查某用户的评价列表 */
+    List<Review> findByUserId(@Param("userId") Long userId);
+
+    /** 新增评价 */
+    int insert(Review review);
+
+    /** 商家回复评价 */
+    int updateReply(@Param("id") Long id,
+                    @Param("merchantReply") String merchantReply,
+                    @Param("merchantReplyTime") java.time.LocalDateTime merchantReplyTime);
+
+    /** 更新评价状态（管理员隐藏/删除） */
+    int updateStatus(@Param("id") Long id, @Param("status") Integer status);
+
+}

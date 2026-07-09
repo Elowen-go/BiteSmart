@@ -31,4 +31,14 @@ public interface OrdersMapper {
 
     /** 更新订单状态（支持部分字段更新） */
     int updateStatus(Orders orders);
+
+    /** 统计某商家在指定时间范围内的已完成订单数 */
+    int countByMerchantAndTime(@Param("merchantId") Long merchantId,
+                               @Param("start") java.time.LocalDateTime start,
+                               @Param("end") java.time.LocalDateTime end);
+
+    /** 统计某商家在指定时间范围内的已完成订单销售额 */
+    java.math.BigDecimal sumPayAmountByMerchantAndTime(@Param("merchantId") Long merchantId,
+                                                       @Param("start") java.time.LocalDateTime start,
+                                                       @Param("end") java.time.LocalDateTime end);
 }

@@ -19,4 +19,8 @@ public interface OrderItemMapper {
 
     /** 批量插入订单明细 */
     int insertBatch(@Param("list") List<OrderItem> items);
+
+    /** 热销菜品排行：按菜品聚合销量，取前 N 名 */
+    java.util.List<java.util.Map<String, Object>> sumQuantityByMerchant(@Param("merchantId") Long merchantId,
+                                                                         @Param("limit") int limit);
 }

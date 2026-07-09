@@ -65,6 +65,7 @@ __screenshots__/
 # Database
 *.sql.bak
 *.sql.backup
+*.rdb
 
 # OS
 Thumbs.db
