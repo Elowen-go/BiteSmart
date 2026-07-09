@@ -61,27 +61,21 @@ public class ShoppingCartService {
                 userId, itemType, dishId, comboId, quantity);
     }
 
-    /** 修改数量 */
+    /** 修改数量（校验所属权） */
     @Transactional
     public void updateQuantity(Long id, Long userId, Integer quantity) {
-        ShoppingCart cart = shoppingCartMapper.findByUserId(userId).stream()
-                .filter(c -> c.getId().equals(id))
-                .findFirst()
-                .orElse(null);
-        if (cart == null) {
+        ShoppingCart cart = shoppingCartMapper.findById(id);
+        if (cart == null || !cart.getUserId().equals(userId)) {
             throw new BusinessException(ResultCodeEnum.NOT_FOUND, "购物车商品不存在");
         }
         shoppingCartMapper.updateQuantity(id, quantity);
     }
 
-    /** 删除购物车商品（逻辑删除） */
+    /** 删除购物车商品（校验所属权） */
     @Transactional
     public void deleteById(Long id, Long userId) {
-        ShoppingCart cart = shoppingCartMapper.findByUserId(userId).stream()
-                .filter(c -> c.getId().equals(id))
-                .findFirst()
-                .orElse(null);
-        if (cart == null) {
+        ShoppingCart cart = shoppingCartMapper.findById(id);
+        if (cart == null || !cart.getUserId().equals(userId)) {
             throw new BusinessException(ResultCodeEnum.NOT_FOUND, "购物车商品不存在");
         }
         shoppingCartMapper.deleteById(id);
@@ -92,14 +86,11 @@ public class ShoppingCartService {
         return shoppingCartMapper.findSelectedByUserId(userId);
     }
 
-    /** 切换选中状态 */
+    /** 切换选中状态（校验所属权） */
     @Transactional
     public void updateSelected(Long id, Long userId, Integer selected) {
-        ShoppingCart cart = shoppingCartMapper.findByUserId(userId).stream()
-                .filter(c -> c.getId().equals(id))
-                .findFirst()
-                .orElse(null);
-        if (cart == null) {
+        ShoppingCart cart = shoppingCartMapper.findById(id);
+        if (cart == null || !cart.getUserId().equals(userId)) {
             throw new BusinessException(ResultCodeEnum.NOT_FOUND, "购物车商品不存在");
         }
         shoppingCartMapper.updateSelected(id, selected);

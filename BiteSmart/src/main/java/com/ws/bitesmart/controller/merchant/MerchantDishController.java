@@ -1,5 +1,6 @@
 package com.ws.bitesmart.controller.merchant;
 
+import com.ws.bitesmart.common.PageResultVO;
 import com.ws.bitesmart.common.ResultVO;
 import com.ws.bitesmart.entity.dish.Dish;
 import com.ws.bitesmart.security.LoginUser;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -34,8 +36,13 @@ public class MerchantDishController {
 
     /** 查自己的菜品列表 */
     @GetMapping
-    public ResultVO<List<Dish>> list(@AuthenticationPrincipal LoginUser loginUser) {
+    public ResultVO<?> list(@AuthenticationPrincipal LoginUser loginUser,
+                            @RequestParam(required = false) Integer page,
+                            @RequestParam(defaultValue = "10") int size) {
         if (loginUser == null) return ResultVO.error(401, "未登录");
+        if (page != null) {
+            return ResultVO.success(PageResultVO.success(dishService.findByMerchantId(loginUser.getUserId(), page, size)));
+        }
         return ResultVO.success(dishService.findByMerchantId(loginUser.getUserId()));
     }
 

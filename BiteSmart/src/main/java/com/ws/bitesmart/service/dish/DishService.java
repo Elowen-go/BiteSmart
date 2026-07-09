@@ -1,5 +1,7 @@
 package com.ws.bitesmart.service.dish;
 
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import com.ws.bitesmart.common.enums.ResultCodeEnum;
 import com.ws.bitesmart.common.util.SnowflakeUtil;
 import com.ws.bitesmart.entity.dish.Dish;
@@ -31,6 +33,13 @@ public class DishService {
         return dishMapper.findByMerchantId(merchantId);
     }
 
+    /** 查某商家的全部菜品（分页） */
+    public PageInfo<Dish> findByMerchantId(Long merchantId, int pageNum, int pageSize) {
+        PageHelper.startPage(pageNum, pageSize);
+        List<Dish> list = dishMapper.findByMerchantId(merchantId);
+        return new PageInfo<>(list);
+    }
+
     /** 查菜品详情 */
     public Dish findById(Long id) {
         Dish dish = dishMapper.findById(id);
@@ -43,6 +52,13 @@ public class DishService {
     /** 查询上架且在售的菜品 */
     public List<Dish> findAvailable() {
         return dishMapper.findAvailable();
+    }
+
+    /** 查询上架且在售的菜品（分页） */
+    public PageInfo<Dish> findAvailable(int pageNum, int pageSize) {
+        PageHelper.startPage(pageNum, pageSize);
+        List<Dish> list = dishMapper.findAvailable();
+        return new PageInfo<>(list);
     }
 
     /** 新增菜品 */

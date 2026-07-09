@@ -11,6 +11,7 @@ import com.ws.bitesmart.entity.user.SysUser;
 import com.ws.bitesmart.exception.BusinessException;
 import com.ws.bitesmart.mapper.user.SysUserMapper;
 import io.jsonwebtoken.Claims;
+import com.ws.bitesmart.service.system.OperateLogService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,6 +39,7 @@ public class AuthService {
     private final JwtTokenUtil jwtTokenUtil;
     private final StringRedisTemplate redisTemplate;
     private final PasswordEncoder passwordEncoder;
+    private final OperateLogService operateLogService;
 
     /** Token 过期时间（毫秒），从 yml 读取，与 JwtTokenUtil 保持一致 */
     @Value("${jwt.expiration}")
@@ -77,6 +79,9 @@ public class AuthService {
         sysUserMapper.insert(user);
         log.info("新用户注册成功: userId={}, username={}, roleType={}", user.getId(), user.getUsername(), user.getRoleType());
 
+        operateLogService.record(user.getId(), user.getUsername(), user.getRoleType(),
+                "用户注册", null, null, null, null, null, null);
+
         // 4. 生成 Token 并返回
         return buildLoginResponse(user);
     }
@@ -114,6 +119,9 @@ public class AuthService {
         sysUserMapper.updateLoginTime(user.getId(), LocalDateTime.now(), clientIp);
 
         log.info("用户登录成功: userId={}, username={}, ip={}", user.getId(), user.getUsername(), clientIp);
+
+        operateLogService.record(user.getId(), user.getUsername(), user.getRoleType(),
+                "用户登录", null, null, null, clientIp, null, null);
 
         // 5. 生成 Token
         return buildLoginResponse(user);

@@ -1,5 +1,6 @@
 package com.ws.bitesmart.controller.health;
 
+import com.ws.bitesmart.common.PageResultVO;
 import com.ws.bitesmart.common.ResultVO;
 import com.ws.bitesmart.entity.health.DietRecord;
 import com.ws.bitesmart.entity.health.ExerciseRecord;
@@ -108,8 +109,13 @@ public class HealthRecordController {
     // ==================== 体重记录 ====================
 
     @GetMapping("/weight")
-    public ResultVO<List<WeightRecord>> getWeightRecords(@AuthenticationPrincipal LoginUser loginUser) {
+    public ResultVO<?> getWeightRecords(@AuthenticationPrincipal LoginUser loginUser,
+                                         @RequestParam(required = false) Integer page,
+                                         @RequestParam(defaultValue = "10") int size) {
         if (loginUser == null) return ResultVO.error(401, "未登录");
+        if (page != null) {
+            return ResultVO.success(PageResultVO.success(healthRecordService.getWeightRecords(loginUser.getUserId(), page, size)));
+        }
         return ResultVO.success(healthRecordService.getWeightRecords(loginUser.getUserId()));
     }
 

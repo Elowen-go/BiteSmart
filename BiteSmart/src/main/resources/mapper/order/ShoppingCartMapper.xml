@@ -26,6 +26,13 @@
           AND deleted = 0
     </select>
 
+    <!-- 按ID查购物车商品（用于校验所属权） -->
+    <select id="findById" resultType="com.ws.bitesmart.entity.order.ShoppingCart">
+        SELECT <include refid="BaseColumns"/>
+        FROM shopping_cart
+        WHERE id = #{id} AND deleted = 0
+    </select>
+
     <!-- 查购物车中已选中的商品 -->
     <select id="findSelectedByUserId" resultType="com.ws.bitesmart.entity.order.ShoppingCart">
         SELECT <include refid="BaseColumns"/>

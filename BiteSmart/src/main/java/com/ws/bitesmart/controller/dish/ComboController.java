@@ -1,5 +1,6 @@
 package com.ws.bitesmart.controller.dish;
 
+import com.ws.bitesmart.common.PageResultVO;
 import com.ws.bitesmart.common.ResultVO;
 import com.ws.bitesmart.entity.dish.Combo;
 import com.ws.bitesmart.entity.dish.ComboDishRel;
@@ -36,7 +37,11 @@ public class ComboController {
 
     /** 查所有上架套餐 */
     @GetMapping
-    public ResultVO<List<Combo>> list() {
+    public ResultVO<?> list(@RequestParam(required = false) Integer page,
+                            @RequestParam(defaultValue = "10") int size) {
+        if (page != null) {
+            return ResultVO.success(PageResultVO.success(comboService.findAvailable(page, size)));
+        }
         return ResultVO.success(comboService.findAvailable());
     }
 

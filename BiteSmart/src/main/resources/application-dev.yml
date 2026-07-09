@@ -1,0 +1,13 @@
+# ============================================================
+# 开发环境配置（spring.profiles.active=dev 时启用）
+# 启动方式：java -jar app.jar --spring.profiles.active=dev
+# ============================================================
+
+# 开发时打印 SQL 日志
+mybatis:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+logging:
+  level:
+    com.ws.bitesmart: DEBUG

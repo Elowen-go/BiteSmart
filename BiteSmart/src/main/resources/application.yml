@@ -1,5 +1,6 @@
 # ============================================================
 # BiteSmart 智能健康膳食管理平台 - 应用配置
+# 敏感信息通过环境变量注入，默认值为本地开发配置
 # ============================================================
 
 server:
@@ -11,9 +12,9 @@ spring:
 
   # 数据源配置
   datasource:
-    url: jdbc:mysql://localhost:3306/bitesmart?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=UTF-8&allowPublicKeyRetrieval=true
-    username: root
-    password: 123456
+    url: ${MYSQL_URL:jdbc:mysql://localhost:3306/bitesmart?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=UTF-8&allowPublicKeyRetrieval=true}
+    username: ${MYSQL_USERNAME:root}
+    password: ${MYSQL_PASSWORD:123456}
     driver-class-name: com.mysql.cj.jdbc.Driver
     hikari:
       minimum-idle: 5
@@ -25,9 +26,9 @@ spring:
   # Redis 配置
   data:
     redis:
-      host: localhost
-      port: 6379
-      password: 123456
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:123456}
       database: 0
       timeout: 3000ms
       lettuce:
@@ -43,7 +44,7 @@ spring:
       max-file-size: 10MB
       max-request-size: 20MB
 
-  # 静态资源映射（文件上传的访问路径）
+  # 静态资源映射
   web:
     resources:
       static-locations: classpath:/static/,file:./uploads/
@@ -54,7 +55,6 @@ mybatis:
   type-aliases-package: com.ws.bitesmart.entity.user,com.ws.bitesmart.entity.health,com.ws.bitesmart.entity.file
   configuration:
     map-underscore-to-camel-case: true
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
 
 # PageHelper 分页配置
 pagehelper:
@@ -64,19 +64,19 @@ pagehelper:
 
 # JWT 配置
 jwt:
-  secret: BiteSmart-JWT-Secret-Key-2026-Security
-  expiration: 86400000        # 24小时，单位毫秒
-  refresh-expiration: 2592000000  # 30天，单位毫秒
+  secret: ${JWT_SECRET:BiteSmart-JWT-Secret-Key-2026-Security}
+  expiration: 86400000
+  refresh-expiration: 2592000000
 
 # 文件上传自定义配置
 file:
-  upload-dir: ./uploads
-  max-size: 10485760         # 10MB，单位字节
+  upload-dir: ${FILE_UPLOAD_DIR:./uploads}
+  max-size: 10485760
   allowed-types: image/jpeg,image/png,image/gif,application/pdf
 
 # 日志配置
 logging:
   level:
     root: INFO
-    com.ws.bitesmart: DEBUG
-    org.springframework.security: INFO
+    com.ws.bitesmart: INFO
+    org.springframework.security: WARN

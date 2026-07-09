@@ -68,13 +68,37 @@
         WHERE id = #{id} AND deleted = 0
     </update>
 
-    <!-- 更新库存（+/- 操作，由调用方传入更新后的值） -->
-    <update id="updateStock">
+    <!-- 下单锁定库存（乐观锁：stock >= quantity 时才扣减） -->
+    <update id="lockStock">
         UPDATE dish
-        SET stock = #{stock},
-            lock_stock = #{lockStock},
+        SET stock = stock - #{quantity},
+            lock_stock = lock_stock + #{quantity},
             update_time = NOW()
-        WHERE id = #{id} AND deleted = 0
+        WHERE id = #{id}
+          AND stock >= #{quantity}
+          AND deleted = 0
+    </update>
+
+    <!-- 取消/退款释放锁定库存 -->
+    <update id="unlockStock">
+        UPDATE dish
+        SET stock = stock + #{quantity},
+            lock_stock = lock_stock - #{quantity},
+            update_time = NOW()
+        WHERE id = #{id}
+          AND lock_stock >= #{quantity}
+          AND deleted = 0
+    </update>
+
+    <!-- 支付成功扣减实际库存（从锁定库存中扣减） -->
+    <update id="deductLockedStock">
+        UPDATE dish
+        SET lock_stock = lock_stock - #{quantity},
+            sales_count = sales_count + #{quantity},
+            update_time = NOW()
+        WHERE id = #{id}
+          AND lock_stock >= #{quantity}
+          AND deleted = 0
     </update>
 
 </mapper>

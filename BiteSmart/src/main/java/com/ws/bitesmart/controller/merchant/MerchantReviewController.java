@@ -1,5 +1,6 @@
 package com.ws.bitesmart.controller.merchant;
 
+import com.ws.bitesmart.common.PageResultVO;
 import com.ws.bitesmart.common.ResultVO;
 import com.ws.bitesmart.entity.review.Review;
 import com.ws.bitesmart.security.LoginUser;
@@ -31,8 +32,13 @@ public class MerchantReviewController {
 
     /** 商家收到的评价列表 */
     @GetMapping
-    public ResultVO<List<Review>> list(@AuthenticationPrincipal LoginUser loginUser) {
+    public ResultVO<?> list(@AuthenticationPrincipal LoginUser loginUser,
+                            @RequestParam(required = false) Integer page,
+                            @RequestParam(defaultValue = "10") int size) {
         if (loginUser == null) return ResultVO.error(401, "未登录");
+        if (page != null) {
+            return ResultVO.success(PageResultVO.success(reviewService.findByMerchantId(loginUser.getUserId(), page, size)));
+        }
         return ResultVO.success(reviewService.getMerchantReviews(loginUser.getUserId()));
     }
 

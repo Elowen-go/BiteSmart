@@ -1,5 +1,7 @@
 package com.ws.bitesmart.service.review;
 
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import com.ws.bitesmart.common.enums.ResultCodeEnum;
 import com.ws.bitesmart.common.util.SnowflakeUtil;
 import com.ws.bitesmart.entity.order.Orders;
@@ -89,10 +91,28 @@ public class ReviewService {
     }
 
     /**
+     * 用户查询自己的评价列表（分页）
+     */
+    public PageInfo<Review> findByUserId(Long userId, int pageNum, int pageSize) {
+        PageHelper.startPage(pageNum, pageSize);
+        List<Review> list = reviewMapper.findByUserId(userId);
+        return new PageInfo<>(list);
+    }
+
+    /**
      * 商家查询收到的评价列表
      */
     public List<Review> getMerchantReviews(Long merchantId) {
         return reviewMapper.findByMerchantId(merchantId);
+    }
+
+    /**
+     * 商家查询收到的评价列表（分页）
+     */
+    public PageInfo<Review> findByMerchantId(Long merchantId, int pageNum, int pageSize) {
+        PageHelper.startPage(pageNum, pageSize);
+        List<Review> list = reviewMapper.findByMerchantId(merchantId);
+        return new PageInfo<>(list);
     }
 
     /**

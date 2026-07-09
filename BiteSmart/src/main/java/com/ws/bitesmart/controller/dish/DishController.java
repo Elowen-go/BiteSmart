@@ -1,5 +1,6 @@
 package com.ws.bitesmart.controller.dish;
 
+import com.ws.bitesmart.common.PageResultVO;
 import com.ws.bitesmart.common.ResultVO;
 import com.ws.bitesmart.entity.dish.Dish;
 import com.ws.bitesmart.service.dish.DishService;
@@ -32,9 +33,16 @@ public class DishController {
      * 查所有上架菜品
      *
      * @param categoryId 可选，按分类筛选
+     * @param page       可选，分页页码（传此参数则分页）
+     * @param size       每页条数，默认10
      */
     @GetMapping
-    public ResultVO<List<Dish>> list(@RequestParam(required = false) Long categoryId) {
+    public ResultVO<?> list(@RequestParam(required = false) Long categoryId,
+                            @RequestParam(required = false) Integer page,
+                            @RequestParam(defaultValue = "10") int size) {
+        if (page != null) {
+            return ResultVO.success(PageResultVO.success(dishService.findAvailable(page, size)));
+        }
         List<Dish> dishes = dishService.findAvailable();
         if (categoryId != null) {
             dishes = dishes.stream()

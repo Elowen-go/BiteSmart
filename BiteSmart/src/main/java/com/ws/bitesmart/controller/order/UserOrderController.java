@@ -1,5 +1,6 @@
 package com.ws.bitesmart.controller.order;
 
+import com.ws.bitesmart.common.PageResultVO;
 import com.ws.bitesmart.common.ResultVO;
 import com.ws.bitesmart.entity.order.OrderItem;
 import com.ws.bitesmart.entity.order.Orders;
@@ -60,8 +61,13 @@ public class UserOrderController {
 
     /** 我的订单列表 */
     @GetMapping
-    public ResultVO<List<Orders>> list(@AuthenticationPrincipal LoginUser loginUser) {
+    public ResultVO<?> list(@AuthenticationPrincipal LoginUser loginUser,
+                            @RequestParam(required = false) Integer page,
+                            @RequestParam(defaultValue = "10") int size) {
         if (loginUser == null) return ResultVO.error(401, "未登录");
+        if (page != null) {
+            return ResultVO.success(PageResultVO.success(orderService.getOrdersByUser(loginUser.getUserId(), page, size)));
+        }
         return ResultVO.success(orderService.getOrdersByUser(loginUser.getUserId()));
     }
 

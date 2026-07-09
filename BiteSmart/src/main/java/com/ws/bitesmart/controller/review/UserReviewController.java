@@ -1,5 +1,6 @@
 package com.ws.bitesmart.controller.review;
 
+import com.ws.bitesmart.common.PageResultVO;
 import com.ws.bitesmart.common.ResultVO;
 import com.ws.bitesmart.entity.review.Review;
 import com.ws.bitesmart.security.LoginUser;
@@ -41,8 +42,13 @@ public class UserReviewController {
 
     /** 用户的评价列表 */
     @GetMapping("/my")
-    public ResultVO<List<Review>> myReviews(@AuthenticationPrincipal LoginUser loginUser) {
+    public ResultVO<?> myReviews(@AuthenticationPrincipal LoginUser loginUser,
+                                  @RequestParam(required = false) Integer page,
+                                  @RequestParam(defaultValue = "10") int size) {
         if (loginUser == null) return ResultVO.error(401, "未登录");
+        if (page != null) {
+            return ResultVO.success(PageResultVO.success(reviewService.findByUserId(loginUser.getUserId(), page, size)));
+        }
         return ResultVO.success(reviewService.getMyReviews(loginUser.getUserId()));
     }
 

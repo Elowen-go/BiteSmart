@@ -23,6 +23,9 @@ public interface ShoppingCartMapper {
                                      @Param("dishId") Long dishId,
                                      @Param("comboId") Long comboId);
 
+    /** 按ID查购物车商品 */
+    ShoppingCart findById(@Param("id") Long id);
+
     /** 查购物车中已选中的商品 */
     List<ShoppingCart> findSelectedByUserId(@Param("userId") Long userId);
 

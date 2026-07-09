@@ -1,18 +1,23 @@
 package com.ws.bitesmart.service.order;
 
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import com.ws.bitesmart.common.enums.ResultCodeEnum;
 import com.ws.bitesmart.common.util.SnowflakeUtil;
 import com.ws.bitesmart.entity.dish.Combo;
+import com.ws.bitesmart.entity.dish.ComboDishRel;
 import com.ws.bitesmart.entity.dish.Dish;
 import com.ws.bitesmart.entity.order.OrderItem;
 import com.ws.bitesmart.entity.order.Orders;
 import com.ws.bitesmart.entity.order.ShoppingCart;
 import com.ws.bitesmart.exception.BusinessException;
+import com.ws.bitesmart.mapper.dish.ComboDishRelMapper;
 import com.ws.bitesmart.mapper.dish.ComboMapper;
 import com.ws.bitesmart.mapper.dish.DishMapper;
 import com.ws.bitesmart.mapper.order.OrderItemMapper;
 import com.ws.bitesmart.mapper.order.OrdersMapper;
 import com.ws.bitesmart.mapper.order.ShoppingCartMapper;
+import com.ws.bitesmart.service.system.OperateLogService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -23,13 +28,18 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * 订单服务
  *
  * 核心业务：创建订单（从购物车选中商品生成订单）、订单状态流转、查询。
  * 订单状态：10-待支付 20-待接单 30-备餐中 40-配送中 50-已完成 60-已取消
+ *
+ * 高并发安全：
+ * - 库存扣减使用乐观锁（WHERE stock >= #{quantity}），返回0表示库存不足
+ * - 订单创建和库存扣减在同一事务中
+ * - 取消/拒单时释放锁定库存
  */
 @Slf4j
 @Service
@@ -41,34 +51,35 @@ public class OrderService {
     private final ShoppingCartMapper shoppingCartMapper;
     private final DishMapper dishMapper;
     private final ComboMapper comboMapper;
+    private final ComboDishRelMapper comboDishRelMapper;
+    private final OperateLogService operateLogService;
+
+    /** 订单号序列计数器（确保同一毫秒内不重复） */
+    private static final AtomicLong ORDER_NO_SEQ = new AtomicLong(0);
 
     /**
-     * 生成订单号：yyyyMMddHHmmss + 6位随机数
+     * 生成订单号
+     * yyyyMMddHHmmss + 3位序列号 + 4位随机数
+     * 序列号保证同一毫秒内唯一，随机数防止被遍历
      */
     private String generateOrderNo() {
         String timePart = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
-        int randomPart = new Random().nextInt(900000) + 100000;
-        return timePart + randomPart;
+        long seq = ORDER_NO_SEQ.incrementAndGet() % 1000;
+        int randomPart = (int) (Math.random() * 9000) + 1000;
+        return timePart + String.format("%03d", seq) + randomPart;
     }
 
     /**
      * 获取商品的商家ID
-     * 根据 itemType 分别查询菜品或套餐
      */
     private Long getMerchantId(Integer itemType, Long dishId, Long comboId) {
         if (itemType == 10) {
-            // 菜品
             Dish dish = dishMapper.findById(dishId);
-            if (dish == null) {
-                throw new BusinessException(ResultCodeEnum.NOT_FOUND, "菜品不存在");
-            }
+            if (dish == null) throw new BusinessException(ResultCodeEnum.NOT_FOUND, "菜品不存在");
             return dish.getMerchantId();
         } else if (itemType == 20) {
-            // 套餐
             Combo combo = comboMapper.findById(comboId);
-            if (combo == null) {
-                throw new BusinessException(ResultCodeEnum.NOT_FOUND, "套餐不存在");
-            }
+            if (combo == null) throw new BusinessException(ResultCodeEnum.NOT_FOUND, "套餐不存在");
             return combo.getMerchantId();
         }
         throw new BusinessException("商品类型错误");
@@ -77,14 +88,10 @@ public class OrderService {
     /**
      * 创建订单
      *
-     * @param userId        用户ID
-     * @param address       配送地址
-     * @param receiverName  收货人姓名
-     * @param receiverPhone 收货人电话
-     * @param remark        订单备注
-     * @return 订单号
+     * 流程：查购物车选中商品 → 锁定库存（乐观锁）→ 构建订单快照 → 插入订单+明细 → 清购物车
+     * 任何一步失败都会回滚，库存不会多扣。
      */
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public String createOrder(Long userId, String address, String receiverName,
                               String receiverPhone, String remark) {
         // 1. 查购物车中选中的商品
@@ -93,11 +100,11 @@ public class OrderService {
             throw new BusinessException("请先选择要购买的商品");
         }
 
-        // 2. 确定商家ID（取第一个商品的商家）
+        // 2. 确定商家ID
         ShoppingCart firstItem = selectedItems.get(0);
         Long merchantId = getMerchantId(firstItem.getItemType(), firstItem.getDishId(), firstItem.getComboId());
 
-        // 3. 计算总价并构建订单明细快照
+        // 3. 锁定库存 + 构建订单明细
         BigDecimal totalAmount = BigDecimal.ZERO;
         List<OrderItem> orderItems = new ArrayList<>();
 
@@ -111,11 +118,15 @@ public class OrderService {
             BigDecimal carbs = BigDecimal.ZERO;
 
             if (cart.getItemType() == 10) {
-                // 菜品
+                // 菜品：锁定库存（乐观锁，stock>=quantity才扣减）
                 Dish dish = dishMapper.findById(cart.getDishId());
-                if (dish == null) {
-                    throw new BusinessException(ResultCodeEnum.NOT_FOUND, "菜品已下架或不存在");
+                if (dish == null) throw new BusinessException("菜品已下架或不存在");
+
+                int locked = dishMapper.lockStock(cart.getDishId(), cart.getQuantity());
+                if (locked == 0) {
+                    throw new BusinessException("菜品【" + dish.getDishName() + "】库存不足");
                 }
+
                 price = dish.getPrice();
                 name = dish.getDishName();
                 image = dish.getDishImage();
@@ -124,11 +135,18 @@ public class OrderService {
                 fat = dish.getFat() != null ? dish.getFat() : BigDecimal.ZERO;
                 carbs = dish.getCarbs() != null ? dish.getCarbs() : BigDecimal.ZERO;
             } else if (cart.getItemType() == 20) {
-                // 套餐
+                // 套餐：锁定套餐内每个菜品的库存
                 Combo combo = comboMapper.findById(cart.getComboId());
-                if (combo == null) {
-                    throw new BusinessException(ResultCodeEnum.NOT_FOUND, "套餐已下架或不存在");
+                if (combo == null) throw new BusinessException("套餐已下架或不存在");
+
+                List<ComboDishRel> rels = comboDishRelMapper.findByComboId(cart.getComboId());
+                for (ComboDishRel rel : rels) {
+                    int locked = dishMapper.lockStock(rel.getDishId(), rel.getQuantity() * cart.getQuantity());
+                    if (locked == 0) {
+                        throw new BusinessException("套餐包含的菜品库存不足，请重新选择");
+                    }
                 }
+
                 price = combo.getPrice();
                 name = combo.getComboName();
                 image = combo.getComboImage();
@@ -143,7 +161,6 @@ public class OrderService {
             BigDecimal subTotal = price.multiply(BigDecimal.valueOf(cart.getQuantity()));
             totalAmount = totalAmount.add(subTotal);
 
-            // 构建订单明细快照
             OrderItem item = new OrderItem();
             item.setId(SnowflakeUtil.generate());
             item.setItemType(cart.getItemType());
@@ -164,7 +181,7 @@ public class OrderService {
         // 4. 生成订单号
         String orderNo = generateOrderNo();
 
-        // 5. 插入 orders 表
+        // 5. 插入订单
         Orders order = new Orders();
         order.setId(SnowflakeUtil.generate());
         order.setOrderNo(orderNo);
@@ -181,14 +198,17 @@ public class OrderService {
         order.setRemark(remark);
         ordersMapper.insert(order);
 
-        // 6. 插入 order_item 明细（补上 orderId）
+        // 6. 插入明细
         for (OrderItem item : orderItems) {
             item.setOrderId(order.getId());
         }
         orderItemMapper.insertBatch(orderItems);
 
-        // 7. 清空购物车中已选中的商品
+        // 7. 清空购物车
         shoppingCartMapper.deleteByUserId(userId);
+
+        operateLogService.record(userId, null, null,
+                "创建订单", "OrderService.createOrder", null, orderNo, null, null, null);
 
         log.info("订单创建成功: orderNo={}, userId={}, merchantId={}, amount={}",
                 orderNo, userId, merchantId, totalAmount);
@@ -197,9 +217,10 @@ public class OrderService {
 
     /**
      * 取消订单
-     * 只能在"待支付"(10)或"待接单"(20)状态下取消
+     * 只在"待支付"(10)或"待接单"(20)可取消
+     * 取消后释放锁定库存
      */
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void cancelOrder(Long id, Long userId, String reason) {
         Orders order = ordersMapper.findById(id);
         if (order == null || !order.getUserId().equals(userId)) {
@@ -208,21 +229,74 @@ public class OrderService {
         if (order.getOrderStatus() != 10 && order.getOrderStatus() != 20) {
             throw new BusinessException(ResultCodeEnum.ORDER_STATUS_ERROR, "当前订单状态不允许取消");
         }
+
+        // 释放锁定库存
+        releaseLockedStock(id);
+
         Orders update = new Orders();
         update.setId(id);
-        update.setOrderStatus(60); // 已取消
+        update.setOrderStatus(60);
         update.setCancelTime(LocalDateTime.now());
         update.setCancelReason(reason);
         ordersMapper.updateStatus(update);
+        operateLogService.record(userId, null, null,
+                "取消订单", "OrderService.cancelOrder", null, order.getOrderNo(), null, null, null);
         log.info("订单已取消: orderNo={}, userId={}, reason={}", order.getOrderNo(), userId, reason);
     }
 
     /**
-     * 商家接单
-     * 从"待支付"(20) → "备餐中"(30)
-     * 注：待支付状态支付后自动变为待接单
+     * 商家拒单
+     * 释放锁定库存 + 取消订单
      */
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
+    public void rejectOrder(Long id, Long merchantId, String reason) {
+        Orders order = ordersMapper.findById(id);
+        if (order == null || !order.getMerchantId().equals(merchantId)) {
+            throw new BusinessException(ResultCodeEnum.ORDER_NOT_FOUND);
+        }
+        if (order.getOrderStatus() != 20) {
+            throw new BusinessException(ResultCodeEnum.ORDER_STATUS_ERROR, "当前订单状态不允许拒单");
+        }
+
+        // 释放锁定库存
+        releaseLockedStock(id);
+
+        Orders update = new Orders();
+        update.setId(id);
+        update.setOrderStatus(60);
+        update.setCancelTime(LocalDateTime.now());
+        update.setCancelReason(reason);
+        ordersMapper.updateStatus(update);
+        operateLogService.record(merchantId, null, null,
+                "商家拒单", "OrderService.rejectOrder", null, order.getOrderNo(), null, null, null);
+        log.info("商家拒单: orderNo={}, merchantId={}, reason={}", order.getOrderNo(), merchantId, reason);
+    }
+
+    /**
+     * 释放订单锁定的库存
+     * 读取订单明细，对菜品直接释放，对套餐查关联菜品后逐个释放
+     */
+    private void releaseLockedStock(Long orderId) {
+        List<OrderItem> items = orderItemMapper.findByOrderId(orderId);
+        for (OrderItem item : items) {
+            if (item.getItemType() == 10 && item.getDishId() != null) {
+                // 菜品：直接释放
+                dishMapper.unlockStock(item.getDishId(), item.getQuantity());
+                log.debug("释放锁定库存: dishId={}, quantity={}", item.getDishId(), item.getQuantity());
+            } else if (item.getItemType() == 20 && item.getComboId() != null) {
+                // 套餐：释放关联菜品的库存
+                List<ComboDishRel> rels = comboDishRelMapper.findByComboId(item.getComboId());
+                for (ComboDishRel rel : rels) {
+                    int qty = rel.getQuantity() * item.getQuantity();
+                    dishMapper.unlockStock(rel.getDishId(), qty);
+                    log.debug("释放套餐锁定库存: dishId={}, quantity={}", rel.getDishId(), qty);
+                }
+            }
+        }
+    }
+
+    /** 商家接单 */
+    @Transactional(rollbackFor = Exception.class)
     public void acceptOrder(Long id, Long merchantId) {
         Orders order = ordersMapper.findById(id);
         if (order == null || !order.getMerchantId().equals(merchantId)) {
@@ -233,59 +307,21 @@ public class OrderService {
         }
         Orders update = new Orders();
         update.setId(id);
-        update.setOrderStatus(30); // 备餐中
+        update.setOrderStatus(30);
         ordersMapper.updateStatus(update);
+        operateLogService.record(merchantId, null, null,
+                "商家接单", "OrderService.acceptOrder", null, order.getOrderNo(), null, null, null);
         log.info("商家已接单: orderNo={}, merchantId={}", order.getOrderNo(), merchantId);
     }
 
-    /**
-     * 商家拒单
-     * 只能在"待接单"(20)状态下拒单
-     */
-    @Transactional
-    public void rejectOrder(Long id, Long merchantId, String reason) {
-        Orders order = ordersMapper.findById(id);
-        if (order == null || !order.getMerchantId().equals(merchantId)) {
-            throw new BusinessException(ResultCodeEnum.ORDER_NOT_FOUND);
-        }
-        if (order.getOrderStatus() != 20) {
-            throw new BusinessException(ResultCodeEnum.ORDER_STATUS_ERROR, "当前订单状态不允许拒单");
-        }
-        Orders update = new Orders();
-        update.setId(id);
-        update.setOrderStatus(60); // 已取消
-        update.setCancelTime(LocalDateTime.now());
-        update.setCancelReason(reason);
-        ordersMapper.updateStatus(update);
-        log.info("商家拒单: orderNo={}, merchantId={}, reason={}", order.getOrderNo(), merchantId, reason);
-    }
-
-    /**
-     * 备餐中
-     * "备餐中"(30) → "配送中"(40)
-     */
-    @Transactional
+    /** 开始配送（备餐完成 → 配送中） */
+    @Transactional(rollbackFor = Exception.class)
     public void startDelivering(Long id, Long merchantId) {
-        Orders order = ordersMapper.findById(id);
-        if (order == null || !order.getMerchantId().equals(merchantId)) {
-            throw new BusinessException(ResultCodeEnum.ORDER_NOT_FOUND);
-        }
-        if (order.getOrderStatus() != 30) {
-            throw new BusinessException(ResultCodeEnum.ORDER_STATUS_ERROR, "当前订单状态不允许操作");
-        }
-        Orders update = new Orders();
-        update.setId(id);
-        update.setOrderStatus(40); // 配送中
-        ordersMapper.updateStatus(update);
-        log.info("订单开始配送: orderNo={}, merchantId={}", order.getOrderNo(), merchantId);
+        finishPreparing(id, merchantId);
     }
 
-    /**
-     * 出餐完成
-     * "备餐中"(30) → "配送中"(40)
-     * 这是简化版本，没有配送模块时出餐完成直接置为配送中
-     */
-    @Transactional
+    /** 备餐完成 → 配送中 */
+    @Transactional(rollbackFor = Exception.class)
     public void finishPreparing(Long id, Long merchantId) {
         Orders order = ordersMapper.findById(id);
         if (order == null || !order.getMerchantId().equals(merchantId)) {
@@ -296,9 +332,9 @@ public class OrderService {
         }
         Orders update = new Orders();
         update.setId(id);
-        update.setOrderStatus(40); // 配送中
+        update.setOrderStatus(40);
         ordersMapper.updateStatus(update);
-        log.info("出餐完成，已转为配送中: orderNo={}, merchantId={}", order.getOrderNo(), merchantId);
+        log.info("出餐完成: orderNo={}, merchantId={}", order.getOrderNo(), merchantId);
     }
 
     /** 用户查自己的订单 */
@@ -306,12 +342,26 @@ public class OrderService {
         return ordersMapper.findByUserId(userId);
     }
 
+    /** 用户查自己的订单（分页） */
+    public PageInfo<Orders> getOrdersByUser(Long userId, int pageNum, int pageSize) {
+        PageHelper.startPage(pageNum, pageSize);
+        List<Orders> list = ordersMapper.findByUserId(userId);
+        return new PageInfo<>(list);
+    }
+
     /** 商家查收到的订单 */
     public List<Orders> getOrdersByMerchant(Long merchantId) {
         return ordersMapper.findByMerchantId(merchantId);
     }
 
-    /** 查订单详情（含明细） */
+    /** 商家查收到的订单（分页） */
+    public PageInfo<Orders> getOrdersByMerchant(Long merchantId, int pageNum, int pageSize) {
+        PageHelper.startPage(pageNum, pageSize);
+        List<Orders> list = ordersMapper.findByMerchantId(merchantId);
+        return new PageInfo<>(list);
+    }
+
+    /** 用户查订单详情 */
     public Orders getOrderDetail(Long id, Long userId) {
         Orders order = ordersMapper.findById(id);
         if (order == null || !order.getUserId().equals(userId)) {
@@ -334,7 +384,6 @@ public class OrderService {
         return orderItemMapper.findByOrderId(orderId);
     }
 
-    /** 根据ID查订单（内部使用） */
     public Orders findById(Long id) {
         return ordersMapper.findById(id);
     }

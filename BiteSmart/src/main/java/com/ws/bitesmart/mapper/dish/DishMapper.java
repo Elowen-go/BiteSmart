@@ -29,9 +29,13 @@ public interface DishMapper {
     /** 修改菜品（动态 SQL，只改非空字段） */
     int updateById(Dish dish);
 
-    /** 更新菜品库存和锁定库存 */
-    int updateStock(@Param("id") Long id,
-                    @Param("stock") Integer stock,
-                    @Param("lockStock") Integer lockStock);
+    /** 下单锁定库存（乐观锁：stock >= quantity 时才扣减，返回0表示库存不足） */
+    int lockStock(@Param("id") Long id, @Param("quantity") Integer quantity);
+
+    /** 取消/退款释放锁定库存 */
+    int unlockStock(@Param("id") Long id, @Param("quantity") Integer quantity);
+
+    /** 支付成功扣减实际库存 */
+    int deductLockedStock(@Param("id") Long id, @Param("quantity") Integer quantity);
 
 }

@@ -1,5 +1,7 @@
 package com.ws.bitesmart.service.health;
 
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import com.ws.bitesmart.common.enums.ResultCodeEnum;
 import com.ws.bitesmart.common.util.SnowflakeUtil;
 import com.ws.bitesmart.entity.health.DietRecord;
@@ -109,6 +111,13 @@ public class HealthRecordService {
     /** 查全部体重记录（按日期倒序，前端用来画折线图） */
     public List<WeightRecord> getWeightRecords(Long userId) {
         return weightRecordMapper.findByUserId(userId);
+    }
+
+    /** 查全部体重记录（分页） */
+    public PageInfo<WeightRecord> getWeightRecords(Long userId, int pageNum, int pageSize) {
+        PageHelper.startPage(pageNum, pageSize);
+        List<WeightRecord> list = weightRecordMapper.findByUserId(userId);
+        return new PageInfo<>(list);
     }
 
     /**

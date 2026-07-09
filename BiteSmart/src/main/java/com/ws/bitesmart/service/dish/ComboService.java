@@ -1,6 +1,8 @@
 package com.ws.bitesmart.service.dish;
 
 import com.alibaba.fastjson2.JSON;
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import com.ws.bitesmart.common.enums.ResultCodeEnum;
 import com.ws.bitesmart.common.util.SnowflakeUtil;
 import com.ws.bitesmart.entity.dish.Combo;
@@ -54,6 +56,13 @@ public class ComboService {
     /** 查询上架套餐 */
     public List<Combo> findAvailable() {
         return comboMapper.findAvailable();
+    }
+
+    /** 查询上架套餐（分页） */
+    public PageInfo<Combo> findAvailable(int pageNum, int pageSize) {
+        PageHelper.startPage(pageNum, pageSize);
+        List<Combo> list = comboMapper.findAvailable();
+        return new PageInfo<>(list);
     }
 
     /**

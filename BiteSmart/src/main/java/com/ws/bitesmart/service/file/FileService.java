@@ -9,6 +9,7 @@ import com.ws.bitesmart.mapper.file.FileUploadRecordMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -44,6 +45,7 @@ public class FileService {
      * @param userId  上传用户ID
      * @return 文件访问的相对路径，如 /uploads/2026/07/09/xxx.jpg
      */
+    @Transactional(rollbackFor = Exception.class)
     public String uploadFile(MultipartFile file, String bizType, Long userId) {
         // 1. 校验文件是否为空
         if (file.isEmpty()) {

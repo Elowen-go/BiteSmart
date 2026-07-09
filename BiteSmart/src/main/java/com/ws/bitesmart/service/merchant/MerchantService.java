@@ -9,6 +9,7 @@ import com.ws.bitesmart.exception.BusinessException;
 import com.ws.bitesmart.mapper.merchant.MerchantAuditLogMapper;
 import com.ws.bitesmart.mapper.merchant.MerchantMapper;
 import com.ws.bitesmart.mapper.user.SysUserMapper;
+import com.ws.bitesmart.service.system.OperateLogService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -30,6 +31,7 @@ public class MerchantService {
     private final MerchantMapper merchantMapper;
     private final MerchantAuditLogMapper auditLogMapper;
     private final SysUserMapper sysUserMapper;
+    private final OperateLogService operateLogService;
 
     /**
      * 商家入驻申请
@@ -62,6 +64,9 @@ public class MerchantService {
         auditLog.setSubmitTime(LocalDateTime.now());
         auditLog.setAuditStatus(10); // 待审核
         auditLogMapper.insert(auditLog);
+
+        operateLogService.record(userId, null, null,
+                "商家入驻申请", "MerchantService.apply", null, null, null, null, null);
 
         log.info("商家入驻申请: userId={}, shopName={}", userId, merchant.getShopName());
     }

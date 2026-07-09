@@ -70,6 +70,7 @@ public class SecurityConfig {
      */
     private static final String[] WHITE_LIST = {
             "/api/auth/**",         // 登录、注册、刷新Token
+            "/api/merchant/auth/**", // 商家入驻申请（普通用户也可访问）
             "/api/files/**",        // 文件访问（上传/下载/预览）
             "/api/common/**",       // 公共数据接口
             "/api/dishes/**",       // 菜品浏览（无需登录）
