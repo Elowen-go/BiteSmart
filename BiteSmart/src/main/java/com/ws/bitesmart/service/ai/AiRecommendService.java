@@ -8,9 +8,17 @@ import com.ws.bitesmart.mapper.ai.NutritionStandardMapper;
 import com.ws.bitesmart.mapper.user.UserProfileMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -27,6 +35,16 @@ public class AiRecommendService {
     private final UserProfileMapper userProfileMapper;
     private final NutritionStandardMapper nutritionStandardMapper;
     private final AiRecommendRuleMapper aiRecommendRuleMapper;
+    private final RestTemplate restTemplate;
+
+    @Value("${ai.api-key}")
+    private String apiKey;
+
+    @Value("${ai.api-url}")
+    private String apiUrl;
+
+    @Value("${ai.model}")
+    private String modelName;
 
     /**
      * 为用户生成食谱推荐
@@ -56,7 +74,10 @@ public class AiRecommendService {
         // 3. 匹配推荐规则
         AiRecommendRule rule = aiRecommendRuleMapper.findBestRuleByGoal(profile.getHealthGoal());
 
-        // 4. 组装结果
+        // 4. 调用 DeepSeek 生成个性化食谱
+        String recommendation = callDeepSeekForRecommendation(profile, standard, rule);
+
+        // 5. 组装结果
         result.put("success", true);
         result.put("healthGoal", profile.getHealthGoal());
         result.put("userProfile", profile);
@@ -73,71 +94,101 @@ public class AiRecommendService {
             result.put("recommendRule", rule);
         }
 
-        // 生成推荐说明
-        result.put("recommendation", buildRecommendation(profile, standard, rule));
+        result.put("recommendation", recommendation);
 
         log.info("AI推荐成功: userId={}, goal={}", userId, profile.getHealthGoal());
         return result;
     }
 
     /**
-     * 根据用户档案和标准生成推荐说明
+     * 调用 DeepSeek API 生成个性化饮食推荐
      */
-    private String buildRecommendation(UserProfile profile, NutritionStandard standard, AiRecommendRule rule) {
-        StringBuilder sb = new StringBuilder();
+    private String callDeepSeekForRecommendation(UserProfile profile, NutritionStandard standard, AiRecommendRule rule) {
+        try {
+            StringBuilder prompt = new StringBuilder();
+            prompt.append("请根据以下用户信息，生成一份详细的每日饮食推荐方案。\n\n");
 
-        // 目标
-        String goalName = switch (profile.getHealthGoal()) {
-            case "减肥" -> "减脂";
-            case "增肌" -> "增肌";
-            case "控糖" -> "控糖";
-            default -> "维持健康";
-        };
-        sb.append("### ").append(goalName).append("饮食建议\n\n");
+            // 用户信息
+            String genderStr = profile.getGender() == 10 ? "男" : "女";
+            prompt.append("用户信息：\n");
+            prompt.append("- 年龄：").append(profile.getAge()).append("岁\n");
+            prompt.append("- 性别：").append(genderStr).append("\n");
+            prompt.append("- 身高：").append(profile.getHeight()).append("cm\n");
+            prompt.append("- 体重：").append(profile.getWeight()).append("kg\n");
+            prompt.append("- 目标：").append(profile.getHealthGoal()).append("\n");
+            String activityStr = switch (profile.getActivityLevel() != null ? profile.getActivityLevel() : 20) {
+                case 10 -> "久坐";
+                case 20 -> "轻度运动";
+                case 30 -> "中度运动";
+                case 40 -> "重度运动";
+                default -> "轻度运动";
+            };
+            prompt.append("- 运动量：").append(activityStr).append("\n");
 
-        // 热量
-        if (standard != null) {
-            sb.append("根据你的个人情况，建议每日摄入 **").append(standard.getDailyCalories())
-                    .append("大卡** 热量。\n\n");
-            sb.append("- 蛋白质：").append(standard.getProteinGrams()).append("g\n");
-            sb.append("- 脂肪：").append(standard.getFatGrams()).append("g\n");
-            sb.append("- 碳水：").append(standard.getCarbsGrams()).append("g\n");
-            sb.append("- 饮水：").append(standard.getWaterMl() != null ? standard.getWaterMl() + "ml" : "充足饮水").append("\n\n");
+            if (profile.getAllergyInfo() != null && !profile.getAllergyInfo().isEmpty()) {
+                prompt.append("- 过敏信息：").append(profile.getAllergyInfo()).append("\n");
+            }
+            if (profile.getDiseaseHistory() != null && !profile.getDiseaseHistory().isEmpty()) {
+                prompt.append("- 疾病史：").append(profile.getDiseaseHistory()).append("\n");
+            }
+
+            // 营养标准
+            if (standard != null) {
+                prompt.append("\n推荐营养标准：\n");
+                prompt.append("- 每日热量：").append(standard.getDailyCalories()).append("大卡\n");
+                prompt.append("- 蛋白质：").append(standard.getProteinGrams()).append("g\n");
+                prompt.append("- 脂肪：").append(standard.getFatGrams()).append("g\n");
+                prompt.append("- 碳水：").append(standard.getCarbsGrams()).append("g\n");
+            }
+
+            prompt.append("\n请提供以下内容：\n");
+            prompt.append("1. **总体饮食原则**（3-5条，针对用户目标）\n");
+            prompt.append("2. **一日三餐推荐食谱**（具体到食物名称和份量）\n");
+            prompt.append("3. **营养素分析**（每餐的热量、蛋白质、脂肪、碳水分布）\n");
+            prompt.append("4. **进食建议**（什么时间吃、怎么吃更好）\n");
+            prompt.append("5. **推荐搭配**（适合该用户的平台套餐类型）\n\n");
+            prompt.append("请用中文回答，格式清晰，以 Markdown 格式输出。");
+
+            // 调用 DeepSeek
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.setBearerAuth(apiKey);
+
+            List<Map<String, String>> messages = new ArrayList<>();
+            Map<String, String> systemMsg = new HashMap<>();
+            systemMsg.put("role", "system");
+            systemMsg.put("content", "你是BiteSmart智能健康膳食平台的营养专家，擅长根据用户的身体数据和健康目标，生成科学、可执行的每日饮食方案。你的回答要专业、具体、实用。");
+            messages.add(systemMsg);
+
+            Map<String, String> userMsg = new HashMap<>();
+            userMsg.put("role", "user");
+            userMsg.put("content", prompt.toString());
+            messages.add(userMsg);
+
+            Map<String, Object> requestBody = new HashMap<>();
+            requestBody.put("model", modelName);
+            requestBody.put("messages", messages);
+            requestBody.put("temperature", 0.8);
+            requestBody.put("max_tokens", 2048);
+
+            HttpEntity<Map<String, Object>> request = new HttpEntity<>(requestBody, headers);
+            ResponseEntity<Map> response = restTemplate.postForEntity(apiUrl, request, Map.class);
+
+            if (response.getBody() != null && response.getBody().containsKey("choices")) {
+                List<Map<String, Object>> choices = (List<Map<String, Object>>) response.getBody().get("choices");
+                if (!choices.isEmpty()) {
+                    Map<String, Object> choice = choices.get(0);
+                    Map<String, String> message = (Map<String, String>) choice.get("message");
+                    return message.getOrDefault("content", "无法生成推荐方案，请稍后再试。");
+                }
+            }
+
+            return "无法生成推荐方案，请稍后再试。";
+
+        } catch (Exception e) {
+            log.error("调用 DeepSeek 生成推荐失败: {}", e.getMessage());
+            return "个性化推荐服务暂时不可用，请稍后再试。你可以参考平台上的健康套餐进行选择。";
         }
-
-        // 根据目标给建议
-        sb.append("### 饮食原则\n\n");
-        switch (profile.getHealthGoal()) {
-            case "减肥" -> sb.append("""
-                    1. 制造热量缺口，每天减少 300-500 大卡摄入
-                    2. 增加膳食纤维，提升饱腹感
-                    3. 选择优质蛋白，避免肌肉流失
-                    4. 少吃精制碳水和油炸食品
-                    5. 细嚼慢咽，每餐七分饱
-                    """);
-            case "增肌" -> sb.append("""
-                    1. 保证热量盈余，每天多摄入 300-500 大卡
-                    2. 足量蛋白质，每公斤体重 1.6-2.0g
-                    3. 训练后及时补充碳水和蛋白质
-                    4. 少食多餐，每天 4-6 餐
-                    """);
-            case "控糖" -> sb.append("""
-                    1. 选择低GI食物，稳定血糖
-                    2. 控制碳水总量，每餐不超过 50g
-                    3. 增加蔬菜摄入，每餐至少 200g
-                    4. 避免含糖饮料和甜点
-                    5. 饭后散步 15 分钟
-                    """);
-            default -> sb.append("""
-                    1. 均衡饮食，保证各类营养素摄入
-                    2. 三餐规律，不暴饮暴食
-                    3. 多吃蔬菜水果，适量优质蛋白
-                    4. 少油少盐少糖
-                    """);
-        }
-
-        sb.append("\n你可以根据这些建议，在平台上选择合适的健康套餐！");
-        return sb.toString();
     }
 
 }

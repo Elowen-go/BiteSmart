@@ -74,6 +74,13 @@ file:
   max-size: 10485760
   allowed-types: image/jpeg,image/png,image/gif,application/pdf
 
+# AI 模型配置（DeepSeek）
+# API Key 通过环境变量 AI_API_KEY 传入，不要硬编码在配置文件中
+ai:
+  api-key: ${AI_API_KEY:}
+  api-url: ${AI_API_URL:https://api.deepseek.com/v1/chat/completions}
+  model: ${AI_MODEL:deepseek-chat}
+
 # 日志配置
 logging:
   level:
