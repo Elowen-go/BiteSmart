@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ws.bitesmart.mapper.health.WeightRecordMapper">
+
+    <sql id="BaseColumns">
+        id, user_id, record_date, weight, body_fat_rate, bmi,
+        create_time, update_time, deleted
+    </sql>
+
+    <!-- 全部体重记录，按日期倒序（前端折线图用） -->
+    <select id="findByUserId" resultType="com.ws.bitesmart.entity.health.WeightRecord">
+        SELECT <include refid="BaseColumns"/>
+        FROM weight_record
+        WHERE user_id = #{userId} AND deleted = 0
+        ORDER BY record_date DESC
+    </select>
+
+    <!-- 查某天的记录，用来判断是新增还是更新 -->
+    <select id="findByUserIdAndDate" resultType="com.ws.bitesmart.entity.health.WeightRecord">
+        SELECT <include refid="BaseColumns"/>
+        FROM weight_record
+        WHERE user_id = #{userId} AND record_date = #{recordDate} AND deleted = 0
+    </select>
+
+    <insert id="insert" parameterType="com.ws.bitesmart.entity.health.WeightRecord">
+        INSERT INTO weight_record (id, user_id, record_date, weight, body_fat_rate, bmi,
+                                    create_time, update_time)
+        VALUES (#{id}, #{userId}, #{recordDate}, #{weight}, #{bodyFatRate}, #{bmi},
+                NOW(), NOW())
+    </insert>
+
+    <!-- 按用户+日期更新（因为 unique 约束同一天只能有一条） -->
+    <update id="updateByUserIdAndDate" parameterType="com.ws.bitesmart.entity.health.WeightRecord">
+        UPDATE weight_record
+        <set>
+            <if test="weight != null">weight = #{weight},</if>
+            <if test="bodyFatRate != null">body_fat_rate = #{bodyFatRate},</if>
+            <if test="bmi != null">bmi = #{bmi},</if>
+            update_time = NOW()
+        </set>
+        WHERE user_id = #{userId} AND record_date = #{recordDate} AND deleted = 0
+    </update>
+
+</mapper>

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ws.bitesmart.mapper.user.UserProfileMapper">
+
+    <sql id="BaseColumns">
+        id, user_id, age, gender, height, weight, activity_level,
+        diet_preference, allergy_info, disease_history, health_goal,
+        daily_calorie_target, create_time, update_time, deleted
+    </sql>
+
+    <select id="findByUserId" resultType="com.ws.bitesmart.entity.user.UserProfile">
+        SELECT <include refid="BaseColumns"/>
+        FROM user_profile
+        WHERE user_id = #{userId} AND deleted = 0
+    </select>
+
+    <insert id="insert" parameterType="com.ws.bitesmart.entity.user.UserProfile">
+        INSERT INTO user_profile (id, user_id, age, gender, height, weight, activity_level,
+                                  diet_preference, allergy_info, disease_history, health_goal,
+                                  daily_calorie_target, create_time, update_time)
+        VALUES (#{id}, #{userId}, #{age}, #{gender}, #{height}, #{weight}, #{activityLevel},
+                #{dietPreference}, #{allergyInfo}, #{diseaseHistory}, #{healthGoal},
+                #{dailyCalorieTarget}, NOW(), NOW())
+    </insert>
+
+    <!-- 按 userId 更新，因为每个用户只有一条档案 -->
+    <update id="updateByUserId" parameterType="com.ws.bitesmart.entity.user.UserProfile">
+        UPDATE user_profile
+        <set>
+            <if test="age != null">age = #{age},</if>
+            <if test="gender != null">gender = #{gender},</if>
+            <if test="height != null">height = #{height},</if>
+            <if test="weight != null">weight = #{weight},</if>
+            <if test="activityLevel != null">activity_level = #{activityLevel},</if>
+            <if test="dietPreference != null">diet_preference = #{dietPreference},</if>
+            <if test="allergyInfo != null">allergy_info = #{allergyInfo},</if>
+            <if test="diseaseHistory != null">disease_history = #{diseaseHistory},</if>
+            <if test="healthGoal != null">health_goal = #{healthGoal},</if>
+            <if test="dailyCalorieTarget != null">daily_calorie_target = #{dailyCalorieTarget},</if>
+            update_time = NOW()
+        </set>
+        WHERE user_id = #{userId} AND deleted = 0
+    </update>
+
+</mapper>

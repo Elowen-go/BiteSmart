@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ws.bitesmart.mapper.health.DietRecordMapper">
+
+    <sql id="BaseColumns">
+        id, user_id, record_date, meal_type, food_name,
+        calories, protein, fat, carbs, source_type, order_item_id,
+        create_time, update_time, deleted
+    </sql>
+
+    <!-- 查某天的记录，按餐次排序（10早餐→20午餐→30晚餐→40加餐） -->
+    <select id="findByUserIdAndDate" resultType="com.ws.bitesmart.entity.health.DietRecord">
+        SELECT <include refid="BaseColumns"/>
+        FROM diet_record
+        WHERE user_id = #{userId} AND record_date = #{recordDate} AND deleted = 0
+        ORDER BY meal_type ASC
+    </select>
+
+    <!-- 全部饮食记录，按日期倒序 -->
+    <select id="findByUserId" resultType="com.ws.bitesmart.entity.health.DietRecord">
+        SELECT <include refid="BaseColumns"/>
+        FROM diet_record
+        WHERE user_id = #{userId} AND deleted = 0
+        ORDER BY record_date DESC, meal_type ASC
+    </select>
+
+    <select id="findById" resultType="com.ws.bitesmart.entity.health.DietRecord">
+        SELECT <include refid="BaseColumns"/>
+        FROM diet_record WHERE id = #{id} AND deleted = 0
+    </select>
+
+    <insert id="insert" parameterType="com.ws.bitesmart.entity.health.DietRecord">
+        INSERT INTO diet_record (id, user_id, record_date, meal_type, food_name,
+                                  calories, protein, fat, carbs, source_type, order_item_id,
+                                  create_time, update_time)
+        VALUES (#{id}, #{userId}, #{recordDate}, #{mealType}, #{foodName},
+                #{calories}, #{protein}, #{fat}, #{carbs}, #{sourceType}, #{orderItemId},
+                NOW(), NOW())
+    </insert>
+
+    <!-- 只改非空字段 -->
+    <update id="updateById" parameterType="com.ws.bitesmart.entity.health.DietRecord">
+        UPDATE diet_record
+        <set>
+            <if test="mealType != null">meal_type = #{mealType},</if>
+            <if test="foodName != null">food_name = #{foodName},</if>
+            <if test="calories != null">calories = #{calories},</if>
+            <if test="protein != null">protein = #{protein},</if>
+            <if test="fat != null">fat = #{fat},</if>
+            <if test="carbs != null">carbs = #{carbs},</if>
+            update_time = NOW()
+        </set>
+        WHERE id = #{id} AND deleted = 0
+    </update>
+
+    <!-- 软删除 -->
+    <update id="deleteById">
+        UPDATE diet_record SET deleted = 1 WHERE id = #{id}
+    </update>
+
+</mapper>

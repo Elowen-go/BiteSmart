@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ws.bitesmart.mapper.health.ExerciseRecordMapper">
+
+    <sql id="BaseColumns">
+        id, user_id, record_date, exercise_type, duration,
+        distance, calories_burned, remark,
+        create_time, update_time, deleted
+    </sql>
+
+    <select id="findByUserIdAndDate" resultType="com.ws.bitesmart.entity.health.ExerciseRecord">
+        SELECT <include refid="BaseColumns"/>
+        FROM exercise_record
+        WHERE user_id = #{userId} AND record_date = #{recordDate} AND deleted = 0
+    </select>
+
+    <select id="findByUserId" resultType="com.ws.bitesmart.entity.health.ExerciseRecord">
+        SELECT <include refid="BaseColumns"/>
+        FROM exercise_record
+        WHERE user_id = #{userId} AND deleted = 0
+        ORDER BY record_date DESC
+    </select>
+
+    <select id="findById" resultType="com.ws.bitesmart.entity.health.ExerciseRecord">
+        SELECT <include refid="BaseColumns"/>
+        FROM exercise_record WHERE id = #{id} AND deleted = 0
+    </select>
+
+    <insert id="insert" parameterType="com.ws.bitesmart.entity.health.ExerciseRecord">
+        INSERT INTO exercise_record (id, user_id, record_date, exercise_type, duration,
+                                      distance, calories_burned, remark,
+                                      create_time, update_time)
+        VALUES (#{id}, #{userId}, #{recordDate}, #{exerciseType}, #{duration},
+                #{distance}, #{caloriesBurned}, #{remark},
+                NOW(), NOW())
+    </insert>
+
+    <!-- 软删除 -->
+    <update id="deleteById">
+        UPDATE exercise_record SET deleted = 1 WHERE id = #{id}
+    </update>
+
+</mapper>
