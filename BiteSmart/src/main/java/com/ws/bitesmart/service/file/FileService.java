@@ -68,9 +68,12 @@ public class FileService {
             // 4. 生成存储路径：按日期分目录，文件名用UUID避免冲突
             String dateDir = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy/MM/dd"));
             String originalName = file.getOriginalFilename();
+            // 过滤原始文件名中的特殊字符，防止路径穿越
+            String safeName = originalName != null ? originalName.replaceAll("[^a-zA-Z0-9.\\-_]", "") : "";
             String ext = "";
-            if (originalName != null && originalName.contains(".")) {
-                ext = originalName.substring(originalName.lastIndexOf("."));
+            int dotIndex = safeName.lastIndexOf(".");
+            if (dotIndex > 0) {
+                ext = safeName.substring(dotIndex).toLowerCase();
             }
             String newFileName = UUID.randomUUID().toString().replace("-", "") + ext;
 

@@ -28,8 +28,11 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 
 /**
  * 订单服务
@@ -355,9 +358,11 @@ public class OrderService {
         log.info("出餐完成并创建配送任务: orderNo={}, merchantId={}", order.getOrderNo(), merchantId);
     }
 
-    /** 用户查自己的订单 */
+    /** 用户查自己的订单（含明细） */
     public List<Orders> getOrdersByUser(Long userId) {
-        return ordersMapper.findByUserId(userId);
+        List<Orders> orders = ordersMapper.findByUserId(userId);
+        batchLoadOrderItems(orders);
+        return orders;
     }
 
     /** 用户查自己的订单（分页） */
@@ -367,9 +372,11 @@ public class OrderService {
         return new PageInfo<>(list);
     }
 
-    /** 商家查收到的订单 */
+    /** 商家查收到的订单（含明细） */
     public List<Orders> getOrdersByMerchant(Long merchantId) {
-        return ordersMapper.findByMerchantId(merchantId);
+        List<Orders> orders = ordersMapper.findByMerchantId(merchantId);
+        batchLoadOrderItems(orders);
+        return orders;
     }
 
     /** 商家查收到的订单（分页） */
@@ -404,5 +411,20 @@ public class OrderService {
 
     public Orders findById(Long id) {
         return ordersMapper.findById(id);
+    }
+
+    /**
+     * 批量加载订单明细（防 N+1 查询）
+     * 一次性查出所有订单的明细，按 orderId 分组挂到每个订单上
+     */
+    private void batchLoadOrderItems(List<Orders> orders) {
+        if (orders == null || orders.isEmpty()) return;
+        List<Long> orderIds = orders.stream().map(Orders::getId).collect(Collectors.toList());
+        List<OrderItem> allItems = orderItemMapper.findByOrderIds(orderIds);
+        Map<Long, List<OrderItem>> itemMap = allItems.stream()
+                .collect(Collectors.groupingBy(OrderItem::getOrderId));
+        for (Orders order : orders) {
+            order.setItems(itemMap.getOrDefault(order.getId(), new ArrayList<>()));
+        }
     }
 }

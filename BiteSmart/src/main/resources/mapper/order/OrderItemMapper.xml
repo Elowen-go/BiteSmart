@@ -18,6 +18,18 @@
         ORDER BY id ASC
     </select>
 
+    <!-- 批量查多个订单的明细（批量 IN 查询，防 N+1） -->
+    <select id="findByOrderIds" resultType="com.ws.bitesmart.entity.order.OrderItem">
+        SELECT <include refid="BaseColumns"/>
+        FROM order_item
+        WHERE order_id IN
+        <foreach collection="orderIds" item="orderId" open="(" separator="," close=")">
+            #{orderId}
+        </foreach>
+        AND deleted = 0
+        ORDER BY order_id ASC, id ASC
+    </select>
+
     <!-- 批量插入订单明细 -->
     <insert id="insertBatch" parameterType="java.util.List">
         INSERT INTO order_item (id, order_id, item_type, dish_id, combo_id,

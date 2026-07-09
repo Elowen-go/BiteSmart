@@ -17,6 +17,9 @@ public interface OrderItemMapper {
     /** 查某订单的所有明细 */
     List<OrderItem> findByOrderId(@Param("orderId") Long orderId);
 
+    /** 批量查多个订单的明细（一次性查，防N+1） */
+    List<OrderItem> findByOrderIds(@Param("orderIds") List<Long> orderIds);
+
     /** 批量插入订单明细 */
     int insertBatch(@Param("list") List<OrderItem> items);
 

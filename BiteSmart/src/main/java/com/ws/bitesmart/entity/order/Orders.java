@@ -3,6 +3,7 @@ package com.ws.bitesmart.entity.order;
 import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * 订单主表 实体类
@@ -64,6 +65,9 @@ public class Orders {
 
     /** 完成时间 */
     private LocalDateTime finishTime;
+
+    /** 订单明细（非数据库字段，批量查询时填充） */
+    private transient List<OrderItem> items;
 
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
