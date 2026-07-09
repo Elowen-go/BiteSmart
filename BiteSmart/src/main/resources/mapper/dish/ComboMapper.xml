@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ws.bitesmart.mapper.dish.ComboMapper">
+
+    <sql id="BaseColumns">
+        id, merchant_id, combo_name, combo_image, price, original_price,
+        combo_type, suitable_for, total_calories, total_protein, total_fat, total_carbs,
+        description, replaceable_dish_pool, max_replace_count, status, sales_count,
+        create_time, update_time, deleted
+    </sql>
+
+    <!-- 查某商家的全部套餐 -->
+    <select id="findByMerchantId" resultType="com.ws.bitesmart.entity.dish.Combo">
+        SELECT <include refid="BaseColumns"/>
+        FROM combo
+        WHERE merchant_id = #{merchantId} AND deleted = 0
+        ORDER BY create_time DESC
+    </select>
+
+    <select id="findById" resultType="com.ws.bitesmart.entity.dish.Combo">
+        SELECT <include refid="BaseColumns"/>
+        FROM combo WHERE id = #{id} AND deleted = 0
+    </select>
+
+    <!-- 查上架套餐（status = 10） -->
+    <select id="findAvailable" resultType="com.ws.bitesmart.entity.dish.Combo">
+        SELECT <include refid="BaseColumns"/>
+        FROM combo
+        WHERE status = 10 AND deleted = 0
+        ORDER BY create_time DESC
+    </select>
+
+    <insert id="insert" parameterType="com.ws.bitesmart.entity.dish.Combo">
+        INSERT INTO combo (id, merchant_id, combo_name, combo_image, price, original_price,
+                           combo_type, suitable_for, total_calories, total_protein, total_fat, total_carbs,
+                           description, replaceable_dish_pool, max_replace_count, status, sales_count,
+                           create_time, update_time)
+        VALUES (#{id}, #{merchantId}, #{comboName}, #{comboImage}, #{price}, #{originalPrice},
+                #{comboType}, #{suitableFor}, #{totalCalories}, #{totalProtein}, #{totalFat}, #{totalCarbs},
+                #{description}, #{replaceableDishPool}, #{maxReplaceCount}, #{status}, #{salesCount},
+                NOW(), NOW())
+    </insert>
+
+    <!-- 只改非空字段 -->
+    <update id="updateById" parameterType="com.ws.bitesmart.entity.dish.Combo">
+        UPDATE combo
+        <set>
+            <if test="comboName != null">combo_name = #{comboName},</if>
+            <if test="comboImage != null">combo_image = #{comboImage},</if>
+            <if test="price != null">price = #{price},</if>
+            <if test="originalPrice != null">original_price = #{originalPrice},</if>
+            <if test="comboType != null">combo_type = #{comboType},</if>
+            <if test="suitableFor != null">suitable_for = #{suitableFor},</if>
+            <if test="totalCalories != null">total_calories = #{totalCalories},</if>
+            <if test="totalProtein != null">total_protein = #{totalProtein},</if>
+            <if test="totalFat != null">total_fat = #{totalFat},</if>
+            <if test="totalCarbs != null">total_carbs = #{totalCarbs},</if>
+            <if test="description != null">description = #{description},</if>
+            <if test="replaceableDishPool != null">replaceable_dish_pool = #{replaceableDishPool},</if>
+            <if test="maxReplaceCount != null">max_replace_count = #{maxReplaceCount},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="salesCount != null">sales_count = #{salesCount},</if>
+            update_time = NOW()
+        </set>
+        WHERE id = #{id} AND deleted = 0
+    </update>
+
+    <!-- 更新套餐销量 -->
+    <update id="updateSalesCount">
+        UPDATE combo
+        SET sales_count = #{salesCount},
+            update_time = NOW()
+        WHERE id = #{id} AND deleted = 0
+    </update>
+
+</mapper>

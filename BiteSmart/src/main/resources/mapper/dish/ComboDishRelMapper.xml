@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ws.bitesmart.mapper.dish.ComboDishRelMapper">
+
+    <sql id="BaseColumns">
+        id, combo_id, dish_id, quantity, is_fixed,
+        create_time, update_time, deleted
+    </sql>
+
+    <!-- 查套餐包含的菜品 -->
+    <select id="findByComboId" resultType="com.ws.bitesmart.entity.dish.ComboDishRel">
+        SELECT <include refid="BaseColumns"/>
+        FROM combo_dish_rel
+        WHERE combo_id = #{comboId} AND deleted = 0
+        ORDER BY id ASC
+    </select>
+
+    <!-- 批量插入套餐菜品关联 -->
+    <insert id="insertBatch">
+        INSERT INTO combo_dish_rel (id, combo_id, dish_id, quantity, is_fixed,
+                                     create_time, update_time)
+        VALUES
+        <foreach collection="list" item="rel" separator=",">
+            (#{rel.id}, #{rel.comboId}, #{rel.dishId}, #{rel.quantity}, #{rel.isFixed},
+             NOW(), NOW())
+        </foreach>
+    </insert>
+
+    <!-- 删除套餐的所有菜品关联（软删除） -->
+    <update id="deleteByComboId">
+        UPDATE combo_dish_rel SET deleted = 1 WHERE combo_id = #{comboId}
+    </update>
+
+</mapper>

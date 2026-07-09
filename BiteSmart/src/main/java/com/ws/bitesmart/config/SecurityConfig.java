@@ -72,6 +72,8 @@ public class SecurityConfig {
             "/api/auth/**",         // 登录、注册、刷新Token
             "/api/files/**",        // 文件访问（上传/下载/预览）
             "/api/common/**",       // 公共数据接口
+            "/api/dishes/**",       // 菜品浏览（无需登录）
+            "/api/combos/**",       // 套餐浏览（无需登录）
             "/swagger-ui/**",       // Swagger 接口文档页面
             "/v3/api-docs/**",      // OpenAPI 文档接口
             "/webjars/**"           // webjar 静态资源

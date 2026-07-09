@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ws.bitesmart.mapper.dish.DishCategoryMapper">
+
+    <sql id="BaseColumns">
+        id, category_name, category_icon, sort_order, parent_id,
+        create_time, update_time, deleted
+    </sql>
+
+    <!-- 查询全部分类，按 sort_order 排序 -->
+    <select id="findAll" resultType="com.ws.bitesmart.entity.dish.DishCategory">
+        SELECT <include refid="BaseColumns"/>
+        FROM dish_category
+        WHERE deleted = 0
+        ORDER BY sort_order ASC
+    </select>
+
+    <select id="findById" resultType="com.ws.bitesmart.entity.dish.DishCategory">
+        SELECT <include refid="BaseColumns"/>
+        FROM dish_category WHERE id = #{id} AND deleted = 0
+    </select>
+
+    <insert id="insert" parameterType="com.ws.bitesmart.entity.dish.DishCategory">
+        INSERT INTO dish_category (id, category_name, category_icon, sort_order, parent_id,
+                                    create_time, update_time)
+        VALUES (#{id}, #{categoryName}, #{categoryIcon}, #{sortOrder}, #{parentId},
+                NOW(), NOW())
+    </insert>
+
+    <!-- 只改非空字段 -->
+    <update id="updateById" parameterType="com.ws.bitesmart.entity.dish.DishCategory">
+        UPDATE dish_category
+        <set>
+            <if test="categoryName != null">category_name = #{categoryName},</if>
+            <if test="categoryIcon != null">category_icon = #{categoryIcon},</if>
+            <if test="sortOrder != null">sort_order = #{sortOrder},</if>
+            <if test="parentId != null">parent_id = #{parentId},</if>
+            update_time = NOW()
+        </set>
+        WHERE id = #{id} AND deleted = 0
+    </update>
+
+    <!-- 软删除 -->
+    <update id="deleteById">
+        UPDATE dish_category SET deleted = 1 WHERE id = #{id}
+    </update>
+
+</mapper>

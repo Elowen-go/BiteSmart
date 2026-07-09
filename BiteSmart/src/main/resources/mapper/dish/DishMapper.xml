@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ws.bitesmart.mapper.dish.DishMapper">
+
+    <sql id="BaseColumns">
+        id, merchant_id, category_id, dish_name, dish_image,
+        price, original_price, stock, lock_stock, min_stock_warning,
+        sales_count, sales_real, unit, description, suitable_for,
+        calories, protein, fat, carbs, status,
+        create_time, update_time, deleted
+    </sql>
+
+    <!-- 查某商家的全部菜品 -->
+    <select id="findByMerchantId" resultType="com.ws.bitesmart.entity.dish.Dish">
+        SELECT <include refid="BaseColumns"/>
+        FROM dish
+        WHERE merchant_id = #{merchantId} AND deleted = 0
+        ORDER BY create_time DESC
+    </select>
+
+    <select id="findById" resultType="com.ws.bitesmart.entity.dish.Dish">
+        SELECT <include refid="BaseColumns"/>
+        FROM dish WHERE id = #{id} AND deleted = 0
+    </select>
+
+    <!-- 查上架且在售的菜品（status=10 且 stock > 0） -->
+    <select id="findAvailable" resultType="com.ws.bitesmart.entity.dish.Dish">
+        SELECT <include refid="BaseColumns"/>
+        FROM dish
+        WHERE status = 10 AND stock &gt; 0 AND deleted = 0
+        ORDER BY create_time DESC
+    </select>
+
+    <insert id="insert" parameterType="com.ws.bitesmart.entity.dish.Dish">
+        INSERT INTO dish (id, merchant_id, category_id, dish_name, dish_image,
+                          price, original_price, stock, lock_stock, min_stock_warning,
+                          sales_count, sales_real, unit, description, suitable_for,
+                          calories, protein, fat, carbs, status,
+                          create_time, update_time)
+        VALUES (#{id}, #{merchantId}, #{categoryId}, #{dishName}, #{dishImage},
+                #{price}, #{originalPrice}, #{stock}, #{lockStock}, #{minStockWarning},
+                #{salesCount}, #{salesReal}, #{unit}, #{description}, #{suitableFor},
+                #{calories}, #{protein}, #{fat}, #{carbs}, #{status},
+                NOW(), NOW())
+    </insert>
+
+    <!-- 只改非空字段 -->
+    <update id="updateById" parameterType="com.ws.bitesmart.entity.dish.Dish">
+        UPDATE dish
+        <set>
+            <if test="categoryId != null">category_id = #{categoryId},</if>
+            <if test="dishName != null">dish_name = #{dishName},</if>
+            <if test="dishImage != null">dish_image = #{dishImage},</if>
+            <if test="price != null">price = #{price},</if>
+            <if test="originalPrice != null">original_price = #{originalPrice},</if>
+            <if test="stock != null">stock = #{stock},</if>
+            <if test="minStockWarning != null">min_stock_warning = #{minStockWarning},</if>
+            <if test="unit != null">unit = #{unit},</if>
+            <if test="description != null">description = #{description},</if>
+            <if test="suitableFor != null">suitable_for = #{suitableFor},</if>
+            <if test="calories != null">calories = #{calories},</if>
+            <if test="protein != null">protein = #{protein},</if>
+            <if test="fat != null">fat = #{fat},</if>
+            <if test="carbs != null">carbs = #{carbs},</if>
+            <if test="status != null">status = #{status},</if>
+            update_time = NOW()
+        </set>
+        WHERE id = #{id} AND deleted = 0
+    </update>
+
+    <!-- 更新库存（+/- 操作，由调用方传入更新后的值） -->
+    <update id="updateStock">
+        UPDATE dish
+        SET stock = #{stock},
+            lock_stock = #{lockStock},
+            update_time = NOW()
+        WHERE id = #{id} AND deleted = 0
+    </update>
+
+</mapper>

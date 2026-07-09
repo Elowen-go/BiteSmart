@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ws.bitesmart.mapper.merchant.MerchantMapper">
+
+    <sql id="BaseColumns">
+        id, user_id, shop_name, shop_logo, business_license, license_number,
+        contact_name, contact_phone, shop_address, delivery_range, business_hours,
+        shop_notice, status, audit_remark, avg_rating,
+        create_time, update_time, deleted
+    </sql>
+
+    <select id="findByUserId" resultType="com.ws.bitesmart.entity.merchant.Merchant">
+        SELECT <include refid="BaseColumns"/>
+        FROM merchant
+        WHERE user_id = #{userId} AND deleted = 0
+    </select>
+
+    <select id="findById" resultType="com.ws.bitesmart.entity.merchant.Merchant">
+        SELECT <include refid="BaseColumns"/>
+        FROM merchant
+        WHERE id = #{id} AND deleted = 0
+    </select>
+
+    <insert id="insert" parameterType="com.ws.bitesmart.entity.merchant.Merchant">
+        INSERT INTO merchant (id, user_id, shop_name, shop_logo, business_license, license_number,
+                               contact_name, contact_phone, shop_address, delivery_range, business_hours,
+                               shop_notice, status, avg_rating, create_time, update_time)
+        VALUES (#{id}, #{userId}, #{shopName}, #{shopLogo}, #{businessLicense}, #{licenseNumber},
+                #{contactName}, #{contactPhone}, #{shopAddress}, #{deliveryRange}, #{businessHours},
+                #{shopNotice}, #{status}, #{avgRating}, NOW(), NOW())
+    </insert>
+
+    <!-- 商家自己修改店铺信息 -->
+    <update id="updateById" parameterType="com.ws.bitesmart.entity.merchant.Merchant">
+        UPDATE merchant
+        <set>
+            <if test="shopName != null">shop_name = #{shopName},</if>
+            <if test="shopLogo != null">shop_logo = #{shopLogo},</if>
+            <if test="contactName != null">contact_name = #{contactName},</if>
+            <if test="contactPhone != null">contact_phone = #{contactPhone},</if>
+            <if test="shopAddress != null">shop_address = #{shopAddress},</if>
+            <if test="deliveryRange != null">delivery_range = #{deliveryRange},</if>
+            <if test="businessHours != null">business_hours = #{businessHours},</if>
+            <if test="shopNotice != null">shop_notice = #{shopNotice},</if>
+            update_time = NOW()
+        </set>
+        WHERE id = #{id} AND deleted = 0
+    </update>
+
+    <!-- 管理员审核修改状态 -->
+    <update id="updateStatus">
+        UPDATE merchant
+        SET status = #{status},
+            audit_remark = #{auditRemark}
+        WHERE id = #{id} AND deleted = 0
+    </update>
+
+</mapper>
