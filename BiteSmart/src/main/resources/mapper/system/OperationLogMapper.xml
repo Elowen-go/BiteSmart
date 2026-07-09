@@ -11,4 +11,13 @@
                 #{costTime}, #{status}, #{errorMsg}, NOW())
     </insert>
 
+    <select id="findAll" resultType="com.ws.bitesmart.entity.system.OperationLog">
+        SELECT id, user_id, username, role_type, operation, method,
+               request_url, request_params, request_ip, user_agent,
+               cost_time, status, error_msg, create_time
+        FROM operation_log
+        WHERE deleted = 0
+        ORDER BY create_time DESC
+    </select>
+
 </mapper>

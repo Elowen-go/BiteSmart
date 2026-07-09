@@ -87,7 +87,7 @@
         WHERE id = #{id} AND current_orders <![CDATA[ < ]]> max_orders AND deleted = 0
     </update>
 
-    <!-- 原子减少当前订单数（送达时 -1），返回0表示无配送中订单 -->
+    <!-- 原子减少当前订单数（送达时 -1） -->
     <update id="decrementOrders">
         UPDATE delivery_driver
         SET current_orders = current_orders - 1,
@@ -96,5 +96,13 @@
             update_time = NOW()
         WHERE id = #{id} AND current_orders > 0 AND deleted = 0
     </update>
+
+    <!-- 分页查询所有配送员 -->
+    <select id="findAll" resultType="com.ws.bitesmart.entity.delivery.DeliveryDriver">
+        SELECT <include refid="BaseColumns"/>
+        FROM delivery_driver
+        WHERE deleted = 0
+        ORDER BY create_time DESC
+    </select>
 
 </mapper>

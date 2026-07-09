@@ -58,4 +58,20 @@
           AND deleted = 0
     </update>
 
+    <!-- 分页查询商家列表，可按 status 筛选 -->
+    <select id="findAll" resultType="com.ws.bitesmart.entity.merchant.Merchant">
+        SELECT <include refid="BaseColumns"/>
+        FROM merchant
+        WHERE deleted = 0
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 统计商家总数 -->
+    <select id="countAll" resultType="long">
+        SELECT COUNT(*) FROM merchant WHERE deleted = 0
+    </select>
+
 </mapper>

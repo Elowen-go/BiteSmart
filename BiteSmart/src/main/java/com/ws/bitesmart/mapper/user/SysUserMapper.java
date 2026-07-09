@@ -4,6 +4,8 @@ import com.ws.bitesmart.entity.user.SysUser;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+import java.util.List;
+
 /**
  * 系统用户 Mapper
  *
@@ -40,5 +42,15 @@ public interface SysUserMapper {
      * 更新最后登录时间
      */
     int updateLoginTime(@Param("id") Long id, @Param("lastLoginTime") java.time.LocalDateTime time, @Param("lastLoginIp") String ip);
+
+    /**
+     * 分页查询所有非删除用户
+     */
+    List<SysUser> findAll();
+
+    /**
+     * 统计用户总数
+     */
+    long countAll();
 
 }

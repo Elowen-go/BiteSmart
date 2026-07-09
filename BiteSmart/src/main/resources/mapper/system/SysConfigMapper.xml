@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ws.bitesmart.mapper.system.SysConfigMapper">
+
+    <sql id="BaseColumns">
+        id, config_key, config_value, config_group, description, is_sensitive,
+        create_time, update_time, deleted
+    </sql>
+
+    <select id="findAll" resultType="com.ws.bitesmart.entity.system.SysConfig">
+        SELECT <include refid="BaseColumns"/>
+        FROM system_config
+        WHERE deleted = 0
+        ORDER BY config_group ASC, config_key ASC
+    </select>
+
+    <select id="findByKey" resultType="com.ws.bitesmart.entity.system.SysConfig">
+        SELECT <include refid="BaseColumns"/>
+        FROM system_config
+        WHERE config_key = #{configKey} AND deleted = 0
+    </select>
+
+    <select id="findByGroup" resultType="com.ws.bitesmart.entity.system.SysConfig">
+        SELECT <include refid="BaseColumns"/>
+        FROM system_config
+        WHERE config_group = #{configGroup} AND deleted = 0
+        ORDER BY config_key ASC
+    </select>
+
+    <insert id="insert" parameterType="com.ws.bitesmart.entity.system.SysConfig">
+        INSERT INTO system_config (id, config_key, config_value, config_group, description, is_sensitive,
+                                    create_time, update_time)
+        VALUES (#{id}, #{configKey}, #{configValue}, #{configGroup}, #{description}, #{isSensitive},
+                NOW(), NOW())
+    </insert>
+
+    <update id="updateByKey">
+        UPDATE system_config
+        SET config_value = #{configValue},
+            description = #{description},
+            is_sensitive = #{isSensitive},
+            update_time = NOW()
+        WHERE config_key = #{configKey} AND deleted = 0
+    </update>
+
+    <update id="deleteById">
+        UPDATE system_config SET deleted = 1 WHERE id = #{id}
+    </update>
+
+</mapper>

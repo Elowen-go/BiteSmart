@@ -4,6 +4,8 @@ import com.ws.bitesmart.entity.merchant.Merchant;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+import java.util.List;
+
 /**
  * 商家信息 Mapper
  */
@@ -24,5 +26,11 @@ public interface MerchantMapper {
 
     /** 管理员审核 */
     int updateStatus(@Param("id") Long id, @Param("status") Integer status, @Param("auditRemark") String auditRemark);
+
+    /** 分页查询商家列表（可按 status 筛选） */
+    List<Merchant> findAll(@Param("status") Integer status);
+
+    /** 统计商家总数 */
+    long countAll();
 
 }

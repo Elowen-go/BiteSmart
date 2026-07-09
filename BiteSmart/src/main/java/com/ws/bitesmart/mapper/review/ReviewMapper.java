@@ -40,4 +40,7 @@ public interface ReviewMapper {
     /** 更新评价状态（管理员隐藏/删除） */
     int updateStatus(@Param("id") Long id, @Param("status") Integer status);
 
+    /** 分页查询所有评价 */
+    List<Review> findAll();
+
 }

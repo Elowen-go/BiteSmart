@@ -110,4 +110,36 @@
           AND deleted = 0
     </select>
 
+    <!-- 分页查询所有订单 -->
+    <select id="findAll" resultType="com.ws.bitesmart.entity.order.Orders">
+        SELECT <include refid="BaseColumns"/>
+        FROM orders
+        WHERE deleted = 0
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 统计所有订单数量 -->
+    <select id="countAll" resultType="long">
+        SELECT COUNT(*) FROM orders WHERE deleted = 0
+    </select>
+
+    <!-- 统计所有订单实付金额总和 -->
+    <select id="sumPayAmountAll" resultType="java.math.BigDecimal">
+        SELECT COALESCE(SUM(pay_amount), 0) FROM orders WHERE deleted = 0
+    </select>
+
+    <!-- 统计指定时间范围内的订单数 -->
+    <select id="countByTimeRange" resultType="int">
+        SELECT COUNT(*) FROM orders
+        WHERE deleted = 0
+          AND create_time BETWEEN #{start} AND #{end}
+    </select>
+
+    <!-- 统计指定时间范围内的实付金额总和 -->
+    <select id="sumPayAmountByTimeRange" resultType="java.math.BigDecimal">
+        SELECT COALESCE(SUM(pay_amount), 0) FROM orders
+        WHERE deleted = 0
+          AND create_time BETWEEN #{start} AND #{end}
+    </select>
+
 </mapper>

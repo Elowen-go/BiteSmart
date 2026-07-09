@@ -75,4 +75,12 @@
         WHERE id = #{id} AND deleted = 0
     </update>
 
+    <!-- 分页查询所有评价 -->
+    <select id="findAll" resultType="com.ws.bitesmart.entity.review.Review">
+        SELECT <include refid="BaseColumns"/>
+        FROM review
+        WHERE deleted = 0
+        ORDER BY create_time DESC
+    </select>
+
 </mapper>

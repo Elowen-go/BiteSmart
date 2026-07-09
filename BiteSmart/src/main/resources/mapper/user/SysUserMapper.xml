@@ -54,4 +54,17 @@
         WHERE id = #{id} AND deleted = 0
     </update>
 
+    <!-- 分页查询所有非删除用户 -->
+    <select id="findAll" resultType="com.ws.bitesmart.entity.user.SysUser">
+        SELECT <include refid="BaseColumns"/>
+        FROM sys_user
+        WHERE deleted = 0
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 统计用户总数 -->
+    <select id="countAll" resultType="long">
+        SELECT COUNT(*) FROM sys_user WHERE deleted = 0
+    </select>
+
 </mapper>

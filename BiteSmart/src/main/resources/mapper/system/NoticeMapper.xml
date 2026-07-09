@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ws.bitesmart.mapper.system.NoticeMapper">
+
+    <sql id="BaseColumns">
+        id, title, content, type, status, publish_time,
+        create_time, update_time, deleted
+    </sql>
+
+    <!-- 查询所有公告（分页），按发布时间倒序 -->
+    <select id="findAll" resultType="com.ws.bitesmart.entity.system.Notice">
+        SELECT <include refid="BaseColumns"/>
+        FROM notice
+        WHERE deleted = 0
+        ORDER BY publish_time DESC
+    </select>
+
+    <!-- 查询已发布的公告列表 -->
+    <select id="findPublished" resultType="com.ws.bitesmart.entity.system.Notice">
+        SELECT <include refid="BaseColumns"/>
+        FROM notice
+        WHERE status = 10 AND deleted = 0
+        ORDER BY publish_time DESC
+    </select>
+
+    <!-- 根据 ID 查询 -->
+    <select id="findById" resultType="com.ws.bitesmart.entity.system.Notice">
+        SELECT <include refid="BaseColumns"/>
+        FROM notice
+        WHERE id = #{id} AND deleted = 0
+    </select>
+
+    <!-- 新增公告 -->
+    <insert id="insert" parameterType="com.ws.bitesmart.entity.system.Notice">
+        INSERT INTO notice (id, title, content, type, status, publish_time, create_time, update_time)
+        VALUES (#{id}, #{title}, #{content}, #{type}, #{status}, #{publishTime}, NOW(), NOW())
+    </insert>
+
+    <!-- 更新公告 -->
+    <update id="updateById" parameterType="com.ws.bitesmart.entity.system.Notice">
+        UPDATE notice
+        <set>
+            <if test="title != null">title = #{title},</if>
+            <if test="content != null">content = #{content},</if>
+            <if test="type != null">type = #{type},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="publishTime != null">publish_time = #{publishTime},</if>
+            update_time = NOW()
+        </set>
+        WHERE id = #{id} AND deleted = 0
+    </update>
+
+    <!-- 逻辑删除 -->
+    <update id="deleteById">
+        UPDATE notice
+        SET deleted = 1, update_time = NOW()
+        WHERE id = #{id} AND deleted = 0
+    </update>
+
+</mapper>

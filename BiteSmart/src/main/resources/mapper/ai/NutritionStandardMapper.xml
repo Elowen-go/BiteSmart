@@ -22,4 +22,50 @@
         LIMIT 1
     </select>
 
+    <!-- 查询所有营养标准 -->
+    <select id="findAll" resultType="com.ws.bitesmart.entity.ai.NutritionStandard">
+        SELECT <include refid="BaseColumns"/>
+        FROM nutrition_standard
+        WHERE deleted = 0
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 新增营养标准 -->
+    <insert id="insert" parameterType="com.ws.bitesmart.entity.ai.NutritionStandard">
+        INSERT INTO nutrition_standard (id, standard_name, gender, age_min, age_max, activity_level,
+                                        target_goal, daily_calories, protein_grams, fat_grams, carbs_grams,
+                                        water_ml, status, create_time, update_time)
+        VALUES (#{id}, #{standardName}, #{gender}, #{ageMin}, #{ageMax}, #{activityLevel},
+                #{targetGoal}, #{dailyCalories}, #{proteinGrams}, #{fatGrams}, #{carbsGrams},
+                #{waterMl}, #{status}, NOW(), NOW())
+    </insert>
+
+    <!-- 更新营养标准 -->
+    <update id="updateById" parameterType="com.ws.bitesmart.entity.ai.NutritionStandard">
+        UPDATE nutrition_standard
+        <set>
+            <if test="standardName != null">standard_name = #{standardName},</if>
+            <if test="gender != null">gender = #{gender},</if>
+            <if test="ageMin != null">age_min = #{ageMin},</if>
+            <if test="ageMax != null">age_max = #{ageMax},</if>
+            <if test="activityLevel != null">activity_level = #{activityLevel},</if>
+            <if test="targetGoal != null">target_goal = #{targetGoal},</if>
+            <if test="dailyCalories != null">daily_calories = #{dailyCalories},</if>
+            <if test="proteinGrams != null">protein_grams = #{proteinGrams},</if>
+            <if test="fatGrams != null">fat_grams = #{fatGrams},</if>
+            <if test="carbsGrams != null">carbs_grams = #{carbsGrams},</if>
+            <if test="waterMl != null">water_ml = #{waterMl},</if>
+            <if test="status != null">status = #{status},</if>
+            update_time = NOW()
+        </set>
+        WHERE id = #{id} AND deleted = 0
+    </update>
+
+    <!-- 逻辑删除 -->
+    <update id="deleteById">
+        UPDATE nutrition_standard
+        SET deleted = 1, update_time = NOW()
+        WHERE id = #{id} AND deleted = 0
+    </update>
+
 </mapper>

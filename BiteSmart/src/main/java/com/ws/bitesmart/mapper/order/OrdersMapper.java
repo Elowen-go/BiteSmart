@@ -4,6 +4,8 @@ import com.ws.bitesmart.entity.order.Orders;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -53,4 +55,19 @@ public interface OrdersMapper {
     java.math.BigDecimal sumPayAmountByMerchantAndTime(@Param("merchantId") Long merchantId,
                                                        @Param("start") java.time.LocalDateTime start,
                                                        @Param("end") java.time.LocalDateTime end);
+
+    /** 分页查询所有订单 */
+    List<Orders> findAll();
+
+    /** 统计所有订单数量 */
+    long countAll();
+
+    /** 统计所有订单实付金额总和 */
+    BigDecimal sumPayAmountAll();
+
+    /** 统计指定时间范围内的订单数 */
+    int countByTimeRange(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+
+    /** 统计指定时间范围内的实付金额总和 */
+    BigDecimal sumPayAmountByTimeRange(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
 }

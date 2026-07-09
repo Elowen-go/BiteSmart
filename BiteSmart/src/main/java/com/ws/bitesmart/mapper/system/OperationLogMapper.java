@@ -11,4 +11,7 @@ public interface OperationLogMapper {
 
     int insert(OperationLog log);
 
+    /** 查全部操作日志（分页） */
+    java.util.List<OperationLog> findAll();
+
 }

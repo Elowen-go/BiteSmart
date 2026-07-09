@@ -41,4 +41,8 @@ public interface DeliveryDriverMapper {
 
     /** 原子减少当前订单数（送达时 -1），返回0表示无配送中订单 */
     int decrementOrders(@Param("id") Long id);
+
+    /** 分页查询所有配送员 */
+    List<DeliveryDriver> findAll();
+
 }
