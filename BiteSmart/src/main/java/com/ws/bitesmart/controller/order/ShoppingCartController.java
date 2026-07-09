@@ -21,8 +21,8 @@ import java.util.List;
 /**
  * 购物车接口
  *
- * 用户端：查看购物车、添加商品、修改数量、删除商品。
- * 全部从 @AuthenticationPrincipal LoginUser 取 userId。
+ * 用户端：查看购物车、添加商品、修改数量、切换选中、删除商品。
+ * 下单时只购买 selected=1 的商品，跟淘宝购物车逻辑一样。
  */
 @Slf4j
 @RestController
@@ -66,6 +66,20 @@ public class ShoppingCartController {
         if (loginUser == null) return ResultVO.error(401, "未登录");
         shoppingCartService.updateQuantity(id, loginUser.getUserId(), quantity);
         return ResultVO.ok("修改成功");
+    }
+
+    /**
+     * 切换商品选中状态
+     * PUT /api/cart/{id}/select?selected=1
+     * selected=1 选中，selected=0 取消选中
+     */
+    @PutMapping("/{id}/select")
+    public ResultVO<Void> select(@AuthenticationPrincipal LoginUser loginUser,
+                                  @PathVariable Long id,
+                                  @RequestParam Integer selected) {
+        if (loginUser == null) return ResultVO.error(401, "未登录");
+        shoppingCartService.updateSelected(id, loginUser.getUserId(), selected);
+        return ResultVO.ok("操作成功");
     }
 
     /** 删商品 */

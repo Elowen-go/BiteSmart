@@ -91,4 +91,17 @@ public class ShoppingCartService {
     public List<ShoppingCart> findSelectedByUserId(Long userId) {
         return shoppingCartMapper.findSelectedByUserId(userId);
     }
+
+    /** 切换选中状态 */
+    @Transactional
+    public void updateSelected(Long id, Long userId, Integer selected) {
+        ShoppingCart cart = shoppingCartMapper.findByUserId(userId).stream()
+                .filter(c -> c.getId().equals(id))
+                .findFirst()
+                .orElse(null);
+        if (cart == null) {
+            throw new BusinessException(ResultCodeEnum.NOT_FOUND, "购物车商品不存在");
+        }
+        shoppingCartMapper.updateSelected(id, selected);
+    }
 }
