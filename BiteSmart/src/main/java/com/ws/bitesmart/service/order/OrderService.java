@@ -335,6 +335,21 @@ public class OrderService {
         finishPreparing(id, merchantId);
     }
 
+    /** 开始备餐（仅记录日志，不改变状态。接单时状态已变为备餐中） */
+    @Transactional(rollbackFor = Exception.class)
+    public void prepareOrder(Long id, Long merchantId) {
+        Orders order = ordersMapper.findById(id);
+        if (order == null || !order.getMerchantId().equals(merchantId)) {
+            throw new BusinessException(ResultCodeEnum.ORDER_NOT_FOUND);
+        }
+        if (order.getOrderStatus() != 30) {
+            throw new BusinessException(ResultCodeEnum.ORDER_STATUS_ERROR, "当前订单状态不允许开始备餐");
+        }
+        operateLogService.record(merchantId, null, null,
+                "商家开始备餐", "OrderService.prepareOrder", null, order.getOrderNo(), null, null, null);
+        log.info("商家开始备餐: orderNo={}, merchantId={}", order.getOrderNo(), merchantId);
+    }
+
     /** 备餐完成 → 配送中 */
     @Transactional(rollbackFor = Exception.class)
     public void finishPreparing(Long id, Long merchantId) {
@@ -345,11 +360,11 @@ public class OrderService {
         if (order.getOrderStatus() != 30) {
             throw new BusinessException(ResultCodeEnum.ORDER_STATUS_ERROR, "当前订单状态不允许操作");
         }
-        // 乐观锁更新：仅当当前状态为备餐中(30)时才更新为配送中(40)
+        // 乐观锁更新：仅当当前状态为备餐中(30)时才更新为配送中(40)，同时设置配送状态为待取餐
         int affected = ordersMapper.updateStatusWithLock(
                 id, 30, 40,
                 null, null, null,
-                null, null, null, null);
+                null, null, null, 10);
         if (affected == 0) {
             throw new BusinessException(ResultCodeEnum.ORDER_STATUS_ERROR, "订单状态已变更，操作失败");
         }

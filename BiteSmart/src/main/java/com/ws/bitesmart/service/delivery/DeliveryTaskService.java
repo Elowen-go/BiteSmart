@@ -131,6 +131,12 @@ public class DeliveryTaskService {
         if (affected == 0) {
             throw new BusinessException(ResultCodeEnum.ORDER_STATUS_ERROR, "任务状态已变更，取餐失败");
         }
+
+        // 同步更新订单配送状态：已取餐(20)
+        ordersMapper.updateStatusWithLock(
+                task.getOrderId(), 40, 40,
+                null, null, null, null, null, null, 20);
+
         log.info("配送员已取餐: taskId={}", taskId);
     }
 
@@ -166,7 +172,12 @@ public class DeliveryTaskService {
         // 原子更新配送员当前订单数
         deliveryDriverMapper.decrementOrders(driver.getId());
 
-        log.info("配送完成: taskId={}, driverId={}", taskId, driverId);
+        // 同步更新订单状态：配送中(40) → 已完成(50)，并写入完成时间和配送状态(已送达)
+        ordersMapper.updateStatusWithLock(
+                task.getOrderId(), 40, 50,
+                null, null, null, null, null, LocalDateTime.now(), 40);
+
+        log.info("配送完成: taskId={}, driverId={}, orderId={}", taskId, driverId, task.getOrderId());
     }
 
     /**

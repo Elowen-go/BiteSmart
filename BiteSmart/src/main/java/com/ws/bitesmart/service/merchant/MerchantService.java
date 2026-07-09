@@ -48,6 +48,27 @@ public class MerchantService {
         // 检查是否已经申请过
         Merchant exist = merchantMapper.findByUserId(userId);
         if (exist != null) {
+            // 如果之前被驳回(30)，允许重新提交 → 重置为待审核
+            if (exist.getStatus() == 30) {
+                merchant.setId(exist.getId());
+                merchant.setUserId(userId);
+                merchant.setStatus(10); // 重置为待审核
+                merchant.setCreateTime(null); // 不覆盖创建时间
+                merchantMapper.updateById(merchant);
+
+                // 记录新的审核日志
+                MerchantAuditLog auditLog = new MerchantAuditLog();
+                auditLog.setId(SnowflakeUtil.generate());
+                auditLog.setMerchantId(userId);
+                auditLog.setSubmitTime(LocalDateTime.now());
+                auditLog.setAuditStatus(10);
+                auditLogMapper.insert(auditLog);
+
+                operateLogService.record(userId, null, null,
+                        "商家重新提交入驻申请", "MerchantService.apply", null, null, null, null, null);
+                log.info("商家重新提交入驻申请: userId={}, shopName={}", userId, merchant.getShopName());
+                return;
+            }
             throw new BusinessException("你已经提交过入驻申请，请等待审核");
         }
 

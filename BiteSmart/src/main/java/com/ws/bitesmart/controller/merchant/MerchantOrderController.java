@@ -78,13 +78,13 @@ public class MerchantOrderController {
         return ResultVO.ok("已拒单");
     }
 
-    /** 备餐中 */
+    /** 开始备餐（待接单 → 备餐中） */
     @PutMapping("/{id}/prepare")
     public ResultVO<Void> prepare(@AuthenticationPrincipal LoginUser loginUser,
                                    @PathVariable Long id) {
         if (loginUser == null) return ResultVO.error(401, "未登录");
-        orderService.startDelivering(id, loginUser.getUserId());
-        return ResultVO.ok("已转为配送中");
+        orderService.prepareOrder(id, loginUser.getUserId());
+        return ResultVO.ok("已开始备餐");
     }
 
     /** 出餐完成 */

@@ -72,4 +72,18 @@ public class AdminMerchantController {
         return ResultVO.ok(status == 20 ? "审核通过" : "审核驳回");
     }
 
+    /**
+     * 关闭商家店铺
+     * PUT /api/admin/merchants/{id}/close?reason=违规经营
+     * 仅审核通过(20)的商家可以关闭
+     */
+    @PutMapping("/{id}/close")
+    public ResultVO<Void> close(@PathVariable Long id,
+                                @RequestParam String reason,
+                                @AuthenticationPrincipal LoginUser loginUser) {
+        if (loginUser == null) return ResultVO.error(401, "未登录");
+        adminMerchantService.close(id, reason, loginUser.getUserId());
+        return ResultVO.ok("已关店");
+    }
+
 }
