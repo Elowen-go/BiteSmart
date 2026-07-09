@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ws.bitesmart.mapper.order.ShoppingCartMapper">
+
+    <sql id="BaseColumns">
+        id, user_id, item_type, dish_id, combo_id, quantity, selected,
+        customization_json, create_time, update_time, deleted
+    </sql>
+
+    <!-- 查用户购物车全部商品 -->
+    <select id="findByUserId" resultType="com.ws.bitesmart.entity.order.ShoppingCart">
+        SELECT <include refid="BaseColumns"/>
+        FROM shopping_cart
+        WHERE user_id = #{userId} AND deleted = 0
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 查购物车中某个商品是否已存在 -->
+    <select id="findByUserIdAndItem" resultType="com.ws.bitesmart.entity.order.ShoppingCart">
+        SELECT <include refid="BaseColumns"/>
+        FROM shopping_cart
+        WHERE user_id = #{userId}
+          AND item_type = #{itemType}
+          AND (dish_id = #{dishId} OR (dish_id IS NULL AND #{dishId} IS NULL))
+          AND (combo_id = #{comboId} OR (combo_id IS NULL AND #{comboId} IS NULL))
+          AND deleted = 0
+    </select>
+
+    <!-- 查购物车中已选中的商品 -->
+    <select id="findSelectedByUserId" resultType="com.ws.bitesmart.entity.order.ShoppingCart">
+        SELECT <include refid="BaseColumns"/>
+        FROM shopping_cart
+        WHERE user_id = #{userId} AND selected = 1 AND deleted = 0
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 新增购物车商品 -->
+    <insert id="insert" parameterType="com.ws.bitesmart.entity.order.ShoppingCart">
+        INSERT INTO shopping_cart (id, user_id, item_type, dish_id, combo_id, quantity,
+                                   selected, customization_json, create_time, update_time)
+        VALUES (#{id}, #{userId}, #{itemType}, #{dishId}, #{comboId}, #{quantity},
+                #{selected}, #{customizationJson}, NOW(), NOW())
+    </insert>
+
+    <!-- 修改数量 -->
+    <update id="updateQuantity">
+        UPDATE shopping_cart
+        SET quantity = #{quantity}, update_time = NOW()
+        WHERE id = #{id} AND deleted = 0
+    </update>
+
+    <!-- 修改选中状态 -->
+    <update id="updateSelected">
+        UPDATE shopping_cart
+        SET selected = #{selected}, update_time = NOW()
+        WHERE id = #{id} AND deleted = 0
+    </update>
+
+    <!-- 删除购物车商品 -->
+    <update id="deleteById">
+        UPDATE shopping_cart
+        SET deleted = 1, update_time = NOW()
+        WHERE id = #{id} AND deleted = 0
+    </update>
+
+    <!-- 下单后清除已选中商品 -->
+    <update id="deleteByUserId">
+        UPDATE shopping_cart
+        SET deleted = 1, update_time = NOW()
+        WHERE user_id = #{userId} AND selected = 1 AND deleted = 0
+    </update>
+
+</mapper>

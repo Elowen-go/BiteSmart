@@ -1,0 +1,34 @@
+package com.ws.bitesmart.mapper.order;
+
+import com.ws.bitesmart.entity.order.Orders;
+import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
+
+import java.util.List;
+
+/**
+ * 订单 Mapper
+ *
+ * 支持用户端和商家端的订单查询，以及订单状态流转更新。
+ */
+@Mapper
+public interface OrdersMapper {
+
+    /** 按订单号查 */
+    Orders findByOrderNo(@Param("orderNo") String orderNo);
+
+    /** 按ID查 */
+    Orders findById(@Param("id") Long id);
+
+    /** 用户查自己的订单，按时间倒序 */
+    List<Orders> findByUserId(@Param("userId") Long userId);
+
+    /** 商家查收到的订单，按时间倒序 */
+    List<Orders> findByMerchantId(@Param("merchantId") Long merchantId);
+
+    /** 新增订单 */
+    int insert(Orders orders);
+
+    /** 更新订单状态（支持部分字段更新） */
+    int updateStatus(Orders orders);
+}

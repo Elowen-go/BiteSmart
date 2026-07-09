@@ -1,0 +1,71 @@
+package com.ws.bitesmart.entity.order;
+
+import lombok.Data;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
+/**
+ * 订单主表 实体类
+ *
+ * 对应 orders 表。
+ * 订单状态流转：10-待支付 → 20-待接单 → 30-备餐中 → 40-配送中 → 50-已完成
+ * 取消/退款：60-已取消 / 70-退款中 / 80-已退款
+ */
+@Data
+public class Orders {
+
+    private Long id;
+
+    /** 订单编号（唯一） */
+    private String orderNo;
+
+    private Long userId;
+    private Long merchantId;
+    private Long deliveryDriverId;
+
+    /** 订单总金额 */
+    private BigDecimal totalAmount;
+
+    /** 优惠金额 */
+    private BigDecimal discountAmount;
+
+    /** 实付金额 */
+    private BigDecimal payAmount;
+
+    /** 支付方式：10-支付宝 20-微信 */
+    private Integer payMethod;
+
+    /** 支付时间 */
+    private LocalDateTime payTime;
+
+    /** 订单状态：10-待支付 20-待接单 30-备餐中 40-配送中 50-已完成 60-已取消 70-退款中 80-已退款 */
+    private Integer orderStatus;
+
+    /** 配送状态：0-未配送 10-待取餐 20-已取餐 30-配送中 40-已送达 */
+    private Integer deliveryStatus;
+
+    /** 配送地址 */
+    private String deliveryAddress;
+
+    /** 收货人姓名 */
+    private String receiverName;
+
+    /** 收货人电话 */
+    private String receiverPhone;
+
+    /** 订单备注 */
+    private String remark;
+
+    /** 取消时间 */
+    private LocalDateTime cancelTime;
+
+    /** 取消原因 */
+    private String cancelReason;
+
+    /** 完成时间 */
+    private LocalDateTime finishTime;
+
+    private LocalDateTime createTime;
+    private LocalDateTime updateTime;
+    private Integer deleted;
+}

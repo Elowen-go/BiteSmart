@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ws.bitesmart.mapper.order.OrdersMapper">
+
+    <sql id="BaseColumns">
+        id, order_no, user_id, merchant_id, delivery_driver_id,
+        total_amount, discount_amount, pay_amount, pay_method, pay_time,
+        order_status, delivery_status, delivery_address,
+        receiver_name, receiver_phone, remark,
+        cancel_time, cancel_reason, finish_time,
+        create_time, update_time, deleted
+    </sql>
+
+    <!-- 按订单号查 -->
+    <select id="findByOrderNo" resultType="com.ws.bitesmart.entity.order.Orders">
+        SELECT <include refid="BaseColumns"/>
+        FROM orders
+        WHERE order_no = #{orderNo} AND deleted = 0
+    </select>
+
+    <!-- 按ID查 -->
+    <select id="findById" resultType="com.ws.bitesmart.entity.order.Orders">
+        SELECT <include refid="BaseColumns"/>
+        FROM orders WHERE id = #{id} AND deleted = 0
+    </select>
+
+    <!-- 用户查自己的订单 -->
+    <select id="findByUserId" resultType="com.ws.bitesmart.entity.order.Orders">
+        SELECT <include refid="BaseColumns"/>
+        FROM orders
+        WHERE user_id = #{userId} AND deleted = 0
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 商家查收到的订单 -->
+    <select id="findByMerchantId" resultType="com.ws.bitesmart.entity.order.Orders">
+        SELECT <include refid="BaseColumns"/>
+        FROM orders
+        WHERE merchant_id = #{merchantId} AND deleted = 0
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 新增订单 -->
+    <insert id="insert" parameterType="com.ws.bitesmart.entity.order.Orders">
+        INSERT INTO orders (id, order_no, user_id, merchant_id, delivery_driver_id,
+                            total_amount, discount_amount, pay_amount, pay_method, pay_time,
+                            order_status, delivery_status, delivery_address,
+                            receiver_name, receiver_phone, remark,
+                            cancel_time, cancel_reason, finish_time,
+                            create_time, update_time)
+        VALUES (#{id}, #{orderNo}, #{userId}, #{merchantId}, #{deliveryDriverId},
+                #{totalAmount}, #{discountAmount}, #{payAmount}, #{payMethod}, #{payTime},
+                #{orderStatus}, #{deliveryStatus}, #{deliveryAddress},
+                #{receiverName}, #{receiverPhone}, #{remark},
+                #{cancelTime}, #{cancelReason}, #{finishTime},
+                NOW(), NOW())
+    </insert>
+
+    <!-- 更新订单状态 -->
+    <update id="updateStatus">
+        UPDATE orders
+        <set>
+            order_status = #{orderStatus},
+            <if test="payMethod != null">pay_method = #{payMethod},</if>
+            <if test="payTime != null">pay_time = #{payTime},</if>
+            <if test="cancelTime != null">cancel_time = #{cancelTime},</if>
+            <if test="cancelReason != null">cancel_reason = #{cancelReason},</if>
+            <if test="finishTime != null">finish_time = #{finishTime},</if>
+            <if test="payAmount != null">pay_amount = #{payAmount},</if>
+            <if test="deliveryStatus != null">delivery_status = #{deliveryStatus},</if>
+            update_time = NOW()
+        </set>
+        WHERE id = #{id} AND deleted = 0
+    </update>
+
+</mapper>
