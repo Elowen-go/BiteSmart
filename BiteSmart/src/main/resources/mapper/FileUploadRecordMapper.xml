@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ws.bitesmart.mapper.FileUploadRecordMapper">
+
+    <sql id="BaseColumns">
+        id, user_id, biz_type, biz_id, file_name, file_url,
+        file_size, mime_type, storage_path, upload_time,
+        create_time, update_time, deleted
+    </sql>
+
+    <select id="findById" resultType="com.ws.bitesmart.entity.FileUploadRecord">
+        SELECT <include refid="BaseColumns"/>
+        FROM file_upload_record
+        WHERE id = #{id} AND deleted = 0
+    </select>
+
+    <select id="findByBiz" resultType="com.ws.bitesmart.entity.FileUploadRecord">
+        SELECT <include refid="BaseColumns"/>
+        FROM file_upload_record
+        WHERE biz_type = #{bizType} AND biz_id = #{bizId} AND deleted = 0
+    </select>
+
+    <insert id="insert" parameterType="com.ws.bitesmart.entity.FileUploadRecord">
+        INSERT INTO file_upload_record (id, user_id, biz_type, biz_id, file_name, file_url,
+                                        file_size, mime_type, storage_path, upload_time,
+                                        create_time, update_time)
+        VALUES (#{id}, #{userId}, #{bizType}, #{bizId}, #{fileName}, #{fileUrl},
+                #{fileSize}, #{mimeType}, #{storagePath}, NOW(),
+                NOW(), NOW())
+    </insert>
+
+    <update id="deleteById">
+        UPDATE file_upload_record SET deleted = 1 WHERE id = #{id}
+    </update>
+
+</mapper>

@@ -3,10 +3,14 @@ package com.ws.bitesmart.exception;
 import com.ws.bitesmart.common.ResultVO;
 import com.ws.bitesmart.common.enums.ResultCodeEnum;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -66,28 +70,56 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 处理参数校验异常 MethodArgumentNotValidException
-     *
-     * 使用 @Valid 或 @Validated 注解自动校验请求参数时，
-     * 如果校验失败会抛出此异常。将所有字段的错误信息拼接后返回。
-     *
-     * 示例请求体：
-     *   {"name": "", "age": 150}
-     * 返回消息：
-     *   "名称不能为空, 年龄不能超过120"
-     *
-     * @param e 参数校验异常对象，包含所有字段的校验错误
-     * @return 统一响应体 ResultVO
+     * 处理 @RequestBody 参数校验失败
+     * 对应 Controller 参数上的 @Valid 注解
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ResultVO<Void> handleValidationException(MethodArgumentNotValidException e) {
-        // 提取所有字段的错误消息，用逗号拼接
         String message = e.getBindingResult().getFieldErrors().stream()
                 .map(FieldError::getDefaultMessage)
                 .collect(Collectors.joining(", "));
-        log.warn("参数校验失败: {}", message);
+        log.warn("@RequestBody参数校验失败: {}", message);
         return ResultVO.error(ResultCodeEnum.VALIDATION_FAILED, message);
+    }
+
+    /**
+     * 处理 @ModelAttribute 或 @RequestParam 参数绑定校验失败
+     * 和 MethodArgumentNotValidException 类似，但触发场景不同
+     */
+    @ExceptionHandler(BindException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ResultVO<Void> handleBindException(BindException e) {
+        String message = e.getBindingResult().getFieldErrors().stream()
+                .map(FieldError::getDefaultMessage)
+                .collect(Collectors.joining(", "));
+        log.warn("@ModelAttribute参数校验失败: {}", message);
+        return ResultVO.error(ResultCodeEnum.VALIDATION_FAILED, message);
+    }
+
+    /**
+     * 处理方法级别参数校验失败
+     * 对应 @Validated 注解的方法参数校验
+     */
+    @ExceptionHandler(ConstraintViolationException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ResultVO<Void> handleConstraintViolationException(ConstraintViolationException e) {
+        String message = e.getConstraintViolations().stream()
+                .map(ConstraintViolation::getMessage)
+                .collect(Collectors.joining(", "));
+        log.warn("方法参数校验失败: {}", message);
+        return ResultVO.error(ResultCodeEnum.VALIDATION_FAILED, message);
+    }
+
+    /**
+     * 处理缺少必填的请求参数
+     */
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ResultVO<Void> handleMissingParamException(MissingServletRequestParameterException e) {
+        String message = "缺少必填参数: " + e.getParameterName();
+        log.warn("缺少请求参数: {}", e.getParameterName());
+        return ResultVO.error(ResultCodeEnum.BAD_REQUEST, message);
     }
 
     /**

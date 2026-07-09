@@ -27,16 +27,25 @@ public class ResultVO<T> {
 
     // ==================== 成功响应 ====================
 
+    /** 无数据，只有默认消息 "操作成功" */
     public static <T> ResultVO<T> success() {
         return new ResultVO<>(ResultCodeEnum.SUCCESS.getCode(), ResultCodeEnum.SUCCESS.getMessage(), null);
     }
 
+    /** 有数据，消息用默认的 "操作成功" */
     public static <T> ResultVO<T> success(T data) {
         return new ResultVO<>(ResultCodeEnum.SUCCESS.getCode(), ResultCodeEnum.SUCCESS.getMessage(), data);
     }
 
+    /** 自定义消息 + 数据 */
     public static <T> ResultVO<T> success(String message, T data) {
         return new ResultVO<>(ResultCodeEnum.SUCCESS.getCode(), message, data);
+    }
+
+    /** 只有自定义消息，没有数据。比如登出成功这种场景 */
+    @SuppressWarnings("unchecked")
+    public static <T> ResultVO<T> ok(String message) {
+        return (ResultVO<T>) new ResultVO<>(ResultCodeEnum.SUCCESS.getCode(), message, null);
     }
 
     // ==================== 失败响应 ====================
