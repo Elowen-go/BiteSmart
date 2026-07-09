@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ws.bitesmart.mapper.UserMembershipMapper">
+
+    <sql id="BaseColumns">
+        id, user_id, plan_id, membership_type, status,
+        start_time, end_time, order_id, pay_amount,
+        create_time, update_time, deleted
+    </sql>
+
+    <select id="findActiveByUserId" resultType="com.ws.bitesmart.entity.UserMembership">
+        SELECT <include refid="BaseColumns"/>
+        FROM user_membership
+        WHERE user_id = #{userId}
+          AND status = 10
+          AND end_time > NOW()
+          AND deleted = 0
+        ORDER BY end_time DESC
+        LIMIT 1
+    </select>
+
+    <select id="findByUserId" resultType="com.ws.bitesmart.entity.UserMembership">
+        SELECT <include refid="BaseColumns"/>
+        FROM user_membership
+        WHERE user_id = #{userId} AND deleted = 0
+        ORDER BY create_time DESC
+    </select>
+
+    <insert id="insert" parameterType="com.ws.bitesmart.entity.UserMembership">
+        INSERT INTO user_membership (id, user_id, plan_id, membership_type, status,
+                                      start_time, end_time, order_id, pay_amount,
+                                      create_time, update_time)
+        VALUES (#{id}, #{userId}, #{planId}, #{membershipType}, #{status},
+                #{startTime}, #{endTime}, #{orderId}, #{payAmount},
+                NOW(), NOW())
+    </insert>
+
+</mapper>
