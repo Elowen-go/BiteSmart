@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ws.bitesmart.mapper.ai.AiConversationMapper">
+
+    <sql id="BaseColumns">
+        id, user_id, session_id, question, answer, model_name,
+        prompt_tokens, completion_tokens, total_tokens, cost,
+        response_time, create_time, update_time, deleted
+    </sql>
+
+    <!-- 查某个会话的历史记录，按时间正序 -->
+    <select id="findBySessionId" resultType="com.ws.bitesmart.entity.ai.AiConversation">
+        SELECT <include refid="BaseColumns"/>
+        FROM ai_conversation
+        WHERE session_id = #{sessionId} AND deleted = 0
+        ORDER BY create_time ASC
+    </select>
+
+    <!-- 查用户的所有会话列表（取每个会话最新的一条作为摘要） -->
+    <select id="findSessionsByUserId" resultType="com.ws.bitesmart.entity.ai.AiConversation">
+        SELECT <include refid="BaseColumns"/>
+        FROM ai_conversation
+        WHERE user_id = #{userId} AND deleted = 0
+        ORDER BY create_time DESC
+    </select>
+
+    <insert id="insert" parameterType="com.ws.bitesmart.entity.ai.AiConversation">
+        INSERT INTO ai_conversation (id, user_id, session_id, question, answer, model_name,
+                                      prompt_tokens, completion_tokens, total_tokens, cost,
+                                      response_time, create_time, update_time)
+        VALUES (#{id}, #{userId}, #{sessionId}, #{question}, #{answer}, #{modelName},
+                #{promptTokens}, #{completionTokens}, #{totalTokens}, #{cost},
+                #{responseTime}, NOW(), NOW())
+    </insert>
+
+</mapper>

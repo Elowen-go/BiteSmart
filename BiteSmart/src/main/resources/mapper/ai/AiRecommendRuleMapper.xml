@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ws.bitesmart.mapper.ai.AiRecommendRuleMapper">
+
+    <sql id="BaseColumns">
+        id, rule_name, target_goal, prompt_template, calorie_float,
+        max_calories, min_calories, protein_ratio, fat_ratio, carbs_ratio,
+        model_version, status, priority, create_time, update_time, deleted
+    </sql>
+
+    <!-- 查匹配目标且启用的规则，按优先级取最高的一条 -->
+    <select id="findBestRuleByGoal" resultType="com.ws.bitesmart.entity.ai.AiRecommendRule">
+        SELECT <include refid="BaseColumns"/>
+        FROM ai_recommend_rule
+        WHERE target_goal = #{targetGoal}
+          AND status = 10
+          AND deleted = 0
+        ORDER BY priority DESC
+        LIMIT 1
+    </select>
+
+</mapper>
