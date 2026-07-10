@@ -1,13 +1,33 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { Star, Sell, Tickets, Clock } from '@element-plus/icons-vue'
 import StatCard from '../../components/common/StatCard.vue'
+import { getDishList } from '../../api/user/dishes'
+import { getComboList } from '../../api/user/combos'
+import { ElMessage } from 'element-plus'
 
-const stats = ref({
-  recommendDish: '今日推荐',
-  hotCombo: '热销套餐',
-  newDish: '新品上市',
-  discount: '限时优惠'
+const loading = ref(false)
+const dishes = ref<any[]>([])
+const combos = ref<any[]>([])
+
+const fetchData = async () => {
+  loading.value = true
+  try {
+    const [dishRes, comboRes] = await Promise.all([
+      getDishList({ page: 1, size: 10 }),
+      getComboList({ page: 1, size: 4 })
+    ])
+    dishes.value = dishRes.data?.list || []
+    combos.value = comboRes.data?.list || []
+  } catch (e) {
+    console.error('获取数据失败', e)
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(() => {
+  fetchData()
 })
 </script>
 
@@ -17,22 +37,22 @@ const stats = ref({
       <StatCard
         :icon="Star"
         label="今日推荐"
-        :value="stats.recommendDish"
+        :value="dishes.length > 0 ? dishes[0]?.name : '暂无推荐'"
       />
       <StatCard
         :icon="Sell"
         label="热销套餐"
-        :value="stats.hotCombo"
+        :value="combos.length > 0 ? combos[0]?.name : '暂无套餐'"
       />
       <StatCard
         :icon="Tickets"
-        label="新品上市"
-        :value="stats.newDish"
+        label="菜品数量"
+        :value="`共 ${dishes.length} 款`"
       />
       <StatCard
         :icon="Clock"
         label="限时优惠"
-        :value="stats.discount"
+        :value="combos.length > 1 ? combos[1]?.name : '暂无优惠'"
       />
     </div>
     
@@ -41,11 +61,15 @@ const stats = ref({
         <h3>推荐菜品</h3>
       </div>
       <div style="padding-top: 20px;">
-        <el-table :data="[]" border>
+        <el-table v-loading="loading" :data="dishes" border>
           <el-table-column prop="name" label="菜品名称" />
-          <el-table-column prop="price" label="价格" />
-          <el-table-column prop="rating" label="评分" />
-          <el-table-column label="操作">
+          <el-table-column prop="price" label="价格" width="120">
+            <template #default="{ row }">
+              <span>¥{{ row.price }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="calories" label="热量(千卡)" width="120" />
+          <el-table-column label="操作" width="200">
             <template #default>
               <el-button size="small">查看详情</el-button>
               <el-button size="small" type="primary">加入购物车</el-button>

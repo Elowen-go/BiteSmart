@@ -64,11 +64,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             // 第二步：检查 Token 是否在 Redis 黑名单中
             // 当用户主动登出或管理员冻结账号时，Token 会被加入黑名单
             // 黑名单 Key 格式：token:blacklist:{token字符串}
-            String blacklistKey = Constant.REDIS_TOKEN_BLACKLIST + token;
-            if (Boolean.TRUE.equals(redisTemplate.hasKey(blacklistKey))) {
-                log.warn("Token已在黑名单中，拒绝访问");
-                filterChain.doFilter(request, response);
-                return;
+            // 注意：Redis不可用时跳过黑名单检查，避免认证中断
+            try {
+                String blacklistKey = Constant.REDIS_TOKEN_BLACKLIST + token;
+                if (Boolean.TRUE.equals(redisTemplate.hasKey(blacklistKey))) {
+                    log.warn("Token已在黑名单中，拒绝访问");
+                    filterChain.doFilter(request, response);
+                    return;
+                }
+            } catch (Exception e) {
+                log.warn("Redis不可用，跳过黑名单检查: {}", e.getMessage());
             }
 
             // 第三步：解析 Token，提取用户信息

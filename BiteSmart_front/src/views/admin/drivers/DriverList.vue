@@ -1,4 +1,45 @@
 <script setup lang="ts">
+import { ref, onMounted } from 'vue'
+import { getDriverList, updateDriverStatus } from '../../../api/admin/drivers'
+
+const loading = ref(false)
+const tableData = ref<any[]>([])
+const total = ref(0)
+const pageNum = ref(1)
+const pageSize = ref(10)
+
+const loadData = async () => {
+  loading.value = true
+  try {
+    const res = await getDriverList({ pageNum: pageNum.value, pageSize: pageSize.value })
+    if (res.code === 200) {
+      tableData.value = res.data.list || []
+      total.value = res.data.total || 0
+    }
+  } catch (err) {
+    console.error('获取配送员列表失败', err)
+  } finally {
+    loading.value = false
+  }
+}
+
+const statusMap: Record<number, string> = { 10: '在线', 20: '忙碌', 30: '离线', 40: '冻结' }
+const statusTypeMap: Record<number, 'success' | 'warning' | 'info' | 'danger'> = { 10: 'success', 20: 'warning', 30: 'info', 40: 'danger' }
+
+const handleToggleFreeze = async (row: any) => {
+  const newStatus = row.status === 40 ? 10 : 40
+  try {
+    const res = await updateDriverStatus(row.id, newStatus)
+    if (res.code === 200) {
+      row.status = newStatus
+      ElMessage.success(newStatus === 40 ? '配送员已冻结' : '配送员已解冻')
+    }
+  } catch (err) {
+    console.error('更新配送员状态失败', err)
+  }
+}
+
+onMounted(loadData)
 </script>
 
 <template>
@@ -6,21 +47,43 @@
     <div class="card-panel">
       <div class="card-header">
         <h3>配送员管理</h3>
-        <button class="btn btn-primary">新增配送员</button>
       </div>
       <div style="padding-top: 20px;">
-        <el-table :data="[]" border>
-          <el-table-column prop="name" label="姓名" />
-          <el-table-column prop="phone" label="手机号" />
-          <el-table-column prop="status" label="状态" />
-          <el-table-column prop="orders" label="配送单数" />
-          <el-table-column label="操作">
-            <template #default>
-              <el-button size="small">详情</el-button>
-              <el-button size="small">审核</el-button>
+        <el-table :data="tableData" v-loading="loading" border stripe style="width: 100%">
+          <el-table-column prop="realName" label="姓名" min-width="120" />
+          <el-table-column prop="phone" label="手机号" width="140" />
+          <el-table-column prop="vehicleType" label="交通工具" width="120" />
+          <el-table-column label="状态" width="100">
+            <template #default="{ row }">
+              <el-tag :type="statusTypeMap[row.status] || 'info'" size="small">
+                {{ statusMap[row.status] || '未知' }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="操作" width="120" fixed="right">
+            <template #default="{ row }">
+              <el-button
+                size="small"
+                :type="row.status === 40 ? 'success' : 'warning'"
+                link
+                @click="handleToggleFreeze(row)"
+              >
+                {{ row.status === 40 ? '解冻' : '冻结' }}
+              </el-button>
             </template>
           </el-table-column>
         </el-table>
+        <div style="display:flex;justify-content:flex-end;padding-top:16px;">
+          <el-pagination
+            v-model:current-page="pageNum"
+            v-model:page-size="pageSize"
+            :total="total"
+            :page-sizes="[10, 20, 50]"
+            layout="total, sizes, prev, pager, next"
+            @current-change="loadData"
+            @size-change="loadData"
+          />
+        </div>
       </div>
     </div>
   </div>

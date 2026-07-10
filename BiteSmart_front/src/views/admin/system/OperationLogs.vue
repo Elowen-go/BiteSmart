@@ -1,4 +1,29 @@
 <script setup lang="ts">
+import { ref, onMounted } from 'vue'
+import { getLogList } from '../../../api/admin/system'
+
+const loading = ref(false)
+const tableData = ref<any[]>([])
+const total = ref(0)
+const pageNum = ref(1)
+const pageSize = ref(10)
+
+const loadData = async () => {
+  loading.value = true
+  try {
+    const res = await getLogList({ page: pageNum.value, size: pageSize.value })
+    if (res.code === 200) {
+      tableData.value = res.data.list || []
+      total.value = res.data.total || 0
+    }
+  } catch (err) {
+    console.error('获取操作日志失败', err)
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(loadData)
 </script>
 
 <template>
@@ -8,13 +33,28 @@
         <h3>操作日志</h3>
       </div>
       <div style="padding-top: 20px;">
-        <el-table :data="[]" border>
-          <el-table-column prop="user" label="操作人" />
-          <el-table-column prop="action" label="操作" />
-          <el-table-column prop="module" label="模块" />
-          <el-table-column prop="time" label="时间" />
-          <el-table-column prop="ip" label="IP" />
+        <el-table :data="tableData" v-loading="loading" border stripe style="width: 100%">
+          <el-table-column prop="username" label="操作人" width="130" />
+          <el-table-column prop="operation" label="操作" min-width="200" show-overflow-tooltip />
+          <el-table-column prop="module" label="模块" width="120" />
+          <el-table-column prop="ip" label="IP地址" width="140" />
+          <el-table-column label="操作时间" width="170">
+            <template #default="{ row }">
+              {{ row.createTime?.slice(0, 16) }}
+            </template>
+          </el-table-column>
         </el-table>
+        <div style="display:flex;justify-content:flex-end;padding-top:16px;">
+          <el-pagination
+            v-model:current-page="pageNum"
+            v-model:page-size="pageSize"
+            :total="total"
+            :page-sizes="[10, 20, 50]"
+            layout="total, sizes, prev, pager, next"
+            @current-change="loadData"
+            @size-change="loadData"
+          />
+        </div>
       </div>
     </div>
   </div>

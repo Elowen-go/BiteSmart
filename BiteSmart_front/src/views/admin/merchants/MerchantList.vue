@@ -1,4 +1,81 @@
 <script setup lang="ts">
+import { ref, onMounted } from 'vue'
+import { getMerchantList, auditMerchant, closeMerchant } from '../../../api/admin/merchants'
+
+const loading = ref(false)
+const tableData = ref<any[]>([])
+const total = ref(0)
+const pageNum = ref(1)
+const pageSize = ref(10)
+
+const auditDialogVisible = ref(false)
+const closeDialogVisible = ref(false)
+const currentRow = ref<any>(null)
+const auditRemark = ref('')
+const closeReason = ref('')
+
+const loadData = async () => {
+  loading.value = true
+  try {
+    const res = await getMerchantList({ pageNum: pageNum.value, pageSize: pageSize.value })
+    if (res.code === 200) {
+      tableData.value = res.data.list || []
+      total.value = res.data.total || 0
+    }
+  } catch (err) {
+    console.error('获取商家列表失败', err)
+  } finally {
+    loading.value = false
+  }
+}
+
+const statusMap: Record<number, string> = { 10: '待审核', 20: '审核通过', 30: '审核驳回', 40: '已关闭' }
+const statusTypeMap: Record<number, 'success' | 'warning' | 'info' | 'danger'> = { 10: 'warning', 20: 'success', 30: 'danger', 40: 'info' }
+
+const openAuditDialog = (row: any) => {
+  currentRow.value = row
+  auditRemark.value = ''
+  auditDialogVisible.value = true
+}
+
+const submitAudit = async (status: number) => {
+  if (!currentRow.value) return
+  try {
+    const res = await auditMerchant(currentRow.value.id, status, auditRemark.value || undefined)
+    if (res.code === 200) {
+      ElMessage.success(status === 20 ? '商家已审核通过' : '商家已驳回')
+      auditDialogVisible.value = false
+      loadData()
+    }
+  } catch (err) {
+    console.error('审核失败', err)
+  }
+}
+
+const openCloseDialog = (row: any) => {
+  currentRow.value = row
+  closeReason.value = ''
+  closeDialogVisible.value = true
+}
+
+const submitClose = async () => {
+  if (!currentRow.value || !closeReason.value) {
+    ElMessage.warning('请输入关闭原因')
+    return
+  }
+  try {
+    const res = await closeMerchant(currentRow.value.id, closeReason.value)
+    if (res.code === 200) {
+      ElMessage.success('商家已关闭')
+      closeDialogVisible.value = false
+      loadData()
+    }
+  } catch (err) {
+    console.error('关闭商家失败', err)
+  }
+}
+
+onMounted(loadData)
 </script>
 
 <template>
@@ -6,23 +83,95 @@
     <div class="card-panel">
       <div class="card-header">
         <h3>商家管理</h3>
-        <button class="btn btn-primary">审核入驻</button>
       </div>
       <div style="padding-top: 20px;">
-        <el-table :data="[]" border>
-          <el-table-column prop="name" label="商家名称" />
-          <el-table-column prop="phone" label="联系电话" />
-          <el-table-column prop="status" label="状态" />
-          <el-table-column prop="createTime" label="入驻时间" />
-          <el-table-column label="操作">
-            <template #default>
-              <el-button size="small">详情</el-button>
-              <el-button size="small">审核</el-button>
+        <el-table :data="tableData" v-loading="loading" border stripe style="width: 100%">
+          <el-table-column prop="shopName" label="商家名称" min-width="150" />
+          <el-table-column prop="phone" label="联系电话" width="130" />
+          <el-table-column prop="address" label="店铺地址" min-width="200" show-overflow-tooltip />
+          <el-table-column label="状态" width="100">
+            <template #default="{ row }">
+              <el-tag :type="statusTypeMap[row.auditStatus] || 'info'" size="small">
+                {{ statusMap[row.auditStatus] || '未知' }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="入驻时间" width="170">
+            <template #default="{ row }">
+              {{ row.createTime?.slice(0, 16) }}
+            </template>
+          </el-table-column>
+          <el-table-column label="操作" width="200" fixed="right">
+            <template #default="{ row }">
+              <el-button
+                v-if="row.auditStatus === 10"
+                size="small"
+                type="primary"
+                @click="openAuditDialog(row)"
+              >
+                审核
+              </el-button>
+              <el-button
+                v-if="row.auditStatus !== 40"
+                size="small"
+                type="danger"
+                @click="openCloseDialog(row)"
+              >
+                关闭
+              </el-button>
+              <span v-else style="color: #999; font-size: 13px;">已关闭</span>
             </template>
           </el-table-column>
         </el-table>
+        <div style="display:flex;justify-content:flex-end;padding-top:16px;">
+          <el-pagination
+            v-model:current-page="pageNum"
+            v-model:page-size="pageSize"
+            :total="total"
+            :page-sizes="[10, 20, 50]"
+            layout="total, sizes, prev, pager, next"
+            @current-change="loadData"
+            @size-change="loadData"
+          />
+        </div>
       </div>
     </div>
+
+    <el-dialog v-model="auditDialogVisible" title="商家审核" width="450px">
+      <div style="margin-bottom: 16px;">
+        <p><strong>商家名称：</strong>{{ currentRow?.shopName }}</p>
+        <p><strong>联系电话：</strong>{{ currentRow?.phone }}</p>
+      </div>
+      <el-input
+        v-model="auditRemark"
+        type="textarea"
+        :rows="3"
+        placeholder="审核备注（可选）"
+        style="margin-bottom: 16px;"
+      />
+      <template #footer>
+        <el-button @click="auditDialogVisible = false">取消</el-button>
+        <el-button type="danger" @click="submitAudit(30)">驳回</el-button>
+        <el-button type="primary" @click="submitAudit(20)">审核通过</el-button>
+      </template>
+    </el-dialog>
+
+    <el-dialog v-model="closeDialogVisible" title="关闭商家" width="450px">
+      <div style="margin-bottom: 16px;">
+        <p><strong>商家名称：</strong>{{ currentRow?.shopName }}</p>
+      </div>
+      <el-input
+        v-model="closeReason"
+        type="textarea"
+        :rows="3"
+        placeholder="请输入关闭原因"
+        style="margin-bottom: 16px;"
+      />
+      <template #footer>
+        <el-button @click="closeDialogVisible = false">取消</el-button>
+        <el-button type="danger" @click="submitClose">确认关闭</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 

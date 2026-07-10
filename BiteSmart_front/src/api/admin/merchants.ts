@@ -24,10 +24,10 @@ export const getMerchantDetail = (id: number): Promise<any> => {
   return request.get(`/admin/merchants/${id}`)
 }
 
-export const auditMerchant = (id: number, auditStatus: number, remark?: string): Promise<any> => {
-  return request.put(`/admin/merchants/${id}/audit`, { params: { auditStatus, remark } })
+export const auditMerchant = (id: number, status: number, auditRemark?: string): Promise<any> => {
+  return request.put(`/admin/merchants/${id}/audit`, { params: { status, auditRemark } })
 }
 
-export const closeMerchant = (id: number): Promise<any> => {
-  return request.put(`/admin/merchants/${id}/close`)
+export const closeMerchant = (id: number, reason: string): Promise<any> => {
+  return request.put(`/admin/merchants/${id}/close`, { params: { reason } })
 }

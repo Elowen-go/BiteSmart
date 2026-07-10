@@ -1,55 +1,82 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { Money, ShoppingCart, Bowl, Star } from '@element-plus/icons-vue'
+import { ref, onMounted } from 'vue'
+import { Money, ShoppingCart, UserFilled, Coin } from '@element-plus/icons-vue'
 import StatCard from '../../components/common/StatCard.vue'
+import { getTodayStats, getTopDishes, getPeriodStats } from '../../api/merchant/statistics'
 
-const stats = ref({
-  todaySales: 2450,
-  todayOrders: 32,
-  hotDish: '鸡胸肉沙拉',
-  rating: 4.9
+const loading = ref(false)
+const todayStats = ref({
+  orderCount: 0,
+  revenue: 0,
+  newUserCount: 0,
+  avgOrderAmount: 0
+})
+const topDishes = ref<any[]>([])
+const pendingOrders = ref<any[]>([])
+
+const fetchData = async () => {
+  loading.value = true
+  try {
+    const [todayRes, topRes, periodRes] = await Promise.all([
+      getTodayStats(),
+      getTopDishes({ limit: 10 }),
+      getPeriodStats()
+    ])
+    if (todayRes.code === 200) {
+      todayStats.value = todayRes.data
+    }
+    if (topRes.code === 200) {
+      topDishes.value = topRes.data.list || topRes.data
+    }
+  } catch (e) {
+    console.error('获取统计数据失败', e)
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(() => {
+  fetchData()
 })
 </script>
 
 <template>
-  <div class="dashboard">
+  <div class="dashboard" v-loading="loading">
     <div class="stats-row">
       <StatCard
         :icon="Money"
-        label="今日销售额"
-        :value="'¥' + stats.todaySales"
+        label="今日营收"
+        :value="'¥' + todayStats.revenue"
       />
       <StatCard
         :icon="ShoppingCart"
         label="今日订单"
-        :value="stats.todayOrders"
+        :value="todayStats.orderCount"
       />
       <StatCard
-        :icon="Bowl"
-        label="热销菜品"
-        :value="stats.hotDish"
+        :icon="UserFilled"
+        label="新用户数"
+        :value="todayStats.newUserCount"
       />
       <StatCard
-        :icon="Star"
-        label="店铺评分"
-        :value="stats.rating"
+        :icon="Coin"
+        label="平均订单金额"
+        :value="'¥' + todayStats.avgOrderAmount"
       />
     </div>
-    
-    <div class="card-panel">
+
+    <div class="card-panel" style="margin-top: var(--bs-spacing-lg);">
       <div class="card-header">
-        <h3>待处理订单</h3>
-        <button class="btn btn-primary btn-sm">查看全部</button>
+        <h3>热销菜品排行</h3>
       </div>
       <div style="padding-top: 20px;">
-        <el-table :data="[]" border>
-          <el-table-column prop="orderNo" label="订单号" />
-          <el-table-column prop="items" label="菜品" />
-          <el-table-column prop="amount" label="金额" />
-          <el-table-column prop="time" label="下单时间" />
-          <el-table-column label="操作">
-            <template #default>
-              <el-button size="small" type="primary">接单</el-button>
+        <el-table :data="topDishes" border>
+          <el-table-column type="index" label="排名" width="80" />
+          <el-table-column prop="dishName" label="菜品名称" />
+          <el-table-column prop="soldCount" label="销量" />
+          <el-table-column prop="revenue" label="营收">
+            <template #default="{ row }">
+              ¥{{ row.revenue }}
             </template>
           </el-table-column>
         </el-table>

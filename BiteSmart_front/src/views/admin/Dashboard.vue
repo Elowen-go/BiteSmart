@@ -4,39 +4,60 @@ import {
   Money,
   ShoppingCart,
   User,
-  Cpu,
+  Shop,
   List,
   Bell,
-  Shop,
   ChatDotRound,
   ArrowUp
 } from '@element-plus/icons-vue'
 import StatCard from '../../components/common/StatCard.vue'
+import { getOverview } from '../../api/admin/statistics'
 
+const loading = ref(true)
 const stats = ref({
-  totalSales: 68432,
-  orderCount: 1283,
-  activeUsers: 487,
-  aiCalls: 9201,
-  salesChange: 12.5,
-  orderChange: 8.2,
-  userChange: -3.1,
-  aiChange: 24.6
+  totalRevenue: 0,
+  orderCount: 0,
+  userCount: 0,
+  merchantCount: 0
 })
 
-const recentOrders = ref([
-  { orderNo: '#ORD-1024', customer: '张女士', amount: 78.00, status: 'completed', time: '2026-07-10 12:30' },
-  { orderNo: '#ORD-1023', customer: '李先生', amount: 124.50, status: 'delivering', time: '2026-07-10 11:45' },
-  { orderNo: '#ORD-1022', customer: '王女士', amount: 56.00, status: 'pending', time: '2026-07-10 10:20' }
-])
-
+const recentOrders = ref<any[]>([])
 const notifications = ref([
-  { icon: Shop, title: '新商家入驻', desc: '“轻食主义”提交资质', time: '10分钟前' },
-  { icon: ChatDotRound, title: '用户投诉 #C-234', desc: '配送超时需处理', time: '1小时前' },
+  { icon: Shop, title: '新商家入驻', desc: '"轻食主义"提交资质', time: '10分钟前' },
+  { icon: ChatDotRound, title: '系统通知', desc: '平台运营数据已更新', time: '1小时前' },
   { icon: ArrowUp, title: 'AI规则更新', desc: '参数 v2.3 已生效', time: '3小时前' }
 ])
 
-onMounted(() => {})
+onMounted(async () => {
+  loading.value = true
+  try {
+    const overviewRes = await getOverview()
+    if (overviewRes.code === 200) {
+      const d = overviewRes.data
+      stats.value.totalRevenue = d.totalRevenue || 0
+      stats.value.orderCount = d.orderCount || 0
+      stats.value.userCount = d.userCount || 0
+      stats.value.merchantCount = d.merchantCount || 0
+    }
+
+    const { getOrderList } = await import('../../api/admin/orders')
+    const orderRes = await getOrderList({ pageNum: 1, pageSize: 5 })
+    if (orderRes.code === 200) {
+      const list = orderRes.data?.list || []
+      recentOrders.value = list.map((o: any) => ({
+        orderNo: o.orderNo,
+        customer: o.deliveryAddress?.slice(0, 8) + '…' || '未知',
+        amount: o.payAmount || o.totalAmount,
+        status: o.orderStatus >= 50 ? 'completed' : o.orderStatus >= 40 ? 'delivering' : 'pending',
+        time: o.createTime?.slice(0, 16) || ''
+      }))
+    }
+  } catch (err) {
+    console.error('获取Dashboard数据失败', err)
+  } finally {
+    loading.value = false
+  }
+})
 
 const getStatusBadge = (status: string) => {
   switch (status) {
@@ -54,30 +75,26 @@ const getStatusBadge = (status: string) => {
 
 <template>
   <div class="dashboard">
-    <div class="stats-row">
+    <div v-loading="loading" class="stats-row">
       <StatCard
         :icon="Money"
         label="总销售额"
-        :value="'¥' + stats.totalSales.toLocaleString()"
-        :change="stats.salesChange"
+        :value="'¥' + Number(stats.totalRevenue).toLocaleString()"
       />
       <StatCard
         :icon="ShoppingCart"
         label="订单总数"
         :value="stats.orderCount"
-        :change="stats.orderChange"
       />
       <StatCard
         :icon="User"
-        label="活跃用户"
-        :value="stats.activeUsers"
-        :change="stats.userChange"
+        label="注册用户"
+        :value="stats.userCount"
       />
       <StatCard
-        :icon="Cpu"
-        label="AI调用次数"
-        :value="stats.aiCalls"
-        :change="stats.aiChange"
+        :icon="Shop"
+        label="商家总数"
+        :value="stats.merchantCount"
       />
     </div>
     
@@ -101,11 +118,11 @@ const getStatusBadge = (status: string) => {
                 <th>时间</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody v-if="recentOrders.length > 0">
               <tr v-for="order in recentOrders" :key="order.orderNo">
                 <td>{{ order.orderNo }}</td>
                 <td>{{ order.customer }}</td>
-                <td>¥{{ order.amount.toFixed(2) }}</td>
+                <td>¥{{ Number(order.amount).toFixed(2) }}</td>
                 <td>
                   <span :class="['status-badge', getStatusBadge(order.status).class]">
                     {{ getStatusBadge(order.status).text }}
@@ -113,6 +130,9 @@ const getStatusBadge = (status: string) => {
                 </td>
                 <td>{{ order.time }}</td>
               </tr>
+            </tbody>
+            <tbody v-else>
+              <tr><td colspan="5" style="text-align:center;color:var(--bs-text-muted);padding:32px 0;">暂无订单</td></tr>
             </tbody>
           </table>
         </div>
