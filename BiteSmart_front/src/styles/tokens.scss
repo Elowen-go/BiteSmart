@@ -1,0 +1,131 @@
+$sidebar-bg: #1B3A2F;
+$sidebar-text: #FFFFFF;
+$sidebar-hover: rgba(255,255,255,0.08);
+$sidebar-active: rgba(255,255,255,0.15);
+$sidebar-border: rgba(255,255,255,0.06);
+$sidebar-text-muted: rgba(255,255,255,0.7);
+$sidebar-text-label: rgba(255,255,255,0.35);
+
+$header-bg: #FFFFFF;
+$header-border: #EBEEF0;
+
+$card-bg: #FFFFFF;
+$card-shadow: 0 1px 3px rgba(0,0,0,0.04);
+$card-shadow-hover: 0 4px 12px rgba(0,0,0,0.06);
+
+$primary: #1B3A2F;
+$primary-hover: #2A4F40;
+$primary-light: #3D6B56;
+
+$text-title: #212529;
+$text-body: #495057;
+$text-muted: #868E96;
+$text-light: #DEE2E6;
+
+$border-light: #EBEEF0;
+$border-card: #F0F2F5;
+
+$bg-page: #F5F7FA;
+$bg-card: #FFFFFF;
+$bg-hover: #F1F3F5;
+
+$radius-sm: 4px;
+$radius-md: 8px;
+$radius-lg: 12px;
+
+$shadow-sm: 0 1px 2px rgba(0,0,0,0.03);
+$shadow-md: 0 1px 3px rgba(0,0,0,0.04);
+$shadow-lg: 0 4px 12px rgba(0,0,0,0.06);
+
+$spacing-xs: 4px;
+$spacing-sm: 8px;
+$spacing-md: 16px;
+$spacing-lg: 24px;
+$spacing-xl: 32px;
+
+$font-size-xs: 12px;
+$font-size-sm: 13px;
+$font-size-base: 14px;
+$font-size-md: 15px;
+$font-size-lg: 16px;
+$font-size-xl: 18px;
+$font-size-2xl: 20px;
+$font-size-3xl: 28px;
+
+$sidebar-width: 240px;
+$header-height: 64px;
+
+$status-success: #1B6B4A;
+$status-success-bg: #EAF6ED;
+$status-warning: #B76E2A;
+$status-warning-bg: #FFF3E0;
+$status-secondary: #6C757D;
+$status-secondary-bg: #F1F3F5;
+$status-danger: #D9534F;
+
+:root {
+  --bs-sidebar-bg: #{$sidebar-bg};
+  --bs-sidebar-text: #{$sidebar-text};
+  --bs-sidebar-hover: #{$sidebar-hover};
+  --bs-sidebar-active: #{$sidebar-active};
+  --bs-sidebar-border: #{$sidebar-border};
+  --bs-sidebar-text-muted: #{$sidebar-text-muted};
+  --bs-sidebar-text-label: #{$sidebar-text-label};
+  
+  --bs-header-bg: #{$header-bg};
+  --bs-header-border: #{$header-border};
+  
+  --bs-card-bg: #{$card-bg};
+  --bs-card-shadow: #{$card-shadow};
+  --bs-card-shadow-hover: #{$card-shadow-hover};
+  
+  --bs-primary: #{$primary};
+  --bs-primary-hover: #{$primary-hover};
+  --bs-primary-light: #{$primary-light};
+  
+  --bs-text-title: #{$text-title};
+  --bs-text-body: #{$text-body};
+  --bs-text-muted: #{$text-muted};
+  --bs-text-light: #{$text-light};
+  
+  --bs-border-light: #{$border-light};
+  --bs-border-card: #{$border-card};
+  
+  --bs-bg-page: #{$bg-page};
+  --bs-bg-card: #{$bg-card};
+  --bs-bg-hover: #{$bg-hover};
+  
+  --bs-radius-sm: #{$radius-sm};
+  --bs-radius-md: #{$radius-md};
+  --bs-radius-lg: #{$radius-lg};
+  
+  --bs-shadow-sm: #{$shadow-sm};
+  --bs-shadow-md: #{$shadow-md};
+  --bs-shadow-lg: #{$shadow-lg};
+  
+  --bs-spacing-xs: #{$spacing-xs};
+  --bs-spacing-sm: #{$spacing-sm};
+  --bs-spacing-md: #{$spacing-md};
+  --bs-spacing-lg: #{$spacing-lg};
+  --bs-spacing-xl: #{$spacing-xl};
+  
+  --bs-font-size-xs: #{$font-size-xs};
+  --bs-font-size-sm: #{$font-size-sm};
+  --bs-font-size-base: #{$font-size-base};
+  --bs-font-size-md: #{$font-size-md};
+  --bs-font-size-lg: #{$font-size-lg};
+  --bs-font-size-xl: #{$font-size-xl};
+  --bs-font-size-2xl: #{$font-size-2xl};
+  --bs-font-size-3xl: #{$font-size-3xl};
+  
+  --bs-sidebar-width: #{$sidebar-width};
+  --bs-header-height: #{$header-height};
+  
+  --bs-status-success: #{$status-success};
+  --bs-status-success-bg: #{$status-success-bg};
+  --bs-status-warning: #{$status-warning};
+  --bs-status-warning-bg: #{$status-warning-bg};
+  --bs-status-secondary: #{$status-secondary};
+  --bs-status-secondary-bg: #{$status-secondary-bg};
+  --bs-status-danger: #{$status-danger};
+}

@@ -1,0 +1,59 @@
+<script setup lang="ts">
+</script>
+
+<template>
+  <div class="page-container">
+    <div class="card-panel">
+      <div class="card-header">
+        <h3>订单处理</h3>
+      </div>
+      <div style="padding-top: 20px;">
+        <el-table :data="[]" border>
+          <el-table-column prop="orderNo" label="订单号" />
+          <el-table-column prop="items" label="菜品" />
+          <el-table-column prop="amount" label="金额" />
+          <el-table-column prop="status" label="状态" />
+          <el-table-column prop="time" label="时间" />
+          <el-table-column label="操作">
+            <template #default>
+              <el-button size="small" type="primary">接单</el-button>
+              <el-button size="small">备餐</el-button>
+              <el-button size="small">出餐</el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
+    </div>
+  </div>
+</template>
+
+<style scoped>
+.page-container {
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.card-panel {
+  background: var(--bs-card-bg);
+  border-radius: var(--bs-radius-md);
+  box-shadow: var(--bs-card-shadow);
+  padding: var(--bs-spacing-lg);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--bs-spacing-lg);
+}
+
+.card-header h3 {
+  font-size: var(--bs-font-size-lg);
+  font-weight: 600;
+  color: var(--bs-text-title);
+}
+</style>

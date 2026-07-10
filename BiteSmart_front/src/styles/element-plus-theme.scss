@@ -1,0 +1,66 @@
+@use './tokens.scss' as *;
+
+:root {
+  --el-color-primary: #{$primary};
+  --el-color-primary-light-3: #{$primary-light};
+  --el-color-primary-light-5: rgba(27, 58, 47, 0.1);
+  --el-color-primary-light-7: rgba(27, 58, 47, 0.05);
+  --el-color-primary-dark-2: #{$primary-hover};
+  
+  --el-text-color-primary: #{$text-title};
+  --el-text-color-regular: #{$text-body};
+  --el-text-color-secondary: #{$text-muted};
+  --el-text-color-placeholder: #{$text-muted};
+  
+  --el-bg-color-page: #{$bg-page};
+  --el-bg-color: #{$bg-card};
+  --el-bg-color-overlay: rgba(0, 0, 0, 0.5);
+  
+  --el-border-color: #{$border-light};
+  --el-border-color-light: #{$border-card};
+  --el-border-color-lighter: #{$border-card};
+  
+  --el-radius-sm: #{$radius-sm};
+  --el-radius-md: #{$radius-md};
+  --el-radius-lg: #{$radius-md};
+  --el-radius-circle: 50%;
+  
+  --el-font-size-xs: #{$font-size-xs};
+  --el-font-size-sm: #{$font-size-sm};
+  --el-font-size-base: #{$font-size-base};
+  --el-font-size-md: #{$font-size-md};
+  --el-font-size-lg: #{$font-size-lg};
+  
+  --el-shadow-sm: #{$shadow-sm};
+  --el-shadow-md: #{$shadow-md};
+  --el-shadow-lg: #{$shadow-lg};
+  --el-shadow: #{$shadow-md};
+  
+  --el-button-primary-bg-color: #{$primary};
+  --el-button-primary-hover-bg-color: #{$primary-hover};
+  --el-button-primary-active-bg-color: #{$primary-hover};
+  
+  --el-button-text-color: #{$text-body};
+  --el-button-text-hover-color: #{$text-title};
+  --el-button-text-border-color: #{$border-light};
+  
+  --el-input-bg-color: #{$bg-page};
+  --el-input-border-color: #{$border-light};
+  --el-input-focus-border-color: #{$primary};
+  
+  --el-table-header-bg-color: #{$bg-page};
+  --el-table-row-hover-bg-color: #{$bg-hover};
+  --el-table-row-bg-color: #{$bg-card};
+  
+  --el-card-bg-color: #{$bg-card};
+  --el-card-border-color: #{$border-light};
+  
+  --el-select-dropdown-bg-color: #{$bg-card};
+  --el-select-dropdown-item-hover-bg-color: #{$bg-hover};
+  
+  --el-menu-bg-color: #{$sidebar-bg};
+  --el-menu-text-color: #{$sidebar-text-muted};
+  --el-menu-active-color: #{$sidebar-text};
+  --el-menu-hover-bg-color: #{$sidebar-hover};
+  --el-menu-item-active-bg-color: #{$sidebar-active};
+}
