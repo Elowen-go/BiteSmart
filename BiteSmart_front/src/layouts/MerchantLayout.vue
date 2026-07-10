@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   PieChart,
@@ -68,6 +68,10 @@ const handleLogout = () => {
   userStore.logout()
   router.push('/login')
 }
+
+onMounted(() => {
+  userStore.setBreadcrumbSubtitle('')
+})
 </script>
 
 <template>
@@ -116,7 +120,7 @@ const handleLogout = () => {
           <span class="page-title">{{ route.meta.title || '商家后台' }}</span>
           <span class="breadcrumb">
             <span>/</span>
-            <span>{{ route.meta.subtitle || '总览' }}</span>
+            <span>{{ userStore.breadcrumbSubtitle || route.meta.subtitle || '总览' }}</span>
           </span>
         </div>
         

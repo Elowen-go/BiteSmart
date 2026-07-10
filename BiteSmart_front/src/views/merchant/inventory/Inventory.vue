@@ -1,12 +1,23 @@
 ﻿<script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { getInventoryWarnings, getInventoryLogs } from '../../../api/merchant/inventory'
 import type { InventoryWarning, InventoryLog } from '../../../api/merchant/inventory'
+import { useUserStore } from '../../../stores/user'
 
+const userStore = useUserStore()
 const loading = ref(false)
 const warnings = ref<InventoryWarning[]>([])
 const logs = ref<InventoryLog[]>([])
 const activeTab = ref('warnings')
+
+const updateBreadcrumb = () => {
+  const subtitle = activeTab.value === 'warnings' ? '库存预警' : '库存变动日志'
+  userStore.setBreadcrumbSubtitle(subtitle)
+}
+
+watch(activeTab, () => {
+  updateBreadcrumb()
+})
 
 const fetchData = async () => {
   loading.value = true
@@ -30,6 +41,7 @@ const fetchData = async () => {
 
 onMounted(() => {
   fetchData()
+  updateBreadcrumb()
 })
 </script>
 

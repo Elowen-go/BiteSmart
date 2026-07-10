@@ -6,6 +6,7 @@ export const useUserStore = defineStore('user', () => {
   const token = ref(getToken())
   const role = ref(getRole())
   const userInfo = ref<any>(null)
+  const breadcrumbSubtitle = ref('')
 
   const isAuthenticated = computed(() => !!token.value)
   const isAdmin = computed(() => role.value === 'ADMIN' || role.value === '40')
@@ -32,16 +33,22 @@ export const useUserStore = defineStore('user', () => {
     userInfo.value = info
   }
 
+  const setBreadcrumbSubtitle = (subtitle: string) => {
+    breadcrumbSubtitle.value = subtitle
+  }
+
   return {
     token,
     role,
     userInfo,
+    breadcrumbSubtitle,
     isAuthenticated,
     isAdmin,
     isMerchant,
     isUser,
     login,
     logout,
-    setUserInfo
+    setUserInfo,
+    setBreadcrumbSubtitle
   }
 })

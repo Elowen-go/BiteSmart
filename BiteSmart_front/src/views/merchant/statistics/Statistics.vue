@@ -12,12 +12,18 @@ const todayStats = ref({
 const periodStats = ref<any[]>([])
 const topDishes = ref<any[]>([])
 
+const getDateStr = (daysAgo: number) => {
+  const d = new Date()
+  d.setDate(d.getDate() - daysAgo)
+  return d.toISOString().slice(0, 10)
+}
+
 const fetchData = async () => {
   loading.value = true
   try {
     const [todayRes, periodRes, topRes] = await Promise.all([
       getTodayStats(),
-      getPeriodStats(),
+      getPeriodStats({ startDate: getDateStr(7), endDate: getDateStr(0) }),
       getTopDishes({ limit: 10 })
     ])
     if (todayRes.code === 200) {

@@ -2,7 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { Money, ShoppingCart, UserFilled, Coin } from '@element-plus/icons-vue'
 import StatCard from '../../components/common/StatCard.vue'
-import { getTodayStats, getTopDishes, getPeriodStats } from '../../api/merchant/statistics'
+import { getTodayStats, getTopDishes } from '../../api/merchant/statistics'
 
 const loading = ref(false)
 const todayStats = ref({
@@ -17,10 +17,9 @@ const pendingOrders = ref<any[]>([])
 const fetchData = async () => {
   loading.value = true
   try {
-    const [todayRes, topRes, periodRes] = await Promise.all([
+    const [todayRes, topRes] = await Promise.all([
       getTodayStats(),
-      getTopDishes({ limit: 10 }),
-      getPeriodStats()
+      getTopDishes({ limit: 10 })
     ])
     if (todayRes.code === 200) {
       todayStats.value = todayRes.data

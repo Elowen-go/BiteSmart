@@ -4,7 +4,6 @@ import { useRoute, useRouter } from 'vue-router'
 import {
   PieChart,
   ShoppingBag,
-  Bowl,
   User,
   Shop,
   Ship,
@@ -39,7 +38,6 @@ const menuItems = [
     items: [
       { path: '/admin/dashboard', icon: PieChart, label: '仪表盘' },
       { path: '/admin/orders', icon: ShoppingBag, label: '订单管理' },
-      { path: '/admin/dishes', icon: Bowl, label: '菜品管理' },
       { path: '/admin/users', icon: User, label: '用户管理' },
     ]
   },

@@ -151,6 +151,12 @@ const router = createRouter({
           meta: { title: '评价管理', subtitle: '评价列表' }
         },
         {
+          path: 'categories',
+          name: 'MerchantCategories',
+          component: () => import('../views/merchant/categories/CategoryList.vue'),
+          meta: { title: '分类管理', subtitle: '菜品分类' }
+        },
+        {
           path: 'statistics',
           name: 'MerchantStatistics',
           component: () => import('../views/merchant/statistics/Statistics.vue'),
