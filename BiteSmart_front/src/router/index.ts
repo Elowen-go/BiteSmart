@@ -195,6 +195,12 @@ const router = createRouter({
           meta: { title: '我的订单', subtitle: '订单列表' }
         },
         {
+          path: 'delivery',
+          name: 'UserDeliveryList',
+          component: () => import('../views/user/delivery/DeliveryList.vue'),
+          meta: { title: '配送追踪', subtitle: '配送列表' }
+        },
+        {
           path: 'delivery/:orderId',
           name: 'UserDelivery',
           component: () => import('../views/user/delivery/DeliveryTracking.vue'),

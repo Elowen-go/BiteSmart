@@ -8,10 +8,12 @@ import {
   List,
   Bell,
   ChatDotRound,
-  ArrowUp
+  ArrowUp,
+  UserFilled
 } from '@element-plus/icons-vue'
 import StatCard from '../../components/common/StatCard.vue'
 import { getOverview } from '../../api/admin/statistics'
+import { listNotices } from '../../api/admin/notices'
 
 const loading = ref(true)
 const stats = ref({
@@ -22,11 +24,26 @@ const stats = ref({
 })
 
 const recentOrders = ref<any[]>([])
-const notifications = ref([
-  { icon: Shop, title: '新商家入驻', desc: '"轻食主义"提交资质', time: '10分钟前' },
-  { icon: ChatDotRound, title: '系统通知', desc: '平台运营数据已更新', time: '1小时前' },
-  { icon: ArrowUp, title: 'AI规则更新', desc: '参数 v2.3 已生效', time: '3小时前' }
-])
+const notifications = ref<any[]>([])
+
+const noticeTypeMap: Record<number, any> = {
+  10: { icon: ChatDotRound, label: '系统公告' },
+  20: { icon: UserFilled, label: '健康知识' },
+  30: { icon: Bell, label: '活动信息' },
+  40: { icon: ArrowUp, label: '升级通知' },
+  0: { icon: Bell, label: '通知' }
+}
+
+const formatTime = (createTime: string) => {
+  const now = new Date()
+  const time = new Date(createTime)
+  const diffMinutes = Math.floor((now.getTime() - time.getTime()) / (1000 * 60))
+  if (diffMinutes < 1) return '刚刚'
+  if (diffMinutes < 60) return `${diffMinutes}分钟前`
+  if (diffMinutes < 1440) return `${Math.floor(diffMinutes / 60)}小时前`
+  if (diffMinutes < 43200) return `${Math.floor(diffMinutes / 1440)}天前`
+  return createTime.slice(0, 10)
+}
 
 onMounted(async () => {
   loading.value = true
@@ -50,6 +67,17 @@ onMounted(async () => {
         amount: o.payAmount || o.totalAmount,
         status: o.orderStatus >= 50 ? 'completed' : o.orderStatus >= 40 ? 'delivering' : 'pending',
         time: o.createTime?.slice(0, 16) || ''
+      }))
+    }
+
+    const noticeRes = await listNotices(1, 3)
+    if (noticeRes.code === 200) {
+      const list = noticeRes.data?.list || noticeRes.data || []
+      notifications.value = list.map((n: any) => ({
+        icon: noticeTypeMap[n.noticeType]?.icon || noticeTypeMap[0].icon,
+        title: n.title,
+        desc: n.content?.slice(0, 20) + '…' || '',
+        time: formatTime(n.createTime || '')
       }))
     }
   } catch (err) {

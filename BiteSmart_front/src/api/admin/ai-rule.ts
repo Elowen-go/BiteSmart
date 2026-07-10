@@ -13,17 +13,17 @@ export interface AiRecommendRule {
 }
 
 export const listAiRules = (): Promise<any> => {
-  return request.get('/api/admin/ai-rules')
+  return request.get('/admin/ai-rules')
 }
 
 export const addAiRule = (data: Partial<AiRecommendRule>): Promise<any> => {
-  return request.post('/api/admin/ai-rules', data)
+  return request.post('/admin/ai-rules', data)
 }
 
 export const updateAiRule = (id: number, data: Partial<AiRecommendRule>): Promise<any> => {
-  return request.put(`/api/admin/ai-rules/${id}`, data)
+  return request.put(`/admin/ai-rules/${id}`, data)
 }
 
 export const deleteAiRule = (id: number): Promise<any> => {
-  return request.delete(`/api/admin/ai-rules/${id}`)
+  return request.delete(`/admin/ai-rules/${id}`)
 }

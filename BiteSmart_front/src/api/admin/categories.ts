@@ -10,17 +10,17 @@ export interface DishCategory {
 }
 
 export const listCategories = (): Promise<any> => {
-  return request.get('/api/admin/categories')
+  return request.get('/admin/categories')
 }
 
 export const addCategory = (data: Partial<DishCategory>): Promise<any> => {
-  return request.post('/api/admin/categories', data)
+  return request.post('/admin/categories', data)
 }
 
 export const updateCategory = (id: number, data: Partial<DishCategory>): Promise<any> => {
-  return request.put(`/api/admin/categories/${id}`, data)
+  return request.put(`/admin/categories/${id}`, data)
 }
 
 export const deleteCategory = (id: number): Promise<any> => {
-  return request.delete(`/api/admin/categories/${id}`)
+  return request.delete(`/admin/categories/${id}`)
 }
