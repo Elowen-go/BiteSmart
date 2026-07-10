@@ -69,6 +69,30 @@ const router = createRouter({
           name: 'AdminLogs',
           component: () => import('../views/admin/system/OperationLogs.vue'),
           meta: { title: '日志', subtitle: '操作日志' }
+        },
+        {
+          path: 'ai-rules',
+          name: 'AdminAiRules',
+          component: () => import('../views/admin/ai-rules/AiRuleList.vue'),
+          meta: { title: 'AI规则管理', subtitle: '规则列表' }
+        },
+        {
+          path: 'categories',
+          name: 'AdminCategories',
+          component: () => import('../views/admin/categories/CategoryList.vue'),
+          meta: { title: '分类管理', subtitle: '菜品分类' }
+        },
+        {
+          path: 'nutrition',
+          name: 'AdminNutrition',
+          component: () => import('../views/admin/nutrition/NutritionList.vue'),
+          meta: { title: '营养标准', subtitle: '标准管理' }
+        },
+        {
+          path: 'notices',
+          name: 'AdminNotices',
+          component: () => import('../views/admin/notices/NoticeList.vue'),
+          meta: { title: '公告管理', subtitle: '公告列表' }
         }
       ]
     },
@@ -193,6 +217,30 @@ const router = createRouter({
           name: 'UserProfile',
           component: () => import('../views/user/profile/Profile.vue'),
           meta: { title: '个人中心', subtitle: '我的信息' }
+        },
+        {
+          path: 'membership',
+          name: 'UserMembership',
+          component: () => import('../views/user/membership/Membership.vue'),
+          meta: { title: '会员中心', subtitle: '我的会员' }
+        },
+        {
+          path: 'addresses',
+          name: 'UserAddresses',
+          component: () => import('../views/user/addresses/AddressList.vue'),
+          meta: { title: '地址管理', subtitle: '收货地址' }
+        },
+        {
+          path: 'reviews',
+          name: 'UserReviews',
+          component: () => import('../views/user/reviews/ReviewSubmit.vue'),
+          meta: { title: '我的评价', subtitle: '评价管理' }
+        },
+        {
+          path: 'notices',
+          name: 'UserNotices',
+          component: () => import('../views/user/notices/NoticeList.vue'),
+          meta: { title: '系统公告', subtitle: '公告列表' }
         }
       ]
     },
