@@ -59,6 +59,11 @@ const formatValue = (val: string | number): string => {
   gap: 6px;
 }
 
+.label :deep(svg) {
+  width: 20px;
+  height: 20px;
+}
+
 .value {
   font-size: var(--bs-font-size-3xl);
   font-weight: 600;

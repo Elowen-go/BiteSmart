@@ -85,7 +85,7 @@ const getStatusBadge = (status: string) => {
       <div class="card-panel">
         <div class="card-header">
           <h3>
-            <List style="margin-right: 8px; color: var(--bs-primary);" />
+            <List style="width: 18px; height: 18px; margin-right: 8px; color: var(--bs-primary);" />
             最近订单
           </h3>
           <button class="btn btn-secondary btn-sm">查看更多</button>
@@ -121,7 +121,7 @@ const getStatusBadge = (status: string) => {
       <div class="card-panel">
         <div class="card-header">
           <h3>
-            <Bell style="margin-right: 8px; color: var(--bs-primary);" />
+            <Bell style="width: 18px; height: 18px; margin-right: 8px; color: var(--bs-primary);" />
             最新通知
           </h3>
           <span style="font-size: 13px; color: var(--bs-text-muted);">3条未读</span>

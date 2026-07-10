@@ -74,7 +74,7 @@ const handleLogout = () => {
   <div class="merchant-layout">
     <aside class="sidebar" :class="{ collapsed }">
       <div class="sidebar-logo">
-        <Shop style="font-size: 28px; color: #A8D5BA;" />
+        <Shop class="logo-icon" />
         <span v-if="!collapsed">商家后台</span>
       </div>
       
@@ -89,13 +89,20 @@ const handleLogout = () => {
               <component :is="item.icon" />
               <span v-if="!collapsed">{{ item.label }}</span>
             </router-link>
+            <span class="tooltip">{{ item.label }}</span>
           </li>
         </template>
       </ul>
       
       <div class="sidebar-footer">
-        <Shop />
-        <span v-if="!collapsed">商家</span>
+        <template v-if="!collapsed">
+          <Shop />
+          <span>商家</span>
+        </template>
+        <button class="collapse-btn" @click="collapsed = !collapsed" :title="collapsed ? '展开侧边栏' : '收起侧边栏'">
+          <ArrowLeft v-if="!collapsed" />
+          <ArrowRight v-else />
+        </button>
       </div>
     </aside>
     
@@ -114,8 +121,9 @@ const handleLogout = () => {
         </div>
         
         <div class="header-right">
-          <button class="icon-btn">
+          <button class="icon-btn notification-btn">
             <Bell />
+            <span class="notification-badge">3</span>
           </button>
           <button class="icon-btn">
             <HelpFilled />
@@ -150,10 +158,13 @@ const handleLogout = () => {
   flex-direction: column;
   flex-shrink: 0;
   height: 100vh;
-  overflow-y: auto;
-  padding: 24px 0 20px 0;
+  overflow: hidden;
+  padding: 24px 0 0 0;
+  position: relative;
   transition: width 0.2s;
 }
+
+
 
 .sidebar.collapsed {
   width: 72px;
@@ -170,6 +181,12 @@ const handleLogout = () => {
   color: #FFFFFF;
 }
 
+.logo-icon {
+  width: 24px;
+  height: 24px;
+  color: #A8D5BA;
+}
+
 .sidebar.collapsed .sidebar-logo {
   padding: 0 0 24px 0;
   justify-content: center;
@@ -179,6 +196,25 @@ const handleLogout = () => {
   flex: 1;
   list-style: none;
   padding: 0 12px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.sidebar-menu::-webkit-scrollbar {
+  width: 4px;
+}
+
+.sidebar-menu::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-menu::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 2px;
+}
+
+.sidebar-menu::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
 }
 
 .sidebar-menu li {
@@ -196,6 +232,11 @@ const handleLogout = () => {
   font-size: var(--bs-font-size-md);
   font-weight: 500;
   transition: 0.15s;
+}
+
+.sidebar-menu a svg {
+  width: 20px;
+  height: 20px;
 }
 
 .sidebar.collapsed .sidebar-menu a {
@@ -223,7 +264,7 @@ const handleLogout = () => {
 }
 
 .sidebar-footer {
-  padding: 16px 24px 0 24px;
+  padding: 16px 24px 20px 24px;
   border-top: 1px solid rgba(255,255,255,0.06);
   margin-top: 16px;
   font-size: var(--bs-font-size-sm);
@@ -231,11 +272,82 @@ const handleLogout = () => {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-shrink: 0;
+}
+
+.sidebar-footer svg {
+  width: 20px;
+  height: 20px;
+  gap: 8px;
 }
 
 .sidebar.collapsed .sidebar-footer {
   padding: 16px 0 0 0;
   justify-content: center;
+}
+
+.sidebar.collapsed .collapse-btn {
+  margin-left: 0;
+  margin-top: 0;
+}
+
+.collapse-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: #FFFFFF;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  margin-left: auto;
+  margin-top: 8px;
+}
+
+.collapse-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: #A8D5BA;
+}
+
+.collapse-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: #A8D5BA;
+}
+
+.collapse-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.sidebar-menu li {
+  position: relative;
+}
+
+.sidebar-menu li .tooltip {
+  position: absolute;
+  left: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  background: var(--bs-text-title);
+  color: #FFFFFF;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: all 0.2s;
+  margin-left: 8px;
+  z-index: 100;
+}
+
+.sidebar.collapsed .sidebar-menu li:hover .tooltip {
+  opacity: 1;
+  visibility: visible;
 }
 
 .main-content {
@@ -311,7 +423,32 @@ const handleLogout = () => {
 
 .icon-btn:hover {
   background: var(--bs-bg-hover);
-  color: var(--bs-text-title);
+  color: #A8D5BA;
+}
+
+.icon-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+.notification-btn {
+  position: relative;
+}
+
+.notification-badge {
+  position: absolute;
+  top: -2px;
+  right: -4px;
+  background: #E57373;
+  color: #FFFFFF;
+  font-size: 10px;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
 }
 
 .user-info {

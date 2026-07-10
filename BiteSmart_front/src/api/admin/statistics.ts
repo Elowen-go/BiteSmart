@@ -1,20 +1,24 @@
 import request from '../../utils/request'
 
 export interface DashboardStats {
-  totalSales: number
+  userCount: number
+  merchantCount: number
   orderCount: number
-  activeUsers: number
-  aiCalls: number
-  salesChange: number
-  orderChange: number
-  userChange: number
-  aiChange: number
+  totalRevenue: number
 }
 
-export const getDashboardStats = (): Promise<{ code: number; data: DashboardStats }> => {
-  return request.get('/admin/statistics/dashboard')
+export interface TrendStats {
+  type: string
+  startTime: string
+  endTime: string
+  orderCount: number
+  revenue: number
 }
 
-export const getRecentOrders = (params?: { page?: number; size?: number }): Promise<any> => {
-  return request.get('/admin/statistics/recent-orders', { params })
+export const getOverview = (): Promise<{ code: number; data: DashboardStats }> => {
+  return request.get('/admin/statistics/overview')
+}
+
+export const getTrend = (type?: 'day' | 'week' | 'month'): Promise<{ code: number; data: TrendStats }> => {
+  return request.get('/admin/statistics/trend', { params: { type } })
 }

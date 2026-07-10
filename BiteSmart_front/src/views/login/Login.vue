@@ -65,7 +65,7 @@ const roleOptions = [
     <div class="login-container">
       <div class="login-header">
         <div class="logo">
-          <Key style="font-size: 40px; color: #1B3A2F;" />
+          <Key style="width: 28px; height: 28px; color: #1B3A2F;" />
           <span>BiteSmart</span>
         </div>
         <h1>智能健康膳食管理平台</h1>
@@ -245,7 +245,8 @@ const roleOptions = [
 }
 
 .input-wrapper svg {
-  font-size: var(--bs-font-size-lg);
+  width: 18px;
+  height: 18px;
 }
 
 .input-wrapper input {
@@ -269,6 +270,11 @@ const roleOptions = [
   padding: 4px;
   border-radius: var(--bs-radius-sm);
   transition: all 0.15s;
+}
+
+.toggle-password svg {
+  width: 18px;
+  height: 18px;
 }
 
 .toggle-password:hover {
