@@ -17,9 +17,9 @@ const detailLoading = ref(false)
 const fetchNotices = async () => {
   loading.value = true
   try {
-    const res = await getNoticeList({ pageNum: currentPage.value, pageSize: pageSize.value })
-    notices.value = res.data?.list || []
-    total.value = res.data?.total || 0
+    const res = await getNoticeList()
+    notices.value = Array.isArray(res.data) ? res.data : (res.data?.list || [])
+    total.value = notices.value.length
   } catch (e) {
     console.error('获取公告列表失败', e)
   } finally {
@@ -45,13 +45,14 @@ const handleViewDetail = async (row: Notice) => {
   }
 }
 
-const getTypeTag = (type: number) => {
+const getTypeTag = (noticeType: number) => {
   const map: Record<number, { type: string; label: string }> = {
-    0: { type: 'info', label: '系统公告' },
-    1: { type: 'warning', label: '活动通知' },
-    2: { type: 'success', label: '更新日志' }
+    10: { type: 'info', label: '系统公告' },
+    20: { type: 'success', label: '健康知识' },
+    30: { type: 'warning', label: '活动信息' },
+    40: { type: 'primary', label: '升级通知' }
   }
-  return map[type] || { type: 'info', label: '公告' }
+  return map[noticeType] || { type: 'info', label: '公告' }
 }
 
 const formatDate = (dateStr: string) => {
@@ -72,8 +73,8 @@ onMounted(() => {
       <div v-loading="loading" style="padding-top: 20px;">
         <div v-for="item in notices" :key="item.id" class="notice-item" @click="handleViewDetail(item)">
           <div class="notice-left">
-            <el-tag :type="getTypeTag(item.type).type as any" size="small">
-              {{ getTypeTag(item.type).label }}
+            <el-tag :type="getTypeTag(item.noticeType).type as any" size="small">
+              {{ getTypeTag(item.noticeType).label }}
             </el-tag>
           </div>
           <div class="notice-center">
@@ -111,8 +112,8 @@ onMounted(() => {
           <div class="detail-header">
             <h2>{{ currentNotice.title }}</h2>
             <div class="detail-meta">
-              <el-tag :type="getTypeTag(currentNotice.type).type as any" size="small">
-                {{ getTypeTag(currentNotice.type).label }}
+              <el-tag :type="getTypeTag(currentNotice.noticeType).type as any" size="small">
+                {{ getTypeTag(currentNotice.noticeType).label }}
               </el-tag>
               <span class="detail-time">{{ currentNotice.createTime }}</span>
             </div>

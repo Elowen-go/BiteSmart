@@ -4,9 +4,14 @@ export interface Notice {
   id: number
   title: string
   content: string
-  type: number
+  noticeType: number
+  targetRole: number
+  priority: number
   status: number
+  publishTime: string
+  expireTime: string
   createTime: string
+  updateTime: string
 }
 
 export const getNoticeList = (params?: { pageNum?: number; pageSize?: number }): Promise<any> => {

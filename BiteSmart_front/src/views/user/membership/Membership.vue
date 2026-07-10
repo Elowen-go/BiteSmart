@@ -39,6 +39,7 @@ const handleBuy = async (plan: any) => {
 }
 
 const getPlanIcon = (name: string) => {
+  if (!name) return '⭐'
   if (name.includes('月')) return '📅'
   if (name.includes('季')) return '🌸'
   if (name.includes('年')) return '🌟'
