@@ -161,6 +161,12 @@ const router = createRouter({
           name: 'MerchantStatistics',
           component: () => import('../views/merchant/statistics/Statistics.vue'),
           meta: { title: '销售统计', subtitle: '数据报表' }
+        },
+        {
+          path: 'profile',
+          name: 'MerchantProfile',
+          component: () => import('../views/merchant/profile/Profile.vue'),
+          meta: { title: '个人中心', subtitle: '我的信息' }
         }
       ]
     },

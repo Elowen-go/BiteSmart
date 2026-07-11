@@ -16,7 +16,8 @@ import {
   ArrowLeft,
   ArrowRight,
   HelpFilled,
-  Shop
+  Shop,
+  User
 } from '@element-plus/icons-vue'
 import { useUserStore } from '../stores/user'
 import { getShopInfo } from '../api/merchant/shop'
@@ -56,6 +57,12 @@ const menuItems = [
       { path: '/merchant/delivery', icon: Ship, label: '配送管理' },
       { path: '/merchant/reviews', icon: Star, label: '评价管理' },
       { path: '/merchant/statistics', icon: PieChart, label: '销售统计' },
+    ]
+  },
+  {
+    label: '商家',
+    items: [
+      { path: '/merchant/profile', icon: User, label: '个人中心' },
     ]
   }
 ]

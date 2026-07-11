@@ -9,6 +9,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -41,6 +43,16 @@ public class UserController {
             return ResultVO.error(401, "未登录");
         }
         SysUser user = userService.getUserById(loginUser.getUserId());
+        LoginResponseDTO.UserInfo userInfo = userService.toUserInfo(user);
+        return ResultVO.success(userInfo);
+    }
+
+    @PutMapping("/me")
+    public ResultVO<LoginResponseDTO.UserInfo> updateCurrentUser(@AuthenticationPrincipal LoginUser loginUser, @RequestBody SysUser updateData) {
+        if (loginUser == null) {
+            return ResultVO.error(401, "未登录");
+        }
+        SysUser user = userService.updateUser(loginUser.getUserId(), updateData);
         LoginResponseDTO.UserInfo userInfo = userService.toUserInfo(user);
         return ResultVO.success(userInfo);
     }

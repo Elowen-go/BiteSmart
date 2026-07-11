@@ -51,4 +51,30 @@ public class UserService {
                 .build();
     }
 
+    /**
+     * 更新用户信息
+     *
+     * @param userId 用户ID
+     * @param updateData 更新数据（仅更新 nickname, avatar, phone, email）
+     * @return 更新后的用户信息
+     */
+    public SysUser updateUser(Long userId, SysUser updateData) {
+        SysUser user = getUserById(userId);
+        if (updateData.getNickname() != null) {
+            user.setNickname(updateData.getNickname());
+        }
+        if (updateData.getAvatar() != null) {
+            user.setAvatar(updateData.getAvatar());
+        }
+        if (updateData.getPhone() != null) {
+            user.setPhone(updateData.getPhone());
+        }
+        if (updateData.getEmail() != null) {
+            user.setEmail(updateData.getEmail());
+        }
+        user.setUpdateTime(java.time.LocalDateTime.now());
+        sysUserMapper.updateById(user);
+        return user;
+    }
+
 }
