@@ -43,7 +43,7 @@ onMounted(() => {
       <div class="card-header">
         <h3>配送追踪</h3>
       </div>
-      <el-table :data="orders" border v-loading="loading" @row-click="(row) => goTracking(row.id)">
+      <el-table :data="orders" border v-loading="loading" @row-click="(row: any) => goTracking(row.id)">
         <el-table-column prop="orderNo" label="订单编号" width="200" />
         <el-table-column prop="receiverName" label="收货人" width="120" />
         <el-table-column prop="receiverPhone" label="联系电话" width="130" />

@@ -76,7 +76,8 @@ const linePath = computed(() => {
 const areaPath = computed(() => {
   if (lineChartPoints.value.length < 2) return ''
   const points = lineChartPoints.value
-  return `${linePath.value} L ${points[points.length - 1].x} 100 L 0 100 Z`
+  const lastPoint = points[points.length - 1]
+  return `${linePath.value} L ${lastPoint?.x ?? 0} 100 L 0 100 Z`
 })
 
 const donutStyle = computed(() => {

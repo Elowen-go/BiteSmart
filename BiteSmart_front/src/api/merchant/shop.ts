@@ -1,5 +1,14 @@
 import request from '../../utils/request'
 
+export const uploadFile = (file: File, bizType: string): Promise<any> => {
+  const formData = new FormData()
+  formData.append('file', file)
+  formData.append('bizType', bizType)
+  return request.post('/api/files/upload', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  })
+}
+
 export interface MerchantShop {
   id: number
   userId: number

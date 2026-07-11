@@ -1,18 +1,20 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { getShopInfo, updateShopInfo } from '../../../api/merchant/shop'
+import { Upload, Delete } from '@element-plus/icons-vue'
+import { getShopInfo, updateShopInfo, uploadFile } from '../../../api/merchant/shop'
 
 const loading = ref(false)
 const form = ref({
   shopName: '',
-  logoUrl: '',
-  phone: '',
-  address: '',
-  shopDesc: '',
+  shopLogo: '',
+  contactPhone: '',
+  shopAddress: '',
   businessHours: '',
   shopNotice: ''
 })
+
+const imageUrl = ref('')
 
 const fetchShopInfo = async () => {
   loading.value = true
@@ -21,12 +23,14 @@ const fetchShopInfo = async () => {
     if (res.code === 200) {
       const data = res.data
       form.value.shopName = data.shopName || ''
-      form.value.logoUrl = data.logoUrl || ''
-      form.value.phone = data.phone || ''
-      form.value.address = data.address || ''
-      form.value.shopDesc = data.shopDesc || ''
+      form.value.shopLogo = data.shopLogo || ''
+      form.value.contactPhone = data.contactPhone || ''
+      form.value.shopAddress = data.shopAddress || ''
       form.value.businessHours = data.businessHours || ''
       form.value.shopNotice = data.shopNotice || ''
+      if (form.value.shopLogo) {
+        imageUrl.value = form.value.shopLogo.startsWith('http') ? form.value.shopLogo : `${import.meta.env.VITE_APP_BASE_URL}${form.value.shopLogo}`
+      }
     }
   } catch (e) {
     console.error('获取店铺信息失败', e)
@@ -35,10 +39,44 @@ const fetchShopInfo = async () => {
   }
 }
 
+const handleLogoUpload = async (file: any) => {
+  const reader = new FileReader()
+  reader.onload = async (e) => {
+    imageUrl.value = e.target?.result as string
+    try {
+      const res = await uploadFile(file.raw, 'license')
+      if (res.code === 200) {
+        form.value.shopLogo = res.data.url
+        ElMessage.success('Logo上传成功')
+      } else {
+        ElMessage.error(res.message || '上传失败')
+        imageUrl.value = ''
+      }
+    } catch (e) {
+      ElMessage.error('上传失败')
+      imageUrl.value = ''
+      console.error('上传Logo失败', e)
+    }
+  }
+  reader.readAsDataURL(file.raw)
+  return false
+}
+
+const handleRemoveLogo = () => {
+  form.value.shopLogo = ''
+  imageUrl.value = ''
+}
+
 const handleSave = async () => {
   loading.value = true
   try {
-    const res = await updateShopInfo(form.value as any)
+    const submitData = { ...form.value } as Record<string, any>
+    Object.keys(submitData).forEach(key => {
+      if (submitData[key] === '') {
+        submitData[key] = null
+      }
+    })
+    const res = await updateShopInfo(submitData as any)
     if (res.code === 200) {
       ElMessage.success('保存成功')
     } else {
@@ -70,13 +108,31 @@ onMounted(() => {
             <el-input v-model="form.shopName" placeholder="请输入店铺名称" />
           </el-form-item>
           <el-form-item label="店铺Logo">
-            <el-input v-model="form.logoUrl" placeholder="请输入Logo URL" />
+            <div v-if="imageUrl" class="logo-preview">
+              <img :src="imageUrl" alt="店铺Logo" class="logo-image" />
+              <button class="remove-btn" @click="handleRemoveLogo">
+                <Delete style="width: 16px; height: 16px;" />
+              </button>
+            </div>
+            <div v-else class="logo-upload">
+              <el-upload
+                class="avatar-uploader"
+                :show-file-list="false"
+                :before-upload="handleLogoUpload"
+                accept="image/jpeg,image/png,image/gif"
+              >
+                <div class="upload-btn">
+                  <Upload style="width: 40px; height: 40px;" />
+                  <span>点击上传Logo</span>
+                </div>
+              </el-upload>
+            </div>
           </el-form-item>
           <el-form-item label="联系电话">
-            <el-input v-model="form.phone" placeholder="请输入联系电话" />
+            <el-input v-model="form.contactPhone" placeholder="请输入联系电话" />
           </el-form-item>
           <el-form-item label="店铺地址">
-            <el-input v-model="form.address" placeholder="请输入店铺地址" />
+            <el-input v-model="form.shopAddress" placeholder="请输入店铺地址" />
           </el-form-item>
           <el-form-item label="营业时间">
             <el-input v-model="form.businessHours" placeholder="请输入营业时间，如 09:00-22:00" />
@@ -141,5 +197,73 @@ onMounted(() => {
 .btn-primary:hover {
   background: var(--bs-primary-hover);
 }
-</style>
 
+.logo-preview {
+  position: relative;
+  width: 120px;
+  height: 120px;
+}
+
+.logo-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 2px solid var(--bs-border-color);
+}
+
+.remove-btn {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 24px;
+  height: 24px;
+  background: #D9534F;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.remove-btn:hover {
+  background: #c9302c;
+}
+
+.logo-upload {
+  width: 120px;
+  height: 120px;
+}
+
+.avatar-uploader {
+  width: 100%;
+  height: 100%;
+}
+
+.upload-btn {
+  width: 100%;
+  height: 100%;
+  border: 2px dashed var(--bs-border-color);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--bs-text-muted);
+  transition: all 0.2s;
+}
+
+.upload-btn:hover {
+  border-color: var(--bs-primary);
+  color: var(--bs-primary);
+}
+
+.upload-btn span {
+  font-size: var(--bs-font-size-sm);
+  margin-top: 8px;
+}
+</style>

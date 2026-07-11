@@ -19,12 +19,14 @@ import {
   Shop
 } from '@element-plus/icons-vue'
 import { useUserStore } from '../stores/user'
+import { getShopInfo } from '../api/merchant/shop'
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
 
 const collapsed = ref(false)
+const logoUrl = ref('')
 
 const toggleSidebar = () => {
   collapsed.value = !collapsed.value
@@ -69,8 +71,22 @@ const handleLogout = () => {
   router.push('/login')
 }
 
+const fetchLogo = async () => {
+  try {
+    const res = await getShopInfo()
+    if (res.code === 200 && res.data.shopLogo) {
+      logoUrl.value = res.data.shopLogo.startsWith('http') 
+        ? res.data.shopLogo 
+        : `${import.meta.env.VITE_APP_BASE_URL}${res.data.shopLogo}`
+    }
+  } catch (e) {
+    console.error('获取店铺Logo失败', e)
+  }
+}
+
 onMounted(() => {
   userStore.setBreadcrumbSubtitle('')
+  fetchLogo()
 })
 </script>
 
@@ -133,7 +149,8 @@ onMounted(() => {
             <HelpFilled />
           </button>
           <div class="user-info">
-            <div class="avatar">M</div>
+            <img v-if="logoUrl" :src="logoUrl" class="avatar" alt="店铺Logo" />
+<div v-else class="avatar">M</div>
             <span v-if="!collapsed">商家</span>
             <button class="logout-btn" @click="handleLogout">退出</button>
           </div>
@@ -472,6 +489,7 @@ onMounted(() => {
   justify-content: center;
   font-weight: 600;
   font-size: var(--bs-font-size-sm);
+  object-fit: cover;
 }
 
 .logout-btn {
