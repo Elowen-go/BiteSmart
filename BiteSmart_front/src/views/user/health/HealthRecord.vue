@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+﻿﻿<script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { getDietRecords, addDietRecord, deleteDietRecord, getExerciseRecords, addExerciseRecord, deleteExerciseRecord, getWeightRecords, saveWeightRecord } from '../../../api/user/health'
 import { ElMessage, ElMessageBox } from 'element-plus'

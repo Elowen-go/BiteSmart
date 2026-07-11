@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+﻿﻿<script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { getDeliveryTasks } from '../../../api/merchant/delivery'
 import type { DeliveryTask } from '../../../api/merchant/delivery'

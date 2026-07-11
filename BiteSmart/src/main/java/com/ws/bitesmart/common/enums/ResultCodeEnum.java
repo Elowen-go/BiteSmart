@@ -31,6 +31,7 @@ public enum ResultCodeEnum {
     USER_DISABLED(1004, "账号已被冻结"),
     TOKEN_EXPIRED(1005, "Token已过期"),
     TOKEN_INVALID(1006, "Token无效"),
+    ROLE_NOT_MATCH(1007, "角色不匹配，请选择正确的角色类型"),
 
     STOCK_NOT_ENOUGH(2001, "库存不足"),
     ORDER_STATUS_ERROR(2002, "订单状态异常"),

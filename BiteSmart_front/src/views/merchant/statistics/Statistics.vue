@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+﻿﻿<script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { getTodayStats, getPeriodStats, getTopDishes } from '../../../api/merchant/statistics'
 

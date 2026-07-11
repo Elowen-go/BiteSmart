@@ -19,4 +19,6 @@ public class LoginRequestDTO {
     @NotBlank(message = "密码不能为空")
     private String password;
 
+    private Integer roleType;
+
 }

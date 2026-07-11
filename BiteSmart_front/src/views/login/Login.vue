@@ -10,7 +10,7 @@ const userStore = useUserStore()
 
 const username = ref('')
 const password = ref('')
-const roleType = ref(40)
+const roleType = ref(10)
 const showPassword = ref(false)
 const loading = ref(false)
 const error = ref('')
@@ -27,7 +27,8 @@ const handleLogin = async () => {
   try {
     const response = await login({
       username: username.value,
-      password: password.value
+      password: password.value,
+      roleType: roleType.value
     })
     
     if (response.code === 200) {

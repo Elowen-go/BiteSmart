@@ -120,7 +120,12 @@ public class AuthService {
             throw new BusinessException(ResultCodeEnum.USER_DISABLED);
         }
 
-        // 4. 更新登录时间
+        // 4. 校验角色类型
+        if (request.getRoleType() != null && !request.getRoleType().equals(user.getRoleType())) {
+            throw new BusinessException(ResultCodeEnum.ROLE_NOT_MATCH);
+        }
+
+        // 5. 更新登录时间
         String clientIp = getClientIp(servletRequest);
         sysUserMapper.updateLoginTime(user.getId(), LocalDateTime.now(), clientIp);
 
@@ -129,7 +134,7 @@ public class AuthService {
         operateLogService.record(user.getId(), user.getUsername(), user.getRoleType(),
                 "用户登录", null, null, null, clientIp, null, null);
 
-        // 5. 生成 Token
+        // 6. 生成 Token
         return buildLoginResponse(user);
     }
 
