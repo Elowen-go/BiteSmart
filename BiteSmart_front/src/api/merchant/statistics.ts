@@ -35,6 +35,10 @@ export const getDailyStats = (params?: { startDate?: string; endDate?: string })
   return request.get('/merchant/statistics/daily', { params })
 }
 
+export const getCategoryRevenue = (): Promise<any> => {
+  return request.get('/merchant/statistics/category-revenue')
+}
+
 export const getTopDishes = (params?: { limit?: number }): Promise<any> => {
   return request.get('/merchant/statistics/top-dishes', { params })
 }

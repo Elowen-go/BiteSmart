@@ -147,4 +147,16 @@ public class StatisticsService {
         return orderItemMapper.sumQuantityByMerchant(merchantId, limit);
     }
 
+    /**
+     * 菜品分类销售统计
+     *
+     * 按菜品分类聚合销售额和销量。
+     *
+     * @param merchantId 商家ID
+     * @return 分类销售列表，每条包含 categoryName, revenue, totalQuantity
+     */
+    public List<Map<String, Object>> getCategoryRevenueStats(Long merchantId) {
+        return orderItemMapper.sumRevenueByCategory(merchantId);
+    }
+
 }

@@ -62,4 +62,11 @@ public class MerchantStatisticsController {
         return ResultVO.success(statisticsService.getDailyStats(loginUser.getUserId(), startDate, endDate));
     }
 
+    /** 获取菜品分类销售统计 */
+    @GetMapping("/category-revenue")
+    public ResultVO<List<Map<String, Object>>> categoryRevenue(@AuthenticationPrincipal LoginUser loginUser) {
+        if (loginUser == null) return ResultVO.error(401, "未登录");
+        return ResultVO.success(statisticsService.getCategoryRevenueStats(loginUser.getUserId()));
+    }
+
 }

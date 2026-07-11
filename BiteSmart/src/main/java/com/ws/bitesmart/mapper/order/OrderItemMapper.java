@@ -26,4 +26,7 @@ public interface OrderItemMapper {
     /** 热销菜品排行：按菜品聚合销量，取前 N 名 */
     java.util.List<java.util.Map<String, Object>> sumQuantityByMerchant(@Param("merchantId") Long merchantId,
                                                                          @Param("limit") int limit);
+
+    /** 菜品分类销售统计：按分类聚合销售额 */
+    java.util.List<java.util.Map<String, Object>> sumRevenueByCategory(@Param("merchantId") Long merchantId);
 }

@@ -65,4 +65,23 @@
         LIMIT #{limit}
     </select>
 
+    <!-- 菜品分类销售统计：按分类聚合销售额 -->
+    <select id="sumRevenueByCategory" resultType="java.util.Map">
+        SELECT dc.category_name AS categoryName,
+               SUM(oi.sub_total) AS revenue,
+               SUM(oi.quantity) AS totalQuantity
+        FROM order_item oi
+        JOIN orders o ON oi.order_id = o.id
+        LEFT JOIN dish d ON oi.dish_id = d.id
+        LEFT JOIN dish_category dc ON d.category_id = dc.id
+        WHERE o.merchant_id = #{merchantId}
+          AND o.order_status = 50
+          AND oi.dish_id IS NOT NULL
+          AND dc.id IS NOT NULL
+          AND o.deleted = 0
+          AND oi.deleted = 0
+        GROUP BY dc.id, dc.category_name
+        ORDER BY revenue DESC
+    </select>
+
 </mapper>

@@ -2,10 +2,10 @@
 import { ref, onMounted, computed } from 'vue'
 import { 
   Money, ShoppingCart, UserFilled, Coin, 
-  Clock, Warning, Message, Star 
+  Clock, Warning, Message, Star, DataBoard, PieChart 
 } from '@element-plus/icons-vue'
 import StatCard from '../../components/common/StatCard.vue'
-import { getTodayStats, getTopDishes, getDailyStats } from '../../api/merchant/statistics'
+import { getTodayStats, getTopDishes, getDailyStats, getCategoryRevenue } from '../../api/merchant/statistics'
 
 const loading = ref(false)
 const todayStats = ref({
@@ -19,6 +19,7 @@ const todayStats = ref({
 })
 const topDishes = ref<any[]>([])
 const periodStats = ref<any[]>([])
+const categoryRevenueStats = ref<any[]>([])
 
 const getDateStr = (daysAgo: number) => {
   const d = new Date()
@@ -55,13 +56,60 @@ const pieStyle = computed(() => {
   }
 })
 
+const lineChartPoints = computed(() => {
+  const maxOrderCount = Math.max(...periodStats.value.map((item: any) => item.orderCount || 0), 1)
+  const width = 100 / (periodStats.value.length - 1)
+  return periodStats.value.map((item: any, index: number) => ({
+    x: index * width,
+    y: 100 - ((item.orderCount || 0) / maxOrderCount) * 100,
+    value: item.orderCount || 0
+  }))
+})
+
+const linePath = computed(() => {
+  if (lineChartPoints.value.length < 2) return ''
+  return lineChartPoints.value.map((point, index) => 
+    `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`
+  ).join(' ')
+})
+
+const areaPath = computed(() => {
+  if (lineChartPoints.value.length < 2) return ''
+  const points = lineChartPoints.value
+  return `${linePath.value} L ${points[points.length - 1].x} 100 L 0 100 Z`
+})
+
+const donutStyle = computed(() => {
+  const totalRevenue = categoryRevenueStats.value.reduce((sum, item) => sum + (Number(item.revenue) || 0), 0) || 1
+  const colors = ['#1B3A2F', '#2D5A45', '#3D7A5A', '#4D9A6A', '#8B5A2B', '#A06B36']
+  let gradient = ''
+  let lastAngle = 0
+  categoryRevenueStats.value.forEach((item, index) => {
+    const percent = (Number(item.revenue) || 0) / totalRevenue
+    const angle = Math.round(percent * 360)
+    const color = colors[index % colors.length]
+    gradient += `${color} ${lastAngle}deg ${lastAngle + angle}deg${index < categoryRevenueStats.value.length - 1 ? ', ' : ''}`
+    lastAngle += angle
+  })
+  return {
+    background: `conic-gradient(${gradient})`
+  }
+})
+
+const totalRevenue = computed(() => {
+  return categoryRevenueStats.value.reduce((sum, item) => sum + (Number(item.revenue) || 0), 0)
+})
+
+const categoryColors = ['#1B3A2F', '#2D5A45', '#3D7A5A', '#4D9A6A', '#8B5A2B', '#A06B36']
+
 const fetchData = async () => {
   loading.value = true
   try {
-    const [todayRes, topRes, dailyRes] = await Promise.all([
+    const [todayRes, topRes, dailyRes, categoryRes] = await Promise.all([
       getTodayStats(),
       getTopDishes({ limit: 10 }),
-      getDailyStats({ startDate: getDateStr(6), endDate: getDateStr(0) })
+      getDailyStats({ startDate: getDateStr(6), endDate: getDateStr(0) }),
+      getCategoryRevenue()
     ])
     if (todayRes.code === 200) {
       todayStats.value = todayRes.data
@@ -71,6 +119,9 @@ const fetchData = async () => {
     }
     if (dailyRes.code === 200) {
       periodStats.value = dailyRes.data || []
+    }
+    if (categoryRes.code === 200) {
+      categoryRevenueStats.value = categoryRes.data || []
     }
   } catch (e) {
     console.error('获取统计数据失败', e)
@@ -193,6 +244,74 @@ onMounted(() => {
           </div>
         </div>
       </div>
+
+      <div class="card-panel chart-panel">
+        <div class="card-header">
+          <div class="header-left">
+            <DataBoard style="width: 18px; height: 18px; color: var(--bs-primary);" />
+            <h3>近7日订单量趋势</h3>
+          </div>
+        </div>
+        <div class="chart-container">
+          <div class="line-chart">
+            <svg viewBox="0 0 100 100" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="lineGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" style="stop-color: var(--bs-primary); stop-opacity: 0.3" />
+                  <stop offset="100%" style="stop-color: var(--bs-primary); stop-opacity: 0" />
+                </linearGradient>
+              </defs>
+              <path :d="areaPath" fill="url(#lineGradient)" />
+              <path :d="linePath" fill="none" stroke="var(--bs-primary)" stroke-width="0.8" stroke-linecap="round" stroke-linejoin="round" />
+              <circle 
+                v-for="(point, index) in lineChartPoints" 
+                :key="index"
+                :cx="point.x" 
+                :cy="point.y" 
+                r="1.5" 
+                fill="var(--bs-primary)"
+                class="line-point"
+              />
+            </svg>
+            <div class="line-labels">
+              <span v-for="(item, index) in periodStats" :key="index" class="line-label">{{ formatDate(index) }}</span>
+            </div>
+            <div class="line-values">
+              <span v-for="(point, index) in lineChartPoints" :key="index" class="line-value">{{ point.value }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-panel chart-panel">
+        <div class="card-header">
+          <div class="header-left">
+            <PieChart style="width: 18px; height: 18px; color: var(--bs-primary);" />
+            <h3>菜品分类销售占比</h3>
+          </div>
+        </div>
+        <div class="chart-container">
+          <div class="pie-chart">
+            <div class="pie-wrapper donut-wrapper">
+              <div class="donut" :style="donutStyle"></div>
+              <div class="donut-center">
+                <div class="donut-total">¥{{ totalRevenue }}</div>
+                <div class="donut-label">总营收</div>
+              </div>
+            </div>
+            <div class="pie-legend">
+              <div v-for="(item, index) in categoryRevenueStats" :key="index" class="legend-item">
+                <span class="legend-dot" :style="{ background: categoryColors[index % categoryColors.length] }"></span>
+                <span>{{ item.categoryName }}</span>
+                <span class="legend-value">¥{{ item.revenue }}</span>
+              </div>
+              <div v-if="categoryRevenueStats.length === 0" class="legend-item">
+                <span>暂无数据</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div class="card-panel" style="margin-top: var(--bs-spacing-lg);">
@@ -238,7 +357,7 @@ onMounted(() => {
 
 .card-panel-row {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(4, 1fr);
   gap: var(--bs-spacing-lg);
   margin-bottom: var(--bs-spacing-lg);
 }
@@ -279,7 +398,7 @@ onMounted(() => {
 .bar-chart {
   display: flex;
   align-items: flex-end;
-  gap: 20px;
+  gap: 10px;
   width: 100%;
   height: 100%;
   padding-top: 40px;
@@ -293,7 +412,7 @@ onMounted(() => {
 }
 
 .bar-wrapper {
-  width: 30px;
+  width: 20px;
   height: 140px;
   background: var(--bs-bg-hover);
   border-radius: 4px;
@@ -303,7 +422,7 @@ onMounted(() => {
 }
 
 .bar {
-  width: 24px;
+  width: 16px;
   background: linear-gradient(180deg, var(--bs-primary) 0%, #2D5A45 100%);
   border-radius: 4px 4px 0 0;
   transition: height 0.5s ease;
@@ -322,22 +441,79 @@ onMounted(() => {
   margin-top: 4px;
 }
 
+.line-chart {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  padding-top: 30px;
+}
+
+.line-chart svg {
+  width: 100%;
+  height: 140px;
+}
+
+.line-point {
+  transition: r 0.2s;
+}
+
+.line-point:hover {
+  r: 2.5;
+}
+
+.line-labels {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 5px;
+  margin-top: 8px;
+}
+
+.line-label {
+  font-size: var(--bs-font-size-xs);
+  color: var(--bs-text-muted);
+}
+
+.line-values {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 5px;
+  margin-top: 4px;
+}
+
+.line-value {
+  font-size: var(--bs-font-size-xs);
+  color: var(--bs-text-title);
+  font-weight: 500;
+}
+
 .pie-chart {
   display: flex;
   align-items: center;
-  gap: 30px;
+  gap: 20px;
   width: 100%;
   height: 100%;
 }
 
 .pie-wrapper {
   position: relative;
-  width: 140px;
-  height: 140px;
+  width: 120px;
+  height: 120px;
   flex-shrink: 0;
 }
 
+.donut-wrapper {
+  width: 130px;
+  height: 130px;
+}
+
 .pie {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  transition: transform 0.5s ease;
+}
+
+.donut {
   width: 100%;
   height: 100%;
   border-radius: 50%;
@@ -349,8 +525,23 @@ onMounted(() => {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 80px;
-  height: 80px;
+  width: 70px;
+  height: 70px;
+  background: var(--bs-card-bg);
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.donut-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 75px;
+  height: 75px;
   background: var(--bs-card-bg);
   border-radius: 50%;
   display: flex;
@@ -365,7 +556,18 @@ onMounted(() => {
   color: var(--bs-text-title);
 }
 
+.donut-total {
+  font-size: var(--bs-font-size-lg);
+  font-weight: 700;
+  color: var(--bs-text-title);
+}
+
 .pie-label {
+  font-size: var(--bs-font-size-xs);
+  color: var(--bs-text-muted);
+}
+
+.donut-label {
   font-size: var(--bs-font-size-xs);
   color: var(--bs-text-muted);
 }
@@ -373,7 +575,8 @@ onMounted(() => {
 .pie-legend {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
+  flex: 1;
 }
 
 .legend-item {
@@ -383,9 +586,16 @@ onMounted(() => {
 }
 
 .legend-dot {
-  width: 12px;
-  height: 12px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
+}
+
+.legend-value {
+  margin-left: auto;
+  font-size: var(--bs-font-size-xs);
+  color: var(--bs-text-title);
+  font-weight: 500;
 }
 
 .rank-1 {
@@ -433,6 +643,9 @@ onMounted(() => {
 @media (max-width: 1400px) {
   .stats-row {
     grid-template-columns: repeat(4, 1fr);
+  }
+  .card-panel-row {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
