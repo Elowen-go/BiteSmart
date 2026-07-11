@@ -3,6 +3,7 @@ package com.ws.bitesmart.mapper.review;
 import com.ws.bitesmart.entity.review.Review;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
 
 import java.util.List;
 
@@ -42,5 +43,9 @@ public interface ReviewMapper {
 
     /** 分页查询所有评价 */
     List<Review> findAll();
+    @Select("SELECT COUNT(*) FROM review WHERE merchant_id = #{merchantId} AND deleted = 0 AND create_time >= #{start} AND create_time <= #{end}")
+    int countByMerchantAndTime(@Param("merchantId") Long merchantId,
+                               @Param("start") java.time.LocalDateTime start,
+                               @Param("end") java.time.LocalDateTime end);
 
 }

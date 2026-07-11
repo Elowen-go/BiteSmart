@@ -1,6 +1,6 @@
 ﻿﻿<script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { getTodayStats, getPeriodStats, getTopDishes } from '../../../api/merchant/statistics'
+import { getTodayStats, getDailyStats, getTopDishes } from '../../../api/merchant/statistics'
 
 const loading = ref(false)
 const todayStats = ref({
@@ -21,16 +21,16 @@ const getDateStr = (daysAgo: number) => {
 const fetchData = async () => {
   loading.value = true
   try {
-    const [todayRes, periodRes, topRes] = await Promise.all([
+    const [todayRes, dailyRes, topRes] = await Promise.all([
       getTodayStats(),
-      getPeriodStats({ startDate: getDateStr(7), endDate: getDateStr(0) }),
+      getDailyStats({ startDate: getDateStr(7), endDate: getDateStr(0) }),
       getTopDishes({ limit: 10 })
     ])
     if (todayRes.code === 200) {
       todayStats.value = todayRes.data
     }
-    if (periodRes.code === 200) {
-      periodStats.value = periodRes.data.list || periodRes.data || []
+    if (dailyRes.code === 200) {
+      periodStats.value = dailyRes.data || []
     }
     if (topRes.code === 200) {
       topDishes.value = topRes.data.list || topRes.data || []

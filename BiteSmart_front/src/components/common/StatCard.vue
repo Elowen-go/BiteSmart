@@ -6,6 +6,7 @@ interface Props {
   label: string
   value: string | number
   change?: number
+  color?: string
 }
 
 defineProps<Props>()
@@ -24,7 +25,7 @@ const formatValue = (val: string | number): string => {
 <template>
   <div class="stat-card">
     <div class="label">
-      <component :is="icon" style="color: var(--bs-primary);" />
+      <component :is="icon" :style="{ color: color || 'var(--bs-primary)' }" />
       <span>{{ label }}</span>
     </div>
     <div class="value">{{ formatValue(value) }}</div>

@@ -5,6 +5,9 @@ export interface TodayStats {
   revenue: number
   newUserCount: number
   avgOrderAmount: number
+  pendingOrderCount: number
+  stockAlertCount: number
+  reviewCount: number
 }
 
 export interface PeriodStats {
@@ -26,6 +29,10 @@ export const getTodayStats = (): Promise<any> => {
 
 export const getPeriodStats = (params?: { startDate?: string; endDate?: string }): Promise<any> => {
   return request.get('/merchant/statistics/period', { params })
+}
+
+export const getDailyStats = (params?: { startDate?: string; endDate?: string }): Promise<any> => {
+  return request.get('/merchant/statistics/daily', { params })
 }
 
 export const getTopDishes = (params?: { limit?: number }): Promise<any> => {

@@ -53,4 +53,13 @@ public class MerchantStatisticsController {
         return ResultVO.success(statisticsService.getTopDishes(loginUser.getUserId(), limit));
     }
 
+    /** 获取时间段内每日统计（用于图表） */
+    @GetMapping("/daily")
+    public ResultVO<List<Map<String, Object>>> daily(@AuthenticationPrincipal LoginUser loginUser,
+                                                     @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate startDate,
+                                                     @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate) {
+        if (loginUser == null) return ResultVO.error(401, "未登录");
+        return ResultVO.success(statisticsService.getDailyStats(loginUser.getUserId(), startDate, endDate));
+    }
+
 }
