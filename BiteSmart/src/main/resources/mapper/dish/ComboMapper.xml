@@ -60,6 +60,7 @@
             <if test="maxReplaceCount != null">max_replace_count = #{maxReplaceCount},</if>
             <if test="status != null">status = #{status},</if>
             <if test="salesCount != null">sales_count = #{salesCount},</if>
+            <if test="deleted != null">deleted = #{deleted},</if>
             update_time = NOW()
         </set>
         WHERE id = #{id} AND deleted = 0

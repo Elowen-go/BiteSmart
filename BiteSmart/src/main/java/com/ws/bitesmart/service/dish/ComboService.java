@@ -75,28 +75,28 @@ public class ComboService {
     /**
      * 新增套餐
      *
-     * @param combo   套餐信息
-     * @param dishIds 关联的菜品 ID 列表
+     * @param combo     套餐信息
+     * @param dishItems 关联的菜品列表（含 isFixed、quantity）
      */
     @Transactional
-    public void add(Combo combo, List<Long> dishIds) {
+    public void add(Combo combo, List<ComboDishRel> dishItems) {
         combo.setId(SnowflakeUtil.generate());
         if (combo.getStatus() == null) combo.setStatus(10); // 默认上架
+        // suitable_for 是 JSON 列，需要编码
+        if (combo.getSuitableFor() != null) {
+            combo.setSuitableFor(JSON.toJSONString(combo.getSuitableFor()));
+        }
         comboMapper.insert(combo);
 
         // 批量插入关联
-        if (dishIds != null && !dishIds.isEmpty()) {
-            List<ComboDishRel> relList = new ArrayList<>();
-            for (Long dishId : dishIds) {
-                ComboDishRel rel = new ComboDishRel();
-                rel.setId(SnowflakeUtil.generate());
-                rel.setComboId(combo.getId());
-                rel.setDishId(dishId);
-                rel.setQuantity(1); // 默认 1 份
-                rel.setIsFixed(1);  // 默认固定不可替换
-                relList.add(rel);
+        if (dishItems != null && !dishItems.isEmpty()) {
+            for (ComboDishRel item : dishItems) {
+                item.setId(SnowflakeUtil.generate());
+                item.setComboId(combo.getId());
+                if (item.getQuantity() == null) item.setQuantity(1);
+                if (item.getIsFixed() == null) item.setIsFixed(1);
             }
-            comboDishRelMapper.insertBatch(relList);
+            comboDishRelMapper.insertBatch(dishItems);
         }
     }
 
@@ -107,47 +107,50 @@ public class ComboService {
      * @param merchantId 商家 ID
      * @param id         套餐 ID
      * @param combo      套餐信息
-     * @param dishIds    新的关联菜品 ID 列表
+     * @param dishItems  新的关联菜品列表（含 isFixed、quantity）
      */
     @Transactional
-    public void update(Long merchantId, Long id, Combo combo, List<Long> dishIds) {
+    public void update(Long merchantId, Long id, Combo combo, List<ComboDishRel> dishItems) {
         Combo exist = comboMapper.findById(id);
         if (exist == null || !exist.getMerchantId().equals(merchantId)) {
             throw new BusinessException(ResultCodeEnum.NOT_FOUND, "套餐不存在");
         }
         combo.setId(id);
         combo.setMerchantId(merchantId);
+        // suitable_for 是 JSON 列，需要编码
+        if (combo.getSuitableFor() != null) {
+            combo.setSuitableFor(JSON.toJSONString(combo.getSuitableFor()));
+        }
         comboMapper.updateById(combo);
 
         // 先删旧关联
         comboDishRelMapper.deleteByComboId(id);
 
         // 再插新关联
-        if (dishIds != null && !dishIds.isEmpty()) {
-            List<ComboDishRel> relList = new ArrayList<>();
-            for (Long dishId : dishIds) {
-                ComboDishRel rel = new ComboDishRel();
-                rel.setId(SnowflakeUtil.generate());
-                rel.setComboId(id);
-                rel.setDishId(dishId);
-                rel.setQuantity(1);
-                rel.setIsFixed(1);
-                relList.add(rel);
+        if (dishItems != null && !dishItems.isEmpty()) {
+            for (ComboDishRel item : dishItems) {
+                item.setId(SnowflakeUtil.generate());
+                item.setComboId(id);
+                if (item.getQuantity() == null) item.setQuantity(1);
+                if (item.getIsFixed() == null) item.setIsFixed(1);
             }
-            comboDishRelMapper.insertBatch(relList);
+            comboDishRelMapper.insertBatch(dishItems);
         }
     }
 
-    /** 下架套餐，校验所属权 */
+    /** 删除套餐（软删除），同时删除关联菜品 */
     @Transactional
     public void delete(Long merchantId, Long id) {
         Combo exist = comboMapper.findById(id);
         if (exist == null || !exist.getMerchantId().equals(merchantId)) {
             throw new BusinessException(ResultCodeEnum.NOT_FOUND, "套餐不存在");
         }
+        // 软删除关联菜品
+        comboDishRelMapper.deleteByComboId(id);
+        // 软删除套餐
         Combo update = new Combo();
         update.setId(id);
-        update.setStatus(20); // 下架
+        update.setDeleted(1);
         comboMapper.updateById(update);
     }
 

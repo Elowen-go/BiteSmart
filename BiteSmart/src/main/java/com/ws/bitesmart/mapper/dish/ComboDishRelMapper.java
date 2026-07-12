@@ -20,7 +20,7 @@ public interface ComboDishRelMapper {
     /** 批量插入套餐菜品关联 */
     int insertBatch(@Param("list") List<ComboDishRel> relList);
 
-    /** 删除套餐的所有菜品关联（软删除） */
+    /** 删除套餐的所有菜品关联（物理删除） */
     int deleteByComboId(@Param("comboId") Long comboId);
 
 }

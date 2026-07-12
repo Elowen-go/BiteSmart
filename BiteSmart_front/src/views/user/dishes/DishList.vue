@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { getDishList } from '../../../api/user/dishes'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -28,11 +28,11 @@ const handlePageChange = (page: number) => {
 }
 
 const handleViewDetail = (row: any) => {
-  ElMessage.info(`查看菜品详情: ${row.name}`)
+  ElMessage.info(`查看菜品详情: ${row.dishName}`)
 }
 
 const handleAddToCart = (row: any) => {
-  ElMessage.success(`已加入购物车: ${row.name}`)
+  ElMessage.success(`已加入购物车: ${row.dishName}`)
 }
 
 onMounted(() => {

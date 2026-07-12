@@ -121,16 +121,19 @@ public class DishService {
         log.info("保存菜品-食材关联：dishId={}, count={}", dishId, list.size());
     }
 
-    /** 下架菜品（软删除/下架），校验所属权 */
+    /** 删除菜品（软删除），校验所属权 */
     @Transactional
     public void delete(Long merchantId, Long id) {
         Dish exist = dishMapper.findById(id);
         if (exist == null || !exist.getMerchantId().equals(merchantId)) {
             throw new BusinessException(ResultCodeEnum.NOT_FOUND, "菜品不存在");
         }
+        // 软删除菜品-食材关联
+        dishIngredientMapper.deleteByDishId(id);
+        // 软删除菜品
         Dish update = new Dish();
         update.setId(id);
-        update.setStatus(20); // 下架
+        update.setDeleted(1);
         dishMapper.updateById(update);
     }
 

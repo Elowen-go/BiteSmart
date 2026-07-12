@@ -7,7 +7,9 @@ import com.ws.bitesmart.entity.dish.ComboDishRel;
 import com.ws.bitesmart.security.LoginUser;
 import com.ws.bitesmart.service.dish.ComboService;
 import com.ws.bitesmart.service.merchant.MerchantService;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -52,16 +54,17 @@ public class MerchantComboController {
 
     /** 查自己的套餐列表 */
     @GetMapping
-    public ResultVO<?> list(@AuthenticationPrincipal LoginUser loginUser,
-                            @RequestParam(required = false) Integer page,
-                            @RequestParam(defaultValue = "10") int size,
-                            @RequestHeader(value = "X-Shop-Id", required = false) Long shopId) {
-        if (loginUser == null) return ResultVO.error(401, "未登录");
+    public PageResultVO<Combo> list(@AuthenticationPrincipal LoginUser loginUser,
+                                    @RequestParam(required = false) Integer page,
+                                    @RequestParam(defaultValue = "10") int size,
+                                    @RequestHeader(value = "X-Shop-Id", required = false) Long shopId) {
         Long merchantId = getMerchantId(loginUser, shopId);
         if (page != null) {
-            return ResultVO.success(PageResultVO.success(comboService.findByMerchantId(merchantId, page, size)));
+            return PageResultVO.success(comboService.findByMerchantId(merchantId, page, size));
         }
-        return ResultVO.success(comboService.findByMerchantId(merchantId));
+        // 不分页时，构造一个 PageResultVO
+        List<Combo> list = comboService.findByMerchantId(merchantId);
+        return PageResultVO.success(list, list.size(), 1, list.size());
     }
 
     /** 新增套餐（含关联菜品） */
@@ -73,7 +76,7 @@ public class MerchantComboController {
         Long merchantId = getMerchantId(loginUser, shopId);
         Combo combo = request.getCombo();
         combo.setMerchantId(merchantId);
-        comboService.add(combo, request.getDishIds());
+        comboService.add(combo, toComboDishRels(request.getDishItems()));
         return ResultVO.ok("新增成功");
     }
 
@@ -85,11 +88,25 @@ public class MerchantComboController {
                                   @RequestHeader(value = "X-Shop-Id", required = false) Long shopId) {
         if (loginUser == null) return ResultVO.error(401, "未登录");
         Long merchantId = getMerchantId(loginUser, shopId);
-        comboService.update(merchantId, id, request.getCombo(), request.getDishIds());
+        comboService.update(merchantId, id, request.getCombo(), toComboDishRels(request.getDishItems()));
         return ResultVO.ok("修改成功");
     }
 
-    /** 下架套餐 */
+    /** DishItem → ComboDishRel 转换 */
+    private List<ComboDishRel> toComboDishRels(List<DishItem> items) {
+        if (items == null) return null;
+        return items.stream()
+                .map(d -> {
+                    ComboDishRel rel = new ComboDishRel();
+                    rel.setDishId(d.getDishId());
+                    rel.setQuantity(d.getQuantity() != null ? d.getQuantity() : 1);
+                    rel.setIsFixed(d.getIsFixed() != null ? d.getIsFixed() : 1);
+                    return rel;
+                })
+                .toList();
+    }
+
+    /** 删除套餐 */
     @DeleteMapping("/{id}")
     public ResultVO<Void> delete(@AuthenticationPrincipal LoginUser loginUser,
                                   @PathVariable Long id,
@@ -97,7 +114,31 @@ public class MerchantComboController {
         if (loginUser == null) return ResultVO.error(401, "未登录");
         Long merchantId = getMerchantId(loginUser, shopId);
         comboService.delete(merchantId, id);
-        return ResultVO.ok("下架成功");
+        return ResultVO.ok("删除成功");
+    }
+
+    /** 查询套餐详情（含关联菜品） */
+    @GetMapping("/{id}")
+    public ResultVO<ComboDetailVO> detail(@AuthenticationPrincipal LoginUser loginUser,
+                                          @PathVariable Long id,
+                                          @RequestHeader(value = "X-Shop-Id", required = false) Long shopId) {
+        if (loginUser == null) return ResultVO.error(401, "未登录");
+        Long merchantId = getMerchantId(loginUser, shopId);
+        Combo combo = comboService.findById(id);
+        // 校验该套餐是否属于当前商家
+        if (!combo.getMerchantId().equals(merchantId)) {
+            return ResultVO.error(403, "无权访问该套餐");
+        }
+        // 查询关联菜品（含 isFixed 信息）
+        List<ComboDishRel> rels = comboService.findRelByComboId(id);
+        List<DishItem> dishItems = rels.stream()
+                .map(r -> new DishItem(r.getDishId(), r.getQuantity(), r.getIsFixed()))
+                .toList();
+        // 组装VO
+        ComboDetailVO vo = new ComboDetailVO();
+        vo.setCombo(combo);
+        vo.setDishItems(dishItems);
+        return ResultVO.success(vo);
     }
 
     /**
@@ -107,8 +148,28 @@ public class MerchantComboController {
     public static class ComboRequest {
         /** 套餐基本信息 */
         private Combo combo;
-        /** 关联的菜品 ID 列表 */
-        private List<Long> dishIds;
+        /** 关联的菜品列表（含 isFixed、quantity） */
+        private List<DishItem> dishItems;
+    }
+
+    /** 套餐关联菜品项 */
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class DishItem {
+        private Long dishId;
+        private Integer quantity;
+        /** 是否固定不可替换：1-固定 0-可替换 */
+        private Integer isFixed;
+    }
+
+    /**
+     * 套餐详情VO
+     */
+    @Data
+    public static class ComboDetailVO {
+        private Combo combo;
+        private List<DishItem> dishItems;
     }
 
 }

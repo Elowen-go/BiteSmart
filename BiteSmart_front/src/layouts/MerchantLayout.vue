@@ -192,8 +192,10 @@ const fetchShopList = async () => {
         if (existShop) {
           shopName.value = existShop.shopName
         } else {
-          userStore.setCurrentShopId(shopList.value[0].id)
-          shopName.value = shopList.value[0].shopName
+          // 如果保存的店铺ID不在列表中，重置为第一个店铺
+          const firstShop = shopList.value[0]
+          userStore.setCurrentShopId(firstShop.id)
+          shopName.value = firstShop.shopName
         }
       }
     }

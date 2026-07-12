@@ -63,6 +63,7 @@
             <if test="fat != null">fat = #{fat},</if>
             <if test="carbs != null">carbs = #{carbs},</if>
             <if test="status != null">status = #{status},</if>
+            <if test="deleted != null">deleted = #{deleted},</if>
             update_time = NOW()
         </set>
         WHERE id = #{id} AND deleted = 0

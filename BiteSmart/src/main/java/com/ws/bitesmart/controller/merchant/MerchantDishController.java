@@ -86,7 +86,7 @@ public class MerchantDishController {
         return ResultVO.ok("修改成功");
     }
 
-    /** 下架菜品 */
+    /** 删除菜品 */
     @DeleteMapping("/{id}")
     public ResultVO<Void> delete(@AuthenticationPrincipal LoginUser loginUser,
                                   @PathVariable Long id,
@@ -94,7 +94,7 @@ public class MerchantDishController {
         if (loginUser == null) return ResultVO.error(401, "未登录");
         Long merchantId = getMerchantId(loginUser, shopId);
         dishService.delete(merchantId, id);
-        return ResultVO.ok("下架成功");
+        return ResultVO.ok("删除成功");
     }
 
     /** 查询菜品详情 */

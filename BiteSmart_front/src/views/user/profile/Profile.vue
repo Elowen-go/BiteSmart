@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿<script setup lang="ts">
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿<script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { getCurrentUser, getProfile, saveProfile } from '../../../api/user/profile'
 import { ElMessage } from 'element-plus'

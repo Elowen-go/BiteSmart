@@ -26,9 +26,9 @@
         </foreach>
     </insert>
 
-    <!-- 删除套餐的所有菜品关联（软删除） -->
-    <update id="deleteByComboId">
-        UPDATE combo_dish_rel SET deleted = 1 WHERE combo_id = #{comboId}
-    </update>
+    <!-- 删除套餐的所有菜品关联（物理删除，因为后续会重新插入） -->
+    <delete id="deleteByComboId">
+        DELETE FROM combo_dish_rel WHERE combo_id = #{comboId}
+    </delete>
 
 </mapper>
