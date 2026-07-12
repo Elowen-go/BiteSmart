@@ -44,6 +44,13 @@ public class ComboService {
         return comboMapper.findByMerchantId(merchantId);
     }
 
+    /** 查某商家的全部套餐（分页） */
+    public PageInfo<Combo> findByMerchantId(Long merchantId, int pageNum, int pageSize) {
+        PageHelper.startPage(pageNum, pageSize);
+        List<Combo> list = comboMapper.findByMerchantId(merchantId);
+        return new PageInfo<>(list);
+    }
+
     /** 查套餐详情 */
     public Combo findById(Long id) {
         Combo combo = comboMapper.findById(id);

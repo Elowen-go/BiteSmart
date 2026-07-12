@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 /**
  * 商家店铺信息接口
  *
@@ -26,7 +28,7 @@ public class MerchantShopController {
 
     private final MerchantService merchantService;
 
-    /** 获取店铺信息 */
+    /** 获取当前店铺信息 */
     @GetMapping
     public ResultVO<Merchant> getShop(@AuthenticationPrincipal LoginUser loginUser) {
         if (loginUser == null) return ResultVO.error(401, "未登录");
@@ -40,6 +42,16 @@ public class MerchantShopController {
         if (loginUser == null) return ResultVO.error(401, "未登录");
         merchantService.updateShopInfo(loginUser.getUserId(), merchant);
         return ResultVO.ok("修改成功");
+    }
+
+    /**
+     * 获取当前用户的所有店铺列表
+     * 支持多店铺切换
+     */
+    @GetMapping("/list")
+    public ResultVO<List<Merchant>> listShops(@AuthenticationPrincipal LoginUser loginUser) {
+        if (loginUser == null) return ResultVO.error(401, "未登录");
+        return ResultVO.success(merchantService.listByUserId(loginUser.getUserId()));
     }
 
 }

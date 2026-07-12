@@ -36,3 +36,7 @@ export const updateDish = (id: number, data: Dish): Promise<any> => {
 export const deleteDish = (id: number): Promise<any> => {
   return request.delete(`/merchant/dishes/${id}`)
 }
+
+export const getDishDetail = (id: number): Promise<any> => {
+  return request.get(`/merchant/dishes/${id}`)
+}

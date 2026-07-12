@@ -30,3 +30,10 @@ export const getShopInfo = (): Promise<any> => {
 export const updateShopInfo = (data: MerchantShop): Promise<any> => {
   return request.put('/merchant/shop', data)
 }
+
+/**
+ * 获取当前用户的所有店铺列表（支持多店铺）
+ */
+export const getShopList = (): Promise<any> => {
+  return request.get('/merchant/shop/list')
+}

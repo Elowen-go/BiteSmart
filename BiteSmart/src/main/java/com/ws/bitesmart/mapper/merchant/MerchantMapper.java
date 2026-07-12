@@ -12,8 +12,11 @@ import java.util.List;
 @Mapper
 public interface MerchantMapper {
 
-    /** 根据用户ID查商家信息 */
+    /** 根据用户ID查商家信息（一个用户只有一个主店铺） */
     Merchant findByUserId(@Param("userId") Long userId);
+
+    /** 根据用户ID查询所有店铺列表（支持多店铺） */
+    List<Merchant> findListByUserId(@Param("userId") Long userId);
 
     /** 根据商家ID查 */
     Merchant findById(@Param("id") Long id);

@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * 商家服务
@@ -101,6 +102,21 @@ public class MerchantService {
             throw new BusinessException("你还未提交入驻申请");
         }
         return merchant;
+    }
+
+    /**
+     * 获取当前用户的所有店铺列表（支持多店铺）
+     */
+    public List<Merchant> listByUserId(Long userId) {
+        return merchantMapper.findListByUserId(userId);
+    }
+
+    /**
+     * 获取商家的商家ID（merchant.id不是user.id）
+     */
+    public Long getMerchantId(Long userId) {
+        Merchant merchant = getByUserId(userId);
+        return merchant.getId();
     }
 
     /**

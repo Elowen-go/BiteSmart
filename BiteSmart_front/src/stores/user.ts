@@ -7,6 +7,7 @@ export const useUserStore = defineStore('user', () => {
   const role = ref(getRole())
   const userInfo = ref<any>(getUserInfo())
   const breadcrumbSubtitle = ref('')
+  const currentShopId = ref(Number(localStorage.getItem('currentShopId') || 0))
 
   const isAuthenticated = computed(() => !!token.value)
   const isAdmin = computed(() => role.value === 'ADMIN' || role.value === '40')
@@ -31,6 +32,7 @@ export const useUserStore = defineStore('user', () => {
     removeToken()
     removeRole()
     removeUserInfo()
+    localStorage.removeItem('currentShopId')
   }
 
   const setUserInfo = (info: any) => {
@@ -42,11 +44,17 @@ export const useUserStore = defineStore('user', () => {
     breadcrumbSubtitle.value = subtitle
   }
 
+  const setCurrentShopId = (shopId: number) => {
+    currentShopId.value = shopId
+    localStorage.setItem('currentShopId', String(shopId))
+  }
+
   return {
     token,
     role,
     userInfo,
     breadcrumbSubtitle,
+    currentShopId,
     isAuthenticated,
     isAdmin,
     isMerchant,
@@ -54,6 +62,7 @@ export const useUserStore = defineStore('user', () => {
     login,
     logout,
     setUserInfo,
-    setBreadcrumbSubtitle
+    setBreadcrumbSubtitle,
+    setCurrentShopId
   }
 })

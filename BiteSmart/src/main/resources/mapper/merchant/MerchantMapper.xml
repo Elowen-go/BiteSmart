@@ -15,6 +15,13 @@
         WHERE user_id = #{userId} AND deleted = 0
     </select>
 
+    <select id="findListByUserId" resultType="com.ws.bitesmart.entity.merchant.Merchant">
+        SELECT <include refid="BaseColumns"/>
+        FROM merchant
+        WHERE user_id = #{userId} AND deleted = 0
+        ORDER BY create_time DESC
+    </select>
+
     <select id="findById" resultType="com.ws.bitesmart.entity.merchant.Merchant">
         SELECT <include refid="BaseColumns"/>
         FROM merchant

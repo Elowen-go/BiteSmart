@@ -5,13 +5,16 @@ import com.github.pagehelper.PageInfo;
 import com.ws.bitesmart.common.enums.ResultCodeEnum;
 import com.ws.bitesmart.common.util.SnowflakeUtil;
 import com.ws.bitesmart.entity.dish.Dish;
+import com.ws.bitesmart.entity.dish.DishIngredient;
 import com.ws.bitesmart.exception.BusinessException;
 import com.ws.bitesmart.mapper.dish.DishMapper;
+import com.ws.bitesmart.mapper.dish.DishIngredientMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -27,6 +30,7 @@ import java.util.List;
 public class DishService {
 
     private final DishMapper dishMapper;
+    private final DishIngredientMapper dishIngredientMapper;
 
     /** 查某商家的全部菜品 */
     public List<Dish> findByMerchantId(Long merchantId) {
@@ -46,6 +50,9 @@ public class DishService {
         if (dish == null) {
             throw new BusinessException(ResultCodeEnum.NOT_FOUND, "菜品不存在");
         }
+        // 加载关联的食材
+        List<DishIngredient> ingredients = dishIngredientMapper.findByDishId(id);
+        dish.setIngredients(ingredients);
         return dish;
     }
 
@@ -64,12 +71,16 @@ public class DishService {
     /** 新增菜品 */
     @Transactional
     public void add(Dish dish) {
-        dish.setId(SnowflakeUtil.generate());
+        Long dishId = SnowflakeUtil.generate();
+        dish.setId(dishId);
         dish.setSalesCount(0);
         dish.setSalesReal(0);
         if (dish.getLockStock() == null) dish.setLockStock(0);
         if (dish.getStatus() == null) dish.setStatus(10); // 默认上架
         dishMapper.insert(dish);
+        
+        // 保存菜品-食材关联
+        saveDishIngredients(dishId, dish.getIngredients());
     }
 
     /** 修改菜品，校验所属权 */
@@ -82,6 +93,32 @@ public class DishService {
         dish.setId(id);
         dish.setMerchantId(merchantId);
         dishMapper.updateById(dish);
+        
+        // 更新菜品-食材关联：先删除旧关联，再插入新关联
+        dishIngredientMapper.deleteByDishId(id);
+        saveDishIngredients(id, dish.getIngredients());
+    }
+    
+    /**
+     * 保存菜品-食材关联
+     * @param dishId 菜品ID
+     * @param ingredients 食材列表
+     */
+    private void saveDishIngredients(Long dishId, List<DishIngredient> ingredients) {
+        if (ingredients == null || ingredients.isEmpty()) {
+            return;
+        }
+        List<DishIngredient> list = new ArrayList<>();
+        for (DishIngredient item : ingredients) {
+            DishIngredient di = new DishIngredient();
+            di.setId(SnowflakeUtil.generate());
+            di.setDishId(dishId);
+            di.setIngredientId(item.getIngredientId());
+            di.setWeight(item.getWeight());
+            list.add(di);
+        }
+        dishIngredientMapper.batchInsert(list);
+        log.info("保存菜品-食材关联：dishId={}, count={}", dishId, list.size());
     }
 
     /** 下架菜品（软删除/下架），校验所属权 */

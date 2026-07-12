@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ws.bitesmart.mapper.dish.DishIngredientMapper">
+
+    <!--
+        批量插入菜品-食材关联
+        添加菜品时调用，保存该菜品使用的所有食材
+    -->
+    <insert id="batchInsert">
+        INSERT INTO dish_ingredient (id, dish_id, ingredient_id, weight, create_time)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.id}, #{item.dishId}, #{item.ingredientId}, #{item.weight}, NOW())
+        </foreach>
+    </insert>
+
+    <!--
+        根据菜品ID查询关联的食材
+        查询菜品详情时调用，获取该菜品使用的所有食材及用量
+        关联 ingredient 表获取食材名称
+    -->
+    <select id="findByDishId" resultType="com.ws.bitesmart.entity.dish.DishIngredient">
+        SELECT 
+            di.id,
+            di.dish_id,
+            di.ingredient_id,
+            di.weight,
+            di.create_time,
+            i.name as ingredientName
+        FROM dish_ingredient di
+        LEFT JOIN ingredient i ON di.ingredient_id = i.id
+        WHERE di.dish_id = #{dishId}
+        ORDER BY di.create_time
+    </select>
+
+    <!--
+        根据菜品ID删除关联
+        编辑菜品时先删除旧关联，再插入新关联
+    -->
+    <delete id="deleteByDishId">
+        DELETE FROM dish_ingredient
+        WHERE dish_id = #{dishId}
+    </delete>
+
+</mapper>

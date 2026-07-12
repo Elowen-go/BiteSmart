@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Upload, Delete } from '@element-plus/icons-vue'
-import { getDishList, addDish, updateDish, deleteDish } from '../../../api/merchant/dishes'
+import { Upload, Delete, Plus, Minus } from '@element-plus/icons-vue'
+import { getDishList, addDish, updateDish, deleteDish, getDishDetail } from '../../../api/merchant/dishes'
 import { uploadFile } from '../../../api/merchant/shop'
+import { getMerchantIngredientList, getMerchantIngredientCategories } from '../../../api/merchant/ingredients'
 import type { Dish } from '../../../api/merchant/dishes'
 
 const loading = ref(false)
@@ -33,6 +34,19 @@ const imagePreview = ref('')
 const selectedImageFile = ref<File | null>(null)
 const uploadInput = ref<HTMLInputElement | null>(null)
 
+// 食材相关
+const ingredientList = ref<any[]>([])
+const ingredientCategories = ref<string[]>([])
+const selectedIngredients = ref<{ ingredientId: number; ingredientName: string; weight: number }[]>([])
+const showIngredientSelector = ref(false)
+const selectedCategory = ref('')
+
+// 根据分类筛选食材
+const filteredIngredients = computed(() => {
+  if (!selectedCategory.value) return ingredientList.value
+  return ingredientList.value.filter(ing => ing.categoryName === selectedCategory.value)
+})
+
 const fetchList = async () => {
   loading.value = true
   try {
@@ -56,36 +70,72 @@ const handleAdd = () => {
   form.value = { dishName: '', price: 0, stock: 0, status: 10, description: '', categoryId: 0, dishImage: '', calories: 0 }
   imagePreview.value = ''
   selectedImageFile.value = null
+  selectedIngredients.value = []
   dialogVisible.value = true
+  fetchIngredients()
 }
 
-const handleEdit = (row: any) => {
+const handleEdit = async (row: any) => {
   editingId.value = row.id
   dialogTitle.value = '编辑菜品'
-  form.value = {
-    dishName: row.dishName || row.name,
-    price: row.price,
-    stock: row.stock,
-    status: row.status,
-    description: row.description || '',
-    categoryId: row.categoryId || 0,
-    dishImage: row.dishImage || row.imageUrl || '',
-    calories: row.calories || 0
+  
+  // 获取菜品详情（包含关联的食材）
+  try {
+    const res = await getDishDetail(row.id)
+    if (res.code === 200) {
+      const detail = res.data
+      form.value = {
+        dishName: detail.dishName || detail.name,
+        price: detail.price,
+        stock: detail.stock,
+        status: detail.status,
+        description: detail.description || '',
+        categoryId: detail.categoryId || 0,
+        dishImage: detail.dishImage || detail.imageUrl || '',
+        calories: detail.calories || 0
+      }
+      if (form.value.dishImage) {
+        imagePreview.value = form.value.dishImage.startsWith('http') 
+          ? form.value.dishImage 
+          : `/api/files/download${form.value.dishImage}`
+      } else {
+        imagePreview.value = ''
+      }
+      
+      // 加载菜品关联的食材
+      if (detail.ingredients && detail.ingredients.length > 0) {
+        selectedIngredients.value = detail.ingredients.map((item: any) => ({
+          ingredientId: item.ingredientId,
+          ingredientName: item.ingredientName || '未知食材',
+          weight: item.weight || 100
+        }))
+      } else {
+        selectedIngredients.value = []
+      }
+    }
+  } catch (e) {
+    console.error('获取菜品详情失败', e)
+    ElMessage.error('获取菜品详情失败')
+    return
   }
-  if (form.value.dishImage) {
-    imagePreview.value = form.value.dishImage.startsWith('http') 
-      ? form.value.dishImage 
-      : `/api/files/download${form.value.dishImage}`
-  } else {
-    imagePreview.value = ''
-  }
+  
   selectedImageFile.value = null
   dialogVisible.value = true
+  fetchIngredients()
 }
 
-const handleView = (row: any) => {
-  viewForm.value = { ...row }
-  viewDialogVisible.value = true
+const handleView = async (row: any) => {
+  // 获取菜品详情（包含关联的食材）
+  try {
+    const res = await getDishDetail(row.id)
+    if (res.code === 200) {
+      viewForm.value = res.data
+      viewDialogVisible.value = true
+    }
+  } catch (e) {
+    console.error('获取菜品详情失败', e)
+    ElMessage.error('获取菜品详情失败')
+  }
 }
 
 const handleDelete = (row: any) => {
@@ -148,11 +198,20 @@ const handleSubmit = async () => {
       }
     }
 
+    // 构建提交数据，包含食材信息
+    const submitData = {
+      ...form.value,
+      ingredients: selectedIngredients.value.map(item => ({
+        ingredientId: item.ingredientId,
+        weight: item.weight
+      }))
+    }
+
     let res: any
     if (editingId.value) {
-      res = await updateDish(editingId.value, form.value as any)
+      res = await updateDish(editingId.value, submitData as any)
     } else {
-      res = await addDish(form.value as any)
+      res = await addDish(submitData as any)
     }
     if (res.code === 200) {
       ElMessage.success(editingId.value ? '更新成功' : '新增成功')
@@ -220,6 +279,78 @@ const formatDateTime = (dateTime: string) => {
   const minutes = String(date.getMinutes()).padStart(2, '0')
   return `${year}-${month}-${day} ${hours}:${minutes}`
 }
+
+// 计算查看详情的营养成分
+const calculateViewNutrition = computed(() => {
+  let calories = 0, protein = 0, fat = 0, carbs = 0
+  if (!viewForm.value.ingredients) return { calories, protein, fat, carbs }
+  
+  viewForm.value.ingredients.forEach((item: any) => {
+    // 从ingredientList查找食材信息
+    const ingredient = ingredientList.value.find((ing: any) => ing.id === item.ingredientId)
+    if (ingredient) {
+      const ratio = (item.weight || 0) / 100
+      calories += (ingredient.calories || 0) * ratio
+      protein += (ingredient.protein || 0) * ratio
+      fat += (ingredient.fat || 0) * ratio
+      carbs += (ingredient.carbs || 0) * ratio
+    }
+  })
+  return { calories, protein, fat, carbs }
+})
+
+// 获取食材列表和分类
+const fetchIngredients = async () => {
+  try {
+    const [listRes, catRes] = await Promise.all([
+      getMerchantIngredientList(),
+      getMerchantIngredientCategories()
+    ])
+    if (listRes.code === 200) {
+      ingredientList.value = listRes.data || []
+    }
+    if (catRes.code === 200) {
+      ingredientCategories.value = catRes.data || []
+    }
+  } catch (e) {
+    console.error('获取食材列表失败', e)
+  }
+}
+
+// 添加食材到菜品
+const addIngredientToDish = (ingredient: any) => {
+  const exists = selectedIngredients.value.find(item => item.ingredientId === ingredient.id)
+  if (exists) {
+    ElMessage.warning('该食材已添加')
+    return
+  }
+  selectedIngredients.value.push({
+    ingredientId: ingredient.id,
+    ingredientName: ingredient.name,
+    weight: 100
+  })
+}
+
+// 移除食材
+const removeIngredient = (index: number) => {
+  selectedIngredients.value.splice(index, 1)
+}
+
+// 计算营养成分
+const calculatedNutrition = computed(() => {
+  let calories = 0, protein = 0, fat = 0, carbs = 0
+  selectedIngredients.value.forEach(item => {
+    const ingredient = ingredientList.value.find(ing => ing.id === item.ingredientId)
+    if (ingredient) {
+      const ratio = item.weight / 100
+      calories += (ingredient.calories || 0) * ratio
+      protein += (ingredient.protein || 0) * ratio
+      fat += (ingredient.fat || 0) * ratio
+      carbs += (ingredient.carbs || 0) * ratio
+    }
+  })
+  return { calories, protein, fat, carbs }
+})
 
 onMounted(() => {
   fetchList()
@@ -340,11 +471,81 @@ onMounted(() => {
             @change="handleImageSelect"
           />
         </el-form-item>
+        
+        <!-- 食材选择区域 -->
+        <el-form-item label="关联食材">
+          <div class="ingredient-section">
+            <!-- 已选食材列表 -->
+            <div v-if="selectedIngredients.length > 0" class="selected-ingredients">
+              <div v-for="(item, index) in selectedIngredients" :key="item.ingredientId" class="ingredient-item">
+                <span class="ingredient-name">{{ item.ingredientName }}</span>
+                <el-input-number 
+                  v-model="item.weight" 
+                  :min="1" 
+                  :max="1000" 
+                  size="small"
+                  style="width: 100px;"
+                />
+                <span class="unit">g</span>
+                <el-button type="danger" size="small" circle @click="removeIngredient(index)">
+                  <Minus style="width: 12px; height: 12px;" />
+                </el-button>
+              </div>
+            </div>
+            <div v-else class="no-ingredients">暂无关联食材</div>
+            
+            <!-- 添加食材按钮 -->
+            <el-button type="primary" size="small" @click="showIngredientSelector = true" style="margin-top: 10px;">
+              <Plus style="width: 14px; height: 14px;" />
+              添加食材
+            </el-button>
+            
+            <!-- 营养成分计算 -->
+            <div v-if="selectedIngredients.length > 0" class="nutrition-info">
+              <div class="nutrition-title">营养成分（估算）</div>
+              <div class="nutrition-items">
+                <span>热量: {{ calculatedNutrition.calories.toFixed(1) }} 大卡</span>
+                <span>蛋白质: {{ calculatedNutrition.protein.toFixed(1) }} g</span>
+                <span>脂肪: {{ calculatedNutrition.fat.toFixed(1) }} g</span>
+                <span>碳水: {{ calculatedNutrition.carbs.toFixed(1) }} g</span>
+              </div>
+            </div>
+          </div>
+        </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
         <el-button type="primary" @click="handleSubmit" :loading="loading">确定</el-button>
       </template>
+    </el-dialog>
+    
+    <!-- 食材选择器弹窗 -->
+    <el-dialog v-model="showIngredientSelector" title="选择食材" width="600px">
+      <div class="ingredient-selector">
+        <!-- 分类筛选 -->
+        <div class="category-filter">
+          <el-radio-group v-model="selectedCategory" size="small">
+            <el-radio-button label="">全部</el-radio-button>
+            <el-radio-button v-for="cat in ingredientCategories" :key="cat" :label="cat">{{ cat }}</el-radio-button>
+          </el-radio-group>
+        </div>
+        
+        <!-- 食材列表 -->
+        <div class="ingredient-grid">
+          <div 
+            v-for="ingredient in filteredIngredients" 
+            :key="ingredient.id"
+            class="ingredient-card"
+            @click="addIngredientToDish(ingredient)"
+          >
+            <div class="ingredient-name">{{ ingredient.name }}</div>
+            <div class="ingredient-category">{{ ingredient.categoryName }}</div>
+            <div class="ingredient-nutrition">
+              {{ ingredient.calories }}大卡/100g
+            </div>
+          </div>
+        </div>
+      </div>
     </el-dialog>
 
     <!-- 查看菜品详情弹窗 -->
@@ -378,6 +579,30 @@ onMounted(() => {
         </el-form-item>
         <el-form-item label="菜品描述" v-if="viewForm.description">
           <span class="view-text">{{ viewForm.description }}</span>
+        </el-form-item>
+        
+        <!-- 查看关联食材 -->
+        <el-form-item label="关联食材" v-if="viewForm.ingredients && viewForm.ingredients.length > 0">
+          <div class="view-ingredients">
+            <div v-for="item in viewForm.ingredients" :key="item.ingredientId" class="view-ingredient-item">
+              <span class="name">{{ item.ingredientName || '未知食材' }}</span>
+              <span class="weight">{{ item.weight }}g</span>
+            </div>
+          </div>
+        </el-form-item>
+        
+        <!-- 查看营养成分 -->
+        <el-form-item label="营养成分" v-if="viewForm.ingredients && viewForm.ingredients.length > 0">
+          <div class="view-nutrition">
+            <div class="nutrition-row">
+              <span>热量: {{ calculateViewNutrition.calories.toFixed(1) }} 大卡</span>
+              <span>蛋白质: {{ calculateViewNutrition.protein.toFixed(1) }} g</span>
+            </div>
+            <div class="nutrition-row">
+              <span>脂肪: {{ calculateViewNutrition.fat.toFixed(1) }} g</span>
+              <span>碳水: {{ calculateViewNutrition.carbs.toFixed(1) }} g</span>
+            </div>
+          </div>
         </el-form-item>
       </el-form>
       <template #footer>
@@ -618,5 +843,160 @@ onMounted(() => {
 .view-text {
   color: var(--bs-text-primary);
   font-size: var(--bs-font-size-base);
+}
+
+/* 食材选择区域样式 */
+.ingredient-section {
+  border: 1px solid var(--bs-border-color);
+  border-radius: 8px;
+  padding: 12px;
+  background: var(--bs-bg-secondary);
+}
+
+.selected-ingredients {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ingredient-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  background: #fff;
+  border-radius: 6px;
+  border: 1px solid var(--bs-border-color);
+}
+
+.ingredient-name {
+  flex: 1;
+  font-weight: 500;
+  color: var(--bs-text-primary);
+}
+
+.unit {
+  color: var(--bs-text-secondary);
+  font-size: 12px;
+}
+
+.no-ingredients {
+  color: var(--bs-text-secondary);
+  font-size: 14px;
+  text-align: center;
+  padding: 16px;
+}
+
+.nutrition-info {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--bs-border-color);
+}
+
+.nutrition-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--bs-text-title);
+  margin-bottom: 8px;
+}
+
+.nutrition-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 13px;
+  color: var(--bs-text-secondary);
+}
+
+/* 食材选择器样式 */
+.ingredient-selector {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.category-filter {
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--bs-border-color);
+}
+
+.ingredient-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.ingredient-card {
+  padding: 12px;
+  border: 1px solid var(--bs-border-color);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+}
+
+.ingredient-card:hover {
+  border-color: var(--bs-primary);
+  background: rgba(27, 58, 47, 0.05);
+}
+
+.ingredient-card .ingredient-name {
+  font-weight: 600;
+  color: var(--bs-text-primary);
+  margin-bottom: 4px;
+}
+
+.ingredient-card .ingredient-category {
+  font-size: 12px;
+  color: var(--bs-text-secondary);
+  margin-bottom: 4px;
+}
+
+.ingredient-card .ingredient-nutrition {
+  font-size: 11px;
+  color: var(--bs-primary);
+}
+
+/* 查看详情中的食材样式 */
+.view-ingredients {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.view-ingredient-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--bs-bg-secondary);
+  border-radius: 6px;
+  border: 1px solid var(--bs-border-color);
+}
+
+.view-ingredient-item .name {
+  font-weight: 500;
+  color: var(--bs-text-primary);
+}
+
+.view-ingredient-item .weight {
+  color: var(--bs-text-secondary);
+  font-size: 14px;
+}
+
+/* 查看详情中的营养成分样式 */
+.view-nutrition {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.view-nutrition .nutrition-row {
+  display: flex;
+  gap: 24px;
+}
+
+.view-nutrition span {
+  font-size: 14px;
+  color: var(--bs-text-secondary);
 }
 </style>

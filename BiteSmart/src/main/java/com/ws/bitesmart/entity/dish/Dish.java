@@ -3,6 +3,7 @@ package com.ws.bitesmart.entity.dish;
 import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * 菜品表 实体类
@@ -63,5 +64,8 @@ public class Dish {
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
     private Integer deleted;
+
+    /** 关联的食材列表，非数据库字段，用于接收前端传入的食材 */
+    private List<DishIngredient> ingredients;
 
 }

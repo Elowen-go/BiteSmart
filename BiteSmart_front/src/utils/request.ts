@@ -15,6 +15,11 @@ request.interceptors.request.use(
     if (token && config.headers) {
       config.headers['Authorization'] = `Bearer ${token}`
     }
+    // 传递当前选中的店铺ID（多店铺支持）
+    const shopId = localStorage.getItem('currentShopId')
+    if (shopId && config.headers) {
+      config.headers['X-Shop-Id'] = shopId
+    }
     return config
   },
   (error) => {
