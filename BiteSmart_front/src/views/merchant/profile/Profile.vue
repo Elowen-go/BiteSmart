@@ -3,6 +3,8 @@ import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Upload, Delete } from '@element-plus/icons-vue'
 import { getProfile, updateProfile, uploadFile } from '../../../api/merchant/profile'
+import { useUserStore } from '../../../stores/user'
+import { setUserInfo } from '../../../utils/auth'
 
 const loading = ref(false)
 const form = ref({
@@ -13,6 +15,7 @@ const form = ref({
 })
 
 const imageUrl = ref('')
+const userStore = useUserStore()
 
 const fetchProfile = async () => {
   loading.value = true
@@ -25,7 +28,7 @@ const fetchProfile = async () => {
       form.value.phone = data.phone || ''
       form.value.email = data.email || ''
       if (form.value.avatar) {
-        imageUrl.value = form.value.avatar.startsWith('http') ? form.value.avatar : `${import.meta.env.VITE_APP_BASE_URL}${form.value.avatar}`
+        imageUrl.value = form.value.avatar.startsWith('http') ? form.value.avatar : `/api/files/download${form.value.avatar}`
       }
     }
   } catch (e) {
@@ -75,6 +78,11 @@ const handleSave = async () => {
     const res = await updateProfile(submitData as any)
     if (res.code === 200) {
       ElMessage.success('保存成功')
+      if (userStore.userInfo) {
+        userStore.userInfo.nickname = form.value.nickname
+        userStore.userInfo.avatar = form.value.avatar
+        setUserInfo(userStore.userInfo)
+      }
     } else {
       ElMessage.error(res.message || '保存失败')
     }
@@ -101,22 +109,22 @@ onMounted(() => {
       <div style="padding-top: 20px;">
         <el-form :model="form" label-width="120px" v-loading="loading">
           <el-form-item label="头像">
-            <div v-if="imageUrl" class="logo-preview">
-              <img :src="imageUrl" alt="头像" class="logo-image" />
-              <button class="remove-btn" @click="handleRemoveAvatar">
+            <div class="logo-preview">
+              <img v-if="imageUrl" :src="imageUrl" alt="头像" class="logo-image" />
+              <div v-else class="avatar-placeholder">
+                {{ (form.nickname || '用')[0] }}
+              </div>
+              <button class="remove-btn" @click="handleRemoveAvatar" v-if="imageUrl">
                 <Delete style="width: 16px; height: 16px;" />
               </button>
-            </div>
-            <div v-else class="logo-upload">
               <el-upload
                 class="avatar-uploader"
                 :show-file-list="false"
                 :before-upload="handleAvatarUpload"
                 accept="image/jpeg,image/png,image/gif"
               >
-                <div class="upload-btn">
-                  <Upload style="width: 40px; height: 40px;" />
-                  <span>点击上传头像</span>
+                <div class="upload-overlay">
+                  <Upload style="width: 20px; height: 20px;" />
                 </div>
               </el-upload>
             </div>
@@ -202,6 +210,20 @@ onMounted(() => {
   border: 2px solid var(--bs-border-color);
 }
 
+.avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: #1B3A2F;
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48px;
+  font-weight: 600;
+  border: 2px solid var(--bs-border-color);
+}
+
 .remove-btn {
   position: absolute;
   top: -8px;
@@ -217,43 +239,40 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   transition: background 0.2s;
+  z-index: 10;
 }
 
 .remove-btn:hover {
   background: #c9302c;
 }
 
-.logo-upload {
-  width: 120px;
-  height: 120px;
-}
-
 .avatar-uploader {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
+  border-radius: 50%;
+  cursor: pointer;
 }
 
-.upload-btn {
+.upload-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
-  border: 2px dashed var(--bs-border-color);
   border-radius: 50%;
+  background: rgba(0, 0, 0, 0);
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
-  color: var(--bs-text-muted);
+  color: transparent;
   transition: all 0.2s;
 }
 
-.upload-btn:hover {
-  border-color: var(--bs-primary);
-  color: var(--bs-primary);
-}
-
-.upload-btn span {
-  font-size: var(--bs-font-size-sm);
-  margin-top: 8px;
+.avatar-uploader:hover .upload-overlay {
+  background: rgba(0, 0, 0, 0.3);
+  color: #FFFFFF;
 }
 </style>

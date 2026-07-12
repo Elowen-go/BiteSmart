@@ -1,11 +1,11 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { getToken, setToken, removeToken, getRole, setRole, removeRole } from '../utils/auth'
+import { getToken, setToken, removeToken, getRole, setRole, removeRole, getUserInfo, setUserInfo, removeUserInfo } from '../utils/auth'
 
 export const useUserStore = defineStore('user', () => {
   const token = ref(getToken())
   const role = ref(getRole())
-  const userInfo = ref<any>(null)
+  const userInfo = ref<any>(getUserInfo())
   const breadcrumbSubtitle = ref('')
 
   const isAuthenticated = computed(() => !!token.value)
@@ -19,6 +19,9 @@ export const useUserStore = defineStore('user', () => {
     userInfo.value = info
     setToken(newToken)
     setRole(newRole)
+    if (info) {
+      setUserInfo(info)
+    }
   }
 
   const logout = () => {
@@ -27,10 +30,12 @@ export const useUserStore = defineStore('user', () => {
     userInfo.value = null
     removeToken()
     removeRole()
+    removeUserInfo()
   }
 
   const setUserInfo = (info: any) => {
     userInfo.value = info
+    setUserInfo(info)
   }
 
   const setBreadcrumbSubtitle = (subtitle: string) => {

@@ -4,7 +4,7 @@ export const uploadFile = (file: File, bizType: string): Promise<any> => {
   const formData = new FormData()
   formData.append('file', file)
   formData.append('bizType', bizType)
-  return request.post('/api/files/upload', formData, {
+  return request.post('/files/upload', formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
   })
 }

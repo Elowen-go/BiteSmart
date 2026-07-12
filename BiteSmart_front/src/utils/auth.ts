@@ -22,6 +22,19 @@ export const removeRole = (): void => {
   localStorage.removeItem('role')
 }
 
+export const getUserInfo = (): any | null => {
+  const info = localStorage.getItem('userInfo')
+  return info ? JSON.parse(info) : null
+}
+
+export const setUserInfo = (info: any): void => {
+  localStorage.setItem('userInfo', JSON.stringify(info))
+}
+
+export const removeUserInfo = (): void => {
+  localStorage.removeItem('userInfo')
+}
+
 export const isAuthenticated = (): boolean => {
   return !!getToken()
 }

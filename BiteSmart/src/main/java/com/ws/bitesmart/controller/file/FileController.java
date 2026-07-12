@@ -1,17 +1,30 @@
 package com.ws.bitesmart.controller.file;
 
 import com.ws.bitesmart.common.ResultVO;
+import com.ws.bitesmart.config.FileConfig;
 import com.ws.bitesmart.security.LoginUser;
 import com.ws.bitesmart.service.file.FileService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import jakarta.servlet.http.HttpServletRequest;
+
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -33,6 +46,7 @@ import java.util.Map;
 public class FileController {
 
     private final FileService fileService;
+    private final FileConfig fileConfig;
 
     /**
      * 上传文件
@@ -65,6 +79,47 @@ public class FileController {
         Map<String, String> data = new HashMap<>();
         data.put("url", fileUrl);
         return ResultVO.success("上传成功", data);
+    }
+
+    /**
+     * 文件下载/预览
+     *
+     * GET /api/files/download/{fileName}
+     * GET /api/files/download/{date}/{fileName}
+     *
+     * 通过URL路径参数传递文件相对路径
+     */
+    @GetMapping("/download/**")
+    public ResponseEntity<Resource> download(HttpServletRequest request) {
+        try {
+            String path = request.getRequestURI().replace("/api/files/download", "");
+            if (path.startsWith("/")) {
+                path = path.substring(1);
+            }
+            if (path.startsWith("uploads/")) {
+                path = path.substring("uploads/".length());
+            }
+
+            File file = new File(fileConfig.getUploadDir(), path);
+            if (!file.exists()) {
+                log.warn("文件不存在: {}", file.getAbsolutePath());
+                return ResponseEntity.notFound().build();
+            }
+
+            FileSystemResource resource = new FileSystemResource(file);
+            String contentType = Files.probeContentType(Path.of(file.getAbsolutePath()));
+            if (contentType == null) {
+                contentType = MediaType.APPLICATION_OCTET_STREAM_VALUE;
+            }
+
+            return ResponseEntity.ok()
+                    .contentType(MediaType.parseMediaType(contentType))
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + file.getName() + "\"")
+                    .body(resource);
+        } catch (Exception e) {
+            log.error("文件下载失败", e);
+            return ResponseEntity.internalServerError().build();
+        }
     }
 
 }

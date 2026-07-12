@@ -32,6 +32,9 @@ build/
 ### VS Code ###
 .vscode/
 
+# TRAE IDE
+.trae/
+
 # Logs
 logs
 *.log

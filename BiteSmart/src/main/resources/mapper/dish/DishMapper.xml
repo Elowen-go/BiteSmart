@@ -14,20 +14,20 @@
     <select id="findByMerchantId" resultType="com.ws.bitesmart.entity.dish.Dish">
         SELECT <include refid="BaseColumns"/>
         FROM dish
-        WHERE merchant_id = #{merchantId} AND deleted = 0
+        WHERE merchant_id = #{merchantId} AND (deleted = 0 OR deleted IS NULL)
         ORDER BY create_time DESC
     </select>
 
     <select id="findById" resultType="com.ws.bitesmart.entity.dish.Dish">
         SELECT <include refid="BaseColumns"/>
-        FROM dish WHERE id = #{id} AND deleted = 0
+        FROM dish WHERE id = #{id} AND (deleted = 0 OR deleted IS NULL)
     </select>
 
     <!-- 查上架且在售的菜品（status=10 且 stock > 0） -->
     <select id="findAvailable" resultType="com.ws.bitesmart.entity.dish.Dish">
         SELECT <include refid="BaseColumns"/>
         FROM dish
-        WHERE status = 10 AND stock &gt; 0 AND deleted = 0
+        WHERE status = 10 AND stock &gt; 0 AND (deleted = 0 OR deleted IS NULL)
         ORDER BY create_time DESC
     </select>
 

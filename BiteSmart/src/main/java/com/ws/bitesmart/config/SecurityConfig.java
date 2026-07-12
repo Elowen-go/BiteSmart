@@ -72,6 +72,7 @@ public class SecurityConfig {
             "/api/auth/**",         // 登录、注册、刷新Token
             "/api/merchant/auth/**", // 商家入驻申请（普通用户也可访问）
             "/api/files/**",        // 文件访问（上传/下载/预览）
+            "/uploads/**",          // 静态资源文件（图片等）
             "/api/common/**",       // 公共数据接口
             "/api/dishes/**",       // 菜品浏览（无需登录）
             "/api/combos/**",       // 套餐浏览（无需登录）

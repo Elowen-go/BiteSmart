@@ -21,6 +21,7 @@ import {
 } from '@element-plus/icons-vue'
 import { useUserStore } from '../stores/user'
 import { getShopInfo } from '../api/merchant/shop'
+import { getProfile } from '../api/merchant/profile'
 
 const route = useRoute()
 const router = useRouter()
@@ -28,6 +29,7 @@ const userStore = useUserStore()
 
 const collapsed = ref(false)
 const logoUrl = ref('')
+const shopName = ref('')
 
 const toggleSidebar = () => {
   collapsed.value = !collapsed.value
@@ -81,19 +83,37 @@ const handleLogout = () => {
 const fetchLogo = async () => {
   try {
     const res = await getShopInfo()
-    if (res.code === 200 && res.data.shopLogo) {
-      logoUrl.value = res.data.shopLogo.startsWith('http') 
-        ? res.data.shopLogo 
-        : `${import.meta.env.VITE_APP_BASE_URL}${res.data.shopLogo}`
+    if (res.code === 200) {
+      if (res.data.shopLogo) {
+        logoUrl.value = res.data.shopLogo.startsWith('http') 
+          ? res.data.shopLogo 
+          : `/api/files/download${res.data.shopLogo}`
+      }
+      shopName.value = res.data.shopName || ''
     }
   } catch (e) {
     console.error('获取店铺Logo失败', e)
   }
 }
 
+const fetchUserInfo = async () => {
+  try {
+    const res = await getProfile()
+    if (res.code === 200) {
+      if (userStore.userInfo) {
+        userStore.userInfo.nickname = res.data.nickname
+        userStore.userInfo.avatar = res.data.avatar
+      }
+    }
+  } catch (e) {
+    console.error('获取用户信息失败', e)
+  }
+}
+
 onMounted(() => {
   userStore.setBreadcrumbSubtitle('')
   fetchLogo()
+  fetchUserInfo()
 })
 </script>
 
@@ -156,9 +176,9 @@ onMounted(() => {
             <HelpFilled />
           </button>
           <div class="user-info">
-            <img v-if="logoUrl" :src="logoUrl" class="avatar" alt="店铺Logo" />
-<div v-else class="avatar">M</div>
-            <span v-if="!collapsed">商家</span>
+            <img v-if="userStore.userInfo?.avatar" :src="userStore.userInfo.avatar.startsWith('http') ? userStore.userInfo.avatar : `/api/files/download${userStore.userInfo.avatar}`" class="avatar" alt="用户头像" />
+            <div v-else class="avatar">{{ (userStore.userInfo?.nickname || userStore.userInfo?.username || '商')[0] }}</div>
+            <span v-if="!collapsed">{{ userStore.userInfo?.nickname || userStore.userInfo?.username || '商家' }}</span>
             <button class="logout-btn" @click="handleLogout">退出</button>
           </div>
         </div>
