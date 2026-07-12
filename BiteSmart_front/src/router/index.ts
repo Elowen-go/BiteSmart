@@ -83,6 +83,12 @@ const router = createRouter({
           meta: { title: '分类管理', subtitle: '菜品分类' }
         },
         {
+          path: 'ingredients',
+          name: 'AdminIngredients',
+          component: () => import('../views/admin/ingredients/IngredientList.vue'),
+          meta: { title: '食材管理', subtitle: '食材库' }
+        },
+        {
           path: 'nutrition',
           name: 'AdminNutrition',
           component: () => import('../views/admin/nutrition/NutritionList.vue'),

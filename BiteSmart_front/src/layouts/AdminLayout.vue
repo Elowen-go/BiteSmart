@@ -18,7 +18,8 @@ import {
   Collection,
   List,
   DataBoard,
-  Memo
+  Memo,
+  Food
 } from '@element-plus/icons-vue'
 import { useUserStore } from '../stores/user'
 
@@ -56,6 +57,7 @@ const menuItems = [
       { path: '/admin/logs', icon: Document, label: '日志' },
       { path: '/admin/ai-rules', icon: DataBoard, label: 'AI规则管理' },
       { path: '/admin/categories', icon: Collection, label: '分类管理' },
+      { path: '/admin/ingredients', icon: Food, label: '食材管理' },
       { path: '/admin/nutrition', icon: List, label: '营养标准' },
       { path: '/admin/notices', icon: Memo, label: '公告管理' },
     ]

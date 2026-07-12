@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ws.bitesmart.mapper.dish.IngredientMapper">
+
+    <!-- 基础列，所有查询共用 -->
+    <sql id="BaseColumns">
+        id, name, category_id, category_name,
+        calories, protein, fat, carbs,
+        status, create_time, update_time, deleted
+    </sql>
+
+    <!--
+        查询所有启用的食材
+        用于商家端选择食材时展示，只返回状态为启用且未删除的食材
+    -->
+    <select id="findAllEnabled" resultType="com.ws.bitesmart.entity.dish.Ingredient">
+        SELECT <include refid="BaseColumns"/>
+        FROM ingredient
+        WHERE status = 10 AND (deleted = 0 OR deleted IS NULL)
+        ORDER BY category_name, name
+    </select>
+
+    <!--
+        按分类查询食材
+        商家可以按分类筛选食材，如只看肉类、只看蔬菜等
+    -->
+    <select id="findByCategory" resultType="com.ws.bitesmart.entity.dish.Ingredient">
+        SELECT <include refid="BaseColumns"/>
+        FROM ingredient
+        WHERE category_name = #{categoryName}
+          AND status = 10
+          AND (deleted = 0 OR deleted IS NULL)
+        ORDER BY name
+    </select>
+
+    <!--
+        根据ID查询单个食材
+        用于编辑食材或查看食材详情
+    -->
+    <select id="findById" resultType="com.ws.bitesmart.entity.dish.Ingredient">
+        SELECT <include refid="BaseColumns"/>
+        FROM ingredient
+        WHERE id = #{id}
+          AND (deleted = 0 OR deleted IS NULL)
+    </select>
+
+    <!--
+        新增食材
+        管理员在后台添加新食材到食材库
+    -->
+    <insert id="insert" parameterType="com.ws.bitesmart.entity.dish.Ingredient">
+        INSERT INTO ingredient (
+            id, name, category_id, category_name,
+            calories, protein, fat, carbs,
+            status, create_time, update_time, deleted
+        ) VALUES (
+            #{id}, #{name}, #{categoryId}, #{categoryName},
+            #{calories}, #{protein}, #{fat}, #{carbs},
+            #{status}, NOW(), NOW(), 0
+        )
+    </insert>
+
+    <!--
+        更新食材信息
+        使用动态SQL，只更新非空字段
+        管理员可以修改食材的营养成分、名称、分类等信息
+    -->
+    <update id="updateById" parameterType="com.ws.bitesmart.entity.dish.Ingredient">
+        UPDATE ingredient
+        <set>
+            <if test="name != null">name = #{name},</if>
+            <if test="categoryId != null">category_id = #{categoryId},</if>
+            <if test="categoryName != null">category_name = #{categoryName},</if>
+            <if test="calories != null">calories = #{calories},</if>
+            <if test="protein != null">protein = #{protein},</if>
+            <if test="fat != null">fat = #{fat},</if>
+            <if test="carbs != null">carbs = #{carbs},</if>
+            <if test="status != null">status = #{status},</if>
+            update_time = NOW()
+        </set>
+        WHERE id = #{id}
+          AND (deleted = 0 OR deleted IS NULL)
+    </update>
+
+    <!--
+        逻辑删除食材
+        不是物理删除，只是将 deleted 字段设为 1
+        这样保留历史数据，同时不再显示在列表中
+    -->
+    <update id="deleteById">
+        UPDATE ingredient
+        SET deleted = 1, update_time = NOW()
+        WHERE id = #{id}
+          AND (deleted = 0 OR deleted IS NULL)
+    </update>
+
+    <!--
+        查询所有分类名称
+        用于前端展示分类筛选下拉框
+        只返回有启用食材的分类
+    -->
+    <select id="findAllCategories" resultType="java.lang.String">
+        SELECT DISTINCT category_name
+        FROM ingredient
+        WHERE status = 10
+          AND (deleted = 0 OR deleted IS NULL)
+        ORDER BY category_name
+    </select>
+
+</mapper>
