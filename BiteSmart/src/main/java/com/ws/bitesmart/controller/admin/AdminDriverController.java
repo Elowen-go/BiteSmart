@@ -36,10 +36,20 @@ public class AdminDriverController {
      */
     @GetMapping
     public PageResultVO<DeliveryDriver> list(@RequestParam(defaultValue = "1") int pageNum,
-                                              @RequestParam(defaultValue = "10") int pageSize) {
+                                              @RequestParam(defaultValue = "10") int pageSize,
+                                              @RequestParam(required = false) Integer status) {
         PageHelper.startPage(pageNum, pageSize);
-        List<DeliveryDriver> list = deliveryDriverMapper.findAll();
+        List<DeliveryDriver> list = status == null
+                ? deliveryDriverMapper.findAll()
+                : deliveryDriverMapper.findAllByStatus(status);
         return PageResultVO.success(new PageInfo<>(list));
+    }
+
+    @GetMapping("/{id}")
+    public ResultVO<DeliveryDriver> detail(@PathVariable Long id) {
+        DeliveryDriver driver = deliveryDriverMapper.findById(id);
+        if (driver == null) return ResultVO.error(404, "配送员不存在");
+        return ResultVO.success(driver);
     }
 
     /**

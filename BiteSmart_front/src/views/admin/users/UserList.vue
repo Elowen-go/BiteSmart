@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { getUserList, updateUserStatus } from '../../../api/admin/users'
+import { ElMessage } from 'element-plus'
+import { getUserList, getUserDetail, updateUserStatus } from '../../../api/admin/users'
 
 const loading = ref(false)
 const tableData = ref<any[]>([])
 const total = ref(0)
 const pageNum = ref(1)
 const pageSize = ref(10)
+const detailDialogVisible = ref(false)
+const detailData = ref<any>(null)
 
 const loadData = async () => {
   loading.value = true
@@ -20,6 +23,18 @@ const loadData = async () => {
     console.error('获取用户列表失败', err)
   } finally {
     loading.value = false
+  }
+}
+
+const handleDetail = async (row: any) => {
+  try {
+    const res = await getUserDetail(row.id)
+    if (res.code === 200) {
+      detailData.value = res.data
+      detailDialogVisible.value = true
+    }
+  } catch (err) {
+    console.error('获取用户详情失败', err)
   }
 }
 
@@ -74,7 +89,7 @@ onMounted(loadData)
           </el-table-column>
           <el-table-column label="操作" width="180" fixed="right">
             <template #default="{ row }">
-              <el-button size="small" type="primary" link>详情</el-button>
+              <el-button size="small" type="primary" link @click="handleDetail(row)">详情</el-button>
               <el-button
                 size="small"
                 :type="row.status === 10 ? 'warning' : 'success'"
@@ -100,6 +115,15 @@ onMounted(loadData)
       </div>
     </div>
   </div>
+  <el-dialog v-model="detailDialogVisible" title="用户详情" width="560px">
+    <el-descriptions v-if="detailData" :column="2" border>
+      <el-descriptions-item label="账号">{{ detailData.username || '-' }}</el-descriptions-item>
+      <el-descriptions-item label="昵称">{{ detailData.nickname || '-' }}</el-descriptions-item>
+      <el-descriptions-item label="手机号">{{ detailData.phone || '-' }}</el-descriptions-item>
+      <el-descriptions-item label="邮箱">{{ detailData.email || '-' }}</el-descriptions-item>
+      <el-descriptions-item label="注册时间" :span="2">{{ detailData.createTime || '-' }}</el-descriptions-item>
+    </el-descriptions>
+  </el-dialog>
 </template>
 
 <style scoped>

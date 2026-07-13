@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { listCategories, addCategory, updateCategory, deleteCategory } from '../../../api/admin/categories'
 import type { DishCategory } from '../../../api/admin/categories'
@@ -9,6 +9,11 @@ const categoryList = ref<DishCategory[]>([])
 const dialogVisible = ref(false)
 const dialogTitle = ref('')
 const editingId = ref<number | null>(null)
+const keyword = ref('')
+const filteredCategories = computed(() => {
+  const query = keyword.value.trim().toLowerCase()
+  return query ? categoryList.value.filter(item => item.categoryName?.toLowerCase().includes(query)) : categoryList.value
+})
 
 const form = ref({
   categoryName: '',
@@ -107,10 +112,13 @@ onMounted(fetchList)
     <div class="card-panel">
       <div class="card-header">
         <h3>分类管理</h3>
-        <button class="btn btn-primary" @click="handleAdd">新增分类</button>
+        <div class="toolbar">
+          <el-input v-model="keyword" clearable placeholder="搜索分类名称" style="width: 220px" />
+          <button class="btn btn-primary" @click="handleAdd">新增分类</button>
+        </div>
       </div>
       <div style="padding-top: 20px;">
-        <el-table :data="categoryList" border v-loading="loading">
+        <el-table :data="filteredCategories" border stripe v-loading="loading" empty-text="暂无分类数据">
           <el-table-column prop="categoryName" label="分类名称" min-width="160" />
           <el-table-column prop="sortOrder" label="排序" width="80" align="center" />
           <el-table-column label="父分类" width="140">
@@ -188,6 +196,8 @@ onMounted(fetchList)
   font-weight: 600;
   color: var(--bs-text-title);
 }
+
+.toolbar { display: flex; align-items: center; gap: 12px; }
 
 .btn {
   display: inline-flex;

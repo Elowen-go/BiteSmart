@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { getConfigList, addConfig, updateConfig, deleteConfig } from '../../../api/admin/system'
 import type { SysConfig } from '../../../api/admin/system'
 

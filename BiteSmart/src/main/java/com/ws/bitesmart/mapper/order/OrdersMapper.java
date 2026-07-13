@@ -59,6 +59,11 @@ public interface OrdersMapper {
     /** 分页查询所有订单 */
     List<Orders> findAll();
 
+    /** 按订单状态分页查询订单 */
+
+    /** 按订单状态分页查询订单 */
+    List<Orders> findAllByStatus(@Param("orderStatus") Integer orderStatus);
+
     /** 统计所有订单数量 */
     long countAll();
 

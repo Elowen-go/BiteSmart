@@ -1,10 +1,44 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿<script setup lang="ts">
-import { ref, onMounted } from 'vue'
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿<script setup lang="ts">
+import { computed, ref, onMounted } from 'vue'
+import { Refresh } from '@element-plus/icons-vue'
 import { getDeliveryTasks } from '../../../api/merchant/delivery'
 import type { DeliveryTask } from '../../../api/merchant/delivery'
 
 const loading = ref(false)
 const taskList = ref<DeliveryTask[]>([])
+const activeStatus = ref<number | 'all'>('all')
+
+const statusOptions = [
+  { label: '全部', value: 'all' as const },
+  { label: '待分配', value: 0 },
+  { label: '待取餐', value: 1 },
+  { label: '配送中', value: 2 },
+  { label: '已送达', value: 3 },
+  { label: '异常', value: 4 }
+]
+
+const statusConfig: Record<number, { label: string; tag: 'success' | 'warning' | 'primary' | 'info' | 'danger'; className: string }> = {
+  0: { label: '待分配', tag: 'info', className: 'muted' },
+  1: { label: '待取餐', tag: 'primary', className: 'pickup' },
+  2: { label: '配送中', tag: 'warning', className: 'delivery' },
+  3: { label: '已送达', tag: 'success', className: 'done' },
+  4: { label: '异常', tag: 'danger', className: 'danger' }
+}
+
+const filteredTaskList = computed(() => {
+  if (activeStatus.value === 'all') return taskList.value
+  return taskList.value.filter((item) => item.taskStatus === activeStatus.value)
+})
+
+const taskStats = computed(() => {
+  const countByStatus = (status: number) => taskList.value.filter((item) => item.taskStatus === status).length
+  return [
+    { label: '待取餐', value: countByStatus(1), status: 1, hint: '出餐后等待骑手' },
+    { label: '配送中', value: countByStatus(2), status: 2, hint: '关注送达进度' },
+    { label: '异常', value: countByStatus(4), status: 4, hint: '需要及时处理' },
+    { label: '已送达', value: countByStatus(3), status: 3, hint: '今日完成配送' }
+  ]
+})
 
 const fetchData = async () => {
   loading.value = true
@@ -21,13 +55,23 @@ const fetchData = async () => {
 }
 
 const getTaskStatusTag = (status: number): 'success' | 'warning' | 'primary' | 'info' | 'danger' => {
-  const map: Record<number, 'success' | 'warning' | 'primary' | 'info' | 'danger'> = { 0: 'info', 1: 'primary', 2: 'warning', 3: 'success', 4: 'danger' }
-  return map[status] || 'info'
+  return statusConfig[status]?.tag || 'info'
 }
 
 const getTaskStatusLabel = (status: number) => {
-  const map: Record<number, string> = { 0: '待分配', 1: '待取餐', 2: '配送中', 3: '已送达', 4: '异常' }
-  return map[status] || '未知'
+  return statusConfig[status]?.label || '未知'
+}
+
+const getStatusClass = (status: number) => {
+  return statusConfig[status]?.className || 'muted'
+}
+
+const handleStatusChange = (status: number | 'all') => {
+  activeStatus.value = status
+}
+
+const formatText = (value?: string) => {
+  return value || '-'
 }
 
 onMounted(() => {
@@ -37,23 +81,63 @@ onMounted(() => {
 
 <template>
   <div class="page-container">
-    <div class="card-panel">
-      <div class="card-header">
-        <h3>配送管理</h3>
+    <div class="delivery-page">
+      <div class="page-head">
+        <div>
+          <h2>配送管理</h2>
+          <p>查看出餐后的取餐、配送、送达和异常状态</p>
+        </div>
+        <el-button :icon="Refresh" :loading="loading" @click="fetchData">刷新</el-button>
       </div>
-      <div style="padding-top: 20px;">
-        <el-table :data="taskList" border v-loading="loading">
-          <el-table-column prop="orderNo" label="订单号" width="200" />
-          <el-table-column prop="driverName" label="配送员" width="120" />
-          <el-table-column prop="driverPhone" label="联系方式" width="140" />
+
+      <div class="summary-grid">
+        <button
+          v-for="item in taskStats"
+          :key="item.label"
+          class="summary-item"
+          :class="[getStatusClass(item.status), { active: activeStatus === item.status }]"
+          @click="handleStatusChange(item.status)"
+        >
+          <span>{{ item.label }}</span>
+          <strong>{{ item.value }}</strong>
+          <em>{{ item.hint }}</em>
+        </button>
+      </div>
+
+      <div class="card-panel delivery-panel">
+        <div class="toolbar">
+          <el-segmented v-model="activeStatus" :options="statusOptions" />
+          <span class="toolbar-count">当前 {{ filteredTaskList.length }} 条配送任务</span>
+        </div>
+
+        <el-table :data="filteredTaskList" v-loading="loading" class="delivery-table" empty-text="暂无符合条件的配送任务">
+          <el-table-column prop="orderNo" label="订单信息" min-width="220">
+            <template #default="{ row }">
+              <div class="order-no">{{ row.orderNo }}</div>
+              <div class="sub-text">创建 {{ formatText(row.createTime) }}</div>
+            </template>
+          </el-table-column>
+          <el-table-column prop="driverName" label="配送员" min-width="150">
+            <template #default="{ row }">
+              <div class="strong-text">{{ formatText(row.driverName) }}</div>
+              <div class="sub-text">{{ formatText(row.driverPhone) }}</div>
+            </template>
+          </el-table-column>
           <el-table-column prop="taskStatus" label="配送状态" width="120">
             <template #default="{ row }">
               <el-tag :type="getTaskStatusTag(row.taskStatus)">{{ getTaskStatusLabel(row.taskStatus) }}</el-tag>
             </template>
           </el-table-column>
           <el-table-column prop="pickupCode" label="取餐码" width="120" />
-          <el-table-column prop="estimatedDeliveryTime" label="预计送达" width="180" />
-          <el-table-column prop="createTime" label="创建时间" width="180" />
+          <el-table-column prop="estimatedDeliveryTime" label="预计送达" min-width="170">
+            <template #default="{ row }">{{ formatText(row.estimatedDeliveryTime) }}</template>
+          </el-table-column>
+          <el-table-column prop="pickupTime" label="取餐时间" min-width="170">
+            <template #default="{ row }">{{ formatText(row.pickupTime) }}</template>
+          </el-table-column>
+          <el-table-column prop="deliverTime" label="送达时间" min-width="170">
+            <template #default="{ row }">{{ formatText(row.deliverTime) }}</template>
+          </el-table-column>
         </el-table>
       </div>
     </div>
@@ -70,6 +154,88 @@ onMounted(() => {
   to { opacity: 1; transform: translateY(0); }
 }
 
+.delivery-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.page-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.page-head h2 {
+  margin: 0;
+  color: var(--bs-text-title);
+  font-size: 20px;
+  font-weight: 650;
+}
+
+.page-head p {
+  margin-top: 4px;
+  color: var(--bs-text-muted);
+  font-size: 13px;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.summary-item {
+  min-height: 104px;
+  padding: 16px;
+  text-align: left;
+  background: #fff;
+  border: 1px solid var(--bs-border-light);
+  border-radius: var(--bs-radius-md);
+  box-shadow: var(--bs-card-shadow);
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.summary-item:hover,
+.summary-item.active {
+  border-color: rgba(27, 58, 47, 0.35);
+  box-shadow: var(--bs-card-shadow-hover);
+  transform: translateY(-1px);
+}
+
+.summary-item span,
+.summary-item em {
+  display: block;
+  color: var(--bs-text-muted);
+  font-size: 13px;
+  font-style: normal;
+}
+
+.summary-item strong {
+  display: block;
+  margin: 6px 0 4px;
+  color: var(--bs-text-title);
+  font-size: 28px;
+  line-height: 1.1;
+}
+
+.summary-item.pickup {
+  border-left: 3px solid var(--bs-primary);
+}
+
+.summary-item.delivery {
+  border-left: 3px solid #b76e2a;
+}
+
+.summary-item.danger {
+  border-left: 3px solid var(--bs-status-danger);
+}
+
+.summary-item.done {
+  border-left: 3px solid #1b6b4a;
+}
+
 .card-panel {
   background: var(--bs-card-bg);
   border-radius: var(--bs-radius-md);
@@ -77,17 +243,55 @@ onMounted(() => {
   padding: var(--bs-spacing-lg);
 }
 
-.card-header {
+.delivery-panel {
+  padding-top: 16px;
+}
+
+.toolbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: var(--bs-spacing-lg);
+  gap: 16px;
+  margin-bottom: 16px;
 }
 
-.card-header h3 {
-  font-size: var(--bs-font-size-lg);
-  font-weight: 600;
+.toolbar-count {
+  color: var(--bs-text-muted);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.delivery-table {
+  width: 100%;
+}
+
+.order-no,
+.strong-text {
   color: var(--bs-text-title);
+  font-weight: 600;
+}
+
+.sub-text {
+  margin-top: 4px;
+  color: var(--bs-text-muted);
+  font-size: 12px;
+}
+
+@media (max-width: 1100px) {
+  .summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .page-head,
+  .toolbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .summary-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>
-

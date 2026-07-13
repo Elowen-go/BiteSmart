@@ -9,8 +9,11 @@ const editing = ref(false)
 const form = ref({
   shopName: '',
   shopLogo: '',
+  contactName: '',
   contactPhone: '',
   shopAddress: '',
+  businessLicense: '',
+  licenseNumber: '',
   deliveryRange: '',
   businessHours: '',
   shopNotice: ''
@@ -50,8 +53,11 @@ const fetchShopInfo = async () => {
       const data = res.data
       form.value.shopName = data.shopName || ''
       form.value.shopLogo = data.shopLogo || ''
+      form.value.contactName = data.contactName || ''
       form.value.contactPhone = data.contactPhone || ''
       form.value.shopAddress = data.shopAddress || ''
+      form.value.businessLicense = data.businessLicense || ''
+      form.value.licenseNumber = data.licenseNumber || ''
       form.value.shopNotice = data.shopNotice || ''
       if (form.value.shopLogo) {
         imageUrl.value = form.value.shopLogo.startsWith('http') ? form.value.shopLogo : `/api/files/download${form.value.shopLogo}`
@@ -154,7 +160,7 @@ const handleSave = async () => {
   loading.value = true
   try {
     if (selectedFile.value) {
-      const uploadRes = await uploadFile(selectedFile.value, 'license')
+      const uploadRes = await uploadFile(selectedFile.value, 'shop_logo')
       if (uploadRes.code === 200) {
         form.value.shopLogo = uploadRes.data.url
         imageUrl.value = `/api/files/download${uploadRes.data.url}`
@@ -230,6 +236,9 @@ onMounted(() => {
           <el-form-item label="店铺名称">
             <el-input v-model="form.shopName" placeholder="请输入店铺名称" :disabled="!editing" />
           </el-form-item>
+          <el-form-item label="联系人">
+            <el-input v-model="form.contactName" placeholder="请输入联系人姓名" :disabled="!editing" />
+          </el-form-item>
           <el-form-item label="店铺Logo">
             <div class="logo-preview" @click="handleLogoClick">
               <img v-if="imageUrl" :src="imageUrl" alt="店铺Logo" class="logo-image" />
@@ -257,6 +266,12 @@ onMounted(() => {
           </el-form-item>
           <el-form-item label="联系电话">
             <el-input v-model="form.contactPhone" placeholder="请输入联系电话" :disabled="!editing" />
+          </el-form-item>
+          <el-form-item label="执照编号">
+            <el-input v-model="form.licenseNumber" placeholder="请输入统一社会信用代码" :disabled="!editing" />
+          </el-form-item>
+          <el-form-item label="营业执照">
+            <el-input v-model="form.businessLicense" placeholder="营业执照图片地址" :disabled="!editing" />
           </el-form-item>
           <el-form-item label="店铺地址">
             <el-input v-model="form.shopAddress" placeholder="请输入店铺地址" :disabled="!editing" />

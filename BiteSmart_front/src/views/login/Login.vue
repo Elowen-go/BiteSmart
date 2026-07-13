@@ -59,6 +59,14 @@ const roleOptions = [
   { value: 20, label: '商家' },
   { value: 40, label: '管理员' }
 ]
+
+const handleMerchantApply = () => {
+  if (!userStore.isAuthenticated) {
+    error.value = '请先登录账号，再提交商家入驻申请'
+    return
+  }
+  router.push('/merchant/apply')
+}
 </script>
 
 <template>
@@ -126,6 +134,9 @@ const roleOptions = [
         <button type="submit" class="login-btn" :disabled="loading">
           <span v-if="loading">登录中...</span>
           <span v-else>登 录</span>
+        </button>
+        <button type="button" class="apply-entry" @click="handleMerchantApply">
+          已有账号，申请成为商家
         </button>
       </form>
       
@@ -308,6 +319,19 @@ const roleOptions = [
 .login-btn:disabled {
   opacity: 0.7;
   cursor: not-allowed;
+}
+
+.apply-entry {
+  border: none;
+  background: transparent;
+  color: var(--bs-primary);
+  font-size: var(--bs-font-size-sm);
+  cursor: pointer;
+  padding: 0;
+}
+
+.apply-entry:hover {
+  text-decoration: underline;
 }
 
 .login-footer {

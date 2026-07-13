@@ -45,4 +45,7 @@ public interface DeliveryDriverMapper {
     /** 分页查询所有配送员 */
     List<DeliveryDriver> findAll();
 
+    /** 按状态分页查询配送员 */
+    List<DeliveryDriver> findAllByStatus(@Param("status") Integer status);
+
 }

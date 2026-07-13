@@ -14,8 +14,12 @@ export interface Driver {
   updateTime: string
 }
 
-export const getDriverList = (params?: { pageNum?: number; pageSize?: number }): Promise<any> => {
+export const getDriverList = (params?: { pageNum?: number; pageSize?: number; status?: number }): Promise<any> => {
   return request.get('/admin/drivers', { params })
+}
+
+export const getDriverDetail = (id: number): Promise<any> => {
+  return request.get(`/admin/drivers/${id}`)
 }
 
 export const updateDriverStatus = (id: number, status: number): Promise<any> => {

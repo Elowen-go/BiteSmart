@@ -1,7 +1,9 @@
 package com.ws.bitesmart.service.order;
 
+import com.alibaba.fastjson2.JSON;
 import com.ws.bitesmart.common.enums.ResultCodeEnum;
 import com.ws.bitesmart.common.util.SnowflakeUtil;
+import com.ws.bitesmart.dto.order.ComboCustomizationSnapshot;
 import com.ws.bitesmart.entity.dish.ComboDishRel;
 import com.ws.bitesmart.entity.order.OrderItem;
 import com.ws.bitesmart.entity.order.Orders;
@@ -19,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -88,8 +91,7 @@ public class PaymentService {
             if (item.getItemType() == 10 && item.getDishId() != null) {
                 dishMapper.deductLockedStock(item.getDishId(), item.getQuantity());
             } else if (item.getItemType() == 20 && item.getComboId() != null) {
-                List<ComboDishRel> rels = comboDishRelMapper.findByComboId(item.getComboId());
-                for (ComboDishRel rel : rels) {
+                for (ComboCustomizationSnapshot.SelectedDishItem rel : resolveSnapshotItems(item)) {
                     dishMapper.deductLockedStock(rel.getDishId(), rel.getQuantity() * item.getQuantity());
                 }
             }
@@ -100,5 +102,23 @@ public class PaymentService {
 
         log.info("模拟支付成功: orderNo={}, payMethod={}, transactionNo={}, amount={}",
                 orderNo, payMethod, transactionNo, order.getPayAmount());
+    }
+
+    private List<ComboCustomizationSnapshot.SelectedDishItem> resolveSnapshotItems(OrderItem item) {
+        if (item.getSnapshotNutritionJson() != null && !item.getSnapshotNutritionJson().isEmpty()) {
+            ComboCustomizationSnapshot snapshot = JSON.parseObject(item.getSnapshotNutritionJson(), ComboCustomizationSnapshot.class);
+            if (snapshot != null && snapshot.getItems() != null && !snapshot.getItems().isEmpty()) {
+                return snapshot.getItems();
+            }
+        }
+        List<ComboCustomizationSnapshot.SelectedDishItem> items = new ArrayList<>();
+        List<ComboDishRel> rels = comboDishRelMapper.findByComboId(item.getComboId());
+        for (ComboDishRel rel : rels) {
+            ComboCustomizationSnapshot.SelectedDishItem selected = new ComboCustomizationSnapshot.SelectedDishItem();
+            selected.setDishId(rel.getDishId());
+            selected.setQuantity(rel.getQuantity() == null ? 1 : rel.getQuantity());
+            items.add(selected);
+        }
+        return items;
     }
 }

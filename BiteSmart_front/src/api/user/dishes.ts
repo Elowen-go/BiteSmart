@@ -4,10 +4,10 @@ export interface Dish {
   id: number
   merchantId: number
   categoryId: number
-  name: string
+  dishName: string
   description: string
   price: number
-  imageUrl: string
+  dishImage: string
   calories: number
   protein: number
   fat: number

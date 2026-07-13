@@ -64,6 +64,12 @@
         WHERE id = #{id} AND deleted = 0
     </update>
 
+    <update id="updateCustomization">
+        UPDATE shopping_cart
+        SET customization_json = #{customizationJson}, update_time = NOW()
+        WHERE id = #{id} AND deleted = 0
+    </update>
+
     <!-- 删除购物车商品 -->
     <update id="deleteById">
         UPDATE shopping_cart

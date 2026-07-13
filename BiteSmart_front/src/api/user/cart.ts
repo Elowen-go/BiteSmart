@@ -17,15 +17,15 @@ export const getCartList = (): Promise<any> => {
 }
 
 export const addToCart = (itemType: number, dishId?: number, comboId?: number, quantity?: number): Promise<any> => {
-  return request.post('/cart', { params: { itemType, dishId, comboId, quantity } })
+  return request.post('/cart', null, { params: { itemType, dishId, comboId, quantity } })
 }
 
 export const updateCartQuantity = (id: number, quantity: number): Promise<any> => {
-  return request.put(`/cart/${id}`, { params: { quantity } })
+  return request.put(`/cart/${id}`, null, { params: { quantity } })
 }
 
 export const updateCartSelected = (id: number, selected: number): Promise<any> => {
-  return request.put(`/cart/${id}/select`, { params: { selected } })
+  return request.put(`/cart/${id}/select`, null, { params: { selected } })
 }
 
 export const deleteCartItem = (id: number): Promise<any> => {

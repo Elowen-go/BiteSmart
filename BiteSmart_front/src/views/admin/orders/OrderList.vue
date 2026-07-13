@@ -1,20 +1,25 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { getOrderList, getOrderDetail } from '../../../api/admin/orders'
+import { ElMessage } from 'element-plus'
+import { getOrderList, getOrderDetail, cancelOrder } from '../../../api/admin/orders'
 
 const loading = ref(false)
 const tableData = ref<any[]>([])
 const total = ref(0)
 const pageNum = ref(1)
 const pageSize = ref(10)
+const orderStatus = ref<number | undefined>()
 
 const detailDialogVisible = ref(false)
 const detailData = ref<any>(null)
+const cancelDialogVisible = ref(false)
+const cancelReason = ref('')
+const cancelTarget = ref<any>(null)
 
 const loadData = async () => {
   loading.value = true
   try {
-    const res = await getOrderList({ pageNum: pageNum.value, pageSize: pageSize.value })
+    const res = await getOrderList({ pageNum: pageNum.value, pageSize: pageSize.value, orderStatus: orderStatus.value })
     if (res.code === 200) {
       tableData.value = res.data.list || []
       total.value = res.data.total || 0
@@ -41,6 +46,27 @@ const handleDetail = async (row: any) => {
   }
 }
 
+const handleFilterChange = () => {
+  pageNum.value = 1
+  loadData()
+}
+
+const openCancelDialog = (row: any) => {
+  cancelTarget.value = row
+  cancelReason.value = ''
+  cancelDialogVisible.value = true
+}
+
+const submitCancel = async () => {
+  if (!cancelTarget.value) return
+  const res = await cancelOrder(cancelTarget.value.id, cancelReason.value || '管理员取消')
+  if (res.code === 200) {
+    ElMessage.success('订单已取消')
+    cancelDialogVisible.value = false
+    loadData()
+  }
+}
+
 onMounted(loadData)
 </script>
 
@@ -48,6 +74,14 @@ onMounted(loadData)
   <div class="page-container">
     <div class="card-panel">
       <div class="card-header">
+        <el-select v-model="orderStatus" clearable placeholder="按订单状态筛选" size="small" style="width: 170px" @change="handleFilterChange">
+          <el-option label="待支付" :value="10" />
+          <el-option label="待接单" :value="20" />
+          <el-option label="备餐中" :value="30" />
+          <el-option label="配送中" :value="40" />
+          <el-option label="已完成" :value="50" />
+          <el-option label="已取消" :value="60" />
+        </el-select>
         <h3>订单管理</h3>
       </div>
       <div style="padding-top: 20px;">
@@ -79,6 +113,7 @@ onMounted(loadData)
           <el-table-column label="操作" width="100" fixed="right">
             <template #default="{ row }">
               <el-button size="small" type="primary" link @click="handleDetail(row)">详情</el-button>
+              <el-button v-if="row.orderStatus === 10 || row.orderStatus === 20" size="small" type="danger" link @click="openCancelDialog(row)">取消</el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -109,10 +144,24 @@ onMounted(loadData)
           <el-descriptions-item label="实付金额">¥{{ detailData.payAmount?.toFixed(2) }}</el-descriptions-item>
           <el-descriptions-item label="配送地址" :span="2">{{ detailData.deliveryAddress }}</el-descriptions-item>
           <el-descriptions-item label="创建时间" :span="2">{{ detailData.createTime }}</el-descriptions-item>
+          <el-descriptions-item label="配送状态">
+            {{ ({ 0: '未配送', 10: '待取餐', 20: '已取餐', 30: '配送中', 40: '已送达', 60: '异常' } as Record<number, string>)[detailData.deliveryTask?.taskStatus] || '-' }}
+          </el-descriptions-item>
+          <el-descriptions-item label="配送员">{{ detailData.deliveryTask?.driverId || '未分配' }}</el-descriptions-item>
+          <el-descriptions-item v-if="detailData.deliveryTask?.taskStatus === 60" label="异常原因" :span="2">
+            <el-tag type="danger">{{ detailData.deliveryTask.exceptionReason || '未填写原因' }}</el-tag>
+          </el-descriptions-item>
         </el-descriptions>
       </div>
       <template #footer>
         <el-button @click="detailDialogVisible = false">关闭</el-button>
+      </template>
+    </el-dialog>
+    <el-dialog v-model="cancelDialogVisible" title="取消订单" width="420px">
+      <el-input v-model="cancelReason" type="textarea" :rows="3" placeholder="请输入取消原因" />
+      <template #footer>
+        <el-button @click="cancelDialogVisible = false">关闭</el-button>
+        <el-button type="danger" @click="submitCancel">确认取消</el-button>
       </template>
     </el-dialog>
   </div>

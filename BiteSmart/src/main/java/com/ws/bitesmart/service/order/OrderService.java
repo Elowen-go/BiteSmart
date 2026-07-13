@@ -1,9 +1,11 @@
 package com.ws.bitesmart.service.order;
 
+import com.alibaba.fastjson2.JSON;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.ws.bitesmart.common.enums.ResultCodeEnum;
 import com.ws.bitesmart.common.util.SnowflakeUtil;
+import com.ws.bitesmart.dto.order.ComboCustomizationSnapshot;
 import com.ws.bitesmart.entity.dish.Combo;
 import com.ws.bitesmart.entity.dish.ComboDishRel;
 import com.ws.bitesmart.entity.dish.Dish;
@@ -18,6 +20,7 @@ import com.ws.bitesmart.mapper.order.OrderItemMapper;
 import com.ws.bitesmart.mapper.order.OrdersMapper;
 import com.ws.bitesmart.mapper.order.ShoppingCartMapper;
 import com.ws.bitesmart.service.delivery.DeliveryTaskService;
+import com.ws.bitesmart.service.dish.ComboService;
 import com.ws.bitesmart.service.system.OperateLogService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -56,6 +59,7 @@ public class OrderService {
     private final DishMapper dishMapper;
     private final ComboMapper comboMapper;
     private final ComboDishRelMapper comboDishRelMapper;
+    private final ComboService comboService;
     private final OperateLogService operateLogService;
     private final DeliveryTaskService deliveryTaskService;
 
@@ -121,6 +125,7 @@ public class OrderService {
             BigDecimal protein = BigDecimal.ZERO;
             BigDecimal fat = BigDecimal.ZERO;
             BigDecimal carbs = BigDecimal.ZERO;
+            String snapshotNutritionJson = null;
 
             if (cart.getItemType() == 10) {
                 // 菜品：锁定库存（乐观锁，stock>=quantity才扣减）
@@ -144,8 +149,8 @@ public class OrderService {
                 Combo combo = comboMapper.findById(cart.getComboId());
                 if (combo == null) throw new BusinessException("套餐已下架或不存在");
 
-                List<ComboDishRel> rels = comboDishRelMapper.findByComboId(cart.getComboId());
-                for (ComboDishRel rel : rels) {
+                ComboCustomizationSnapshot snapshot = buildOrderComboSnapshot(cart);
+                for (ComboCustomizationSnapshot.SelectedDishItem rel : snapshot.getItems()) {
                     int locked = dishMapper.lockStock(rel.getDishId(), rel.getQuantity() * cart.getQuantity());
                     if (locked == 0) {
                         throw new BusinessException("套餐包含的菜品库存不足，请重新选择");
@@ -155,10 +160,11 @@ public class OrderService {
                 price = combo.getPrice();
                 name = combo.getComboName();
                 image = combo.getComboImage();
-                calories = combo.getTotalCalories();
-                protein = combo.getTotalProtein() != null ? combo.getTotalProtein() : BigDecimal.ZERO;
-                fat = combo.getTotalFat() != null ? combo.getTotalFat() : BigDecimal.ZERO;
-                carbs = combo.getTotalCarbs() != null ? combo.getTotalCarbs() : BigDecimal.ZERO;
+                calories = snapshot.getTotalCalories();
+                protein = snapshot.getTotalProtein() != null ? snapshot.getTotalProtein() : BigDecimal.ZERO;
+                fat = snapshot.getTotalFat() != null ? snapshot.getTotalFat() : BigDecimal.ZERO;
+                carbs = snapshot.getTotalCarbs() != null ? snapshot.getTotalCarbs() : BigDecimal.ZERO;
+                snapshotNutritionJson = JSON.toJSONString(snapshot);
             } else {
                 throw new BusinessException("商品类型错误");
             }
@@ -178,6 +184,7 @@ public class OrderService {
             item.setSnapshotProtein(protein);
             item.setSnapshotFat(fat);
             item.setSnapshotCarbs(carbs);
+            item.setSnapshotNutritionJson(snapshotNutritionJson);
             item.setQuantity(cart.getQuantity());
             item.setSubTotal(subTotal);
             orderItems.add(item);
@@ -287,6 +294,35 @@ public class OrderService {
      * 释放订单锁定的库存
      * 读取订单明细，对菜品直接释放，对套餐查关联菜品后逐个释放
      */
+    private ComboCustomizationSnapshot buildOrderComboSnapshot(ShoppingCart cart) {
+        List<ComboCustomizationSnapshot.ReplacementItem> replacements = List.of();
+        if (cart.getCustomizationJson() != null && !cart.getCustomizationJson().isEmpty()) {
+            ComboCustomizationSnapshot customization = JSON.parseObject(cart.getCustomizationJson(), ComboCustomizationSnapshot.class);
+            if (customization != null && customization.getReplacements() != null) {
+                replacements = customization.getReplacements();
+            }
+        }
+        return comboService.buildCustomizedSnapshot(cart.getComboId(), replacements);
+    }
+
+    private List<ComboCustomizationSnapshot.SelectedDishItem> resolveSnapshotItems(OrderItem item) {
+        if (item.getSnapshotNutritionJson() != null && !item.getSnapshotNutritionJson().isEmpty()) {
+            ComboCustomizationSnapshot snapshot = JSON.parseObject(item.getSnapshotNutritionJson(), ComboCustomizationSnapshot.class);
+            if (snapshot != null && snapshot.getItems() != null && !snapshot.getItems().isEmpty()) {
+                return snapshot.getItems();
+            }
+        }
+        List<ComboCustomizationSnapshot.SelectedDishItem> items = new ArrayList<>();
+        List<ComboDishRel> rels = comboDishRelMapper.findByComboId(item.getComboId());
+        for (ComboDishRel rel : rels) {
+            ComboCustomizationSnapshot.SelectedDishItem selected = new ComboCustomizationSnapshot.SelectedDishItem();
+            selected.setDishId(rel.getDishId());
+            selected.setQuantity(rel.getQuantity() == null ? 1 : rel.getQuantity());
+            items.add(selected);
+        }
+        return items;
+    }
+
     private void releaseLockedStock(Long orderId) {
         List<OrderItem> items = orderItemMapper.findByOrderId(orderId);
         for (OrderItem item : items) {
@@ -296,8 +332,7 @@ public class OrderService {
                 log.debug("释放锁定库存: dishId={}, quantity={}", item.getDishId(), item.getQuantity());
             } else if (item.getItemType() == 20 && item.getComboId() != null) {
                 // 套餐：释放关联菜品的库存
-                List<ComboDishRel> rels = comboDishRelMapper.findByComboId(item.getComboId());
-                for (ComboDishRel rel : rels) {
+                for (ComboCustomizationSnapshot.SelectedDishItem rel : resolveSnapshotItems(item)) {
                     int qty = rel.getQuantity() * item.getQuantity();
                     dishMapper.unlockStock(rel.getDishId(), qty);
                     log.debug("释放套餐锁定库存: dishId={}, quantity={}", rel.getDishId(), qty);

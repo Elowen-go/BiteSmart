@@ -31,7 +31,7 @@ export const acceptOrder = (id: number): Promise<any> => {
 }
 
 export const rejectOrder = (id: number, reason?: string): Promise<any> => {
-  return request.put(`/merchant/orders/${id}/reject`, { params: { reason } })
+  return request.put(`/merchant/orders/${id}/reject`, null, { params: { reason } })
 }
 
 export const prepareOrder = (id: number): Promise<any> => {

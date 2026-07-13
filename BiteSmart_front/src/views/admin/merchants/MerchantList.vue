@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { ElMessage } from 'element-plus'
 import { getMerchantList, auditMerchant, closeMerchant } from '../../../api/admin/merchants'
 
 const loading = ref(false)
@@ -7,6 +8,7 @@ const tableData = ref<any[]>([])
 const total = ref(0)
 const pageNum = ref(1)
 const pageSize = ref(10)
+const statusFilter = ref<number | undefined>()
 
 const auditDialogVisible = ref(false)
 const closeDialogVisible = ref(false)
@@ -17,7 +19,7 @@ const closeReason = ref('')
 const loadData = async () => {
   loading.value = true
   try {
-    const res = await getMerchantList({ pageNum: pageNum.value, pageSize: pageSize.value })
+    const res = await getMerchantList({ pageNum: pageNum.value, pageSize: pageSize.value, status: statusFilter.value })
     if (res.code === 200) {
       tableData.value = res.data.list || []
       total.value = res.data.total || 0
@@ -75,6 +77,11 @@ const submitClose = async () => {
   }
 }
 
+const handleFilterChange = () => {
+  pageNum.value = 1
+  loadData()
+}
+
 onMounted(loadData)
 </script>
 
@@ -82,17 +89,23 @@ onMounted(loadData)
   <div class="page-container">
     <div class="card-panel">
       <div class="card-header">
+        <el-select v-model="statusFilter" clearable placeholder="按状态筛选" size="small" style="width: 150px" @change="handleFilterChange">
+          <el-option label="待审核" :value="10" />
+          <el-option label="审核通过" :value="20" />
+          <el-option label="审核驳回" :value="30" />
+          <el-option label="已关闭" :value="40" />
+        </el-select>
         <h3>商家管理</h3>
       </div>
       <div style="padding-top: 20px;">
         <el-table :data="tableData" v-loading="loading" border stripe style="width: 100%">
           <el-table-column prop="shopName" label="商家名称" min-width="150" />
-          <el-table-column prop="phone" label="联系电话" width="130" />
-          <el-table-column prop="address" label="店铺地址" min-width="200" show-overflow-tooltip />
+          <el-table-column prop="contactPhone" label="联系电话" width="130" />
+          <el-table-column prop="shopAddress" label="店铺地址" min-width="200" show-overflow-tooltip />
           <el-table-column label="状态" width="100">
             <template #default="{ row }">
-              <el-tag :type="statusTypeMap[row.auditStatus] || 'info'" size="small">
-                {{ statusMap[row.auditStatus] || '未知' }}
+              <el-tag :type="statusTypeMap[row.status] || 'info'" size="small">
+                {{ statusMap[row.status] || '未知' }}
               </el-tag>
             </template>
           </el-table-column>
@@ -104,7 +117,7 @@ onMounted(loadData)
           <el-table-column label="操作" width="200" fixed="right">
             <template #default="{ row }">
               <el-button
-                v-if="row.auditStatus === 10"
+                v-if="row.status === 10"
                 size="small"
                 type="primary"
                 @click="openAuditDialog(row)"
@@ -112,14 +125,14 @@ onMounted(loadData)
                 审核
               </el-button>
               <el-button
-                v-if="row.auditStatus !== 40"
+                v-if="row.status === 20"
                 size="small"
                 type="danger"
                 @click="openCloseDialog(row)"
               >
                 关闭
               </el-button>
-              <span v-else style="color: #999; font-size: 13px;">已关闭</span>
+              <span v-if="row.status === 40" style="color: #999; font-size: 13px;">已关闭</span>
             </template>
           </el-table-column>
         </el-table>
@@ -140,7 +153,7 @@ onMounted(loadData)
     <el-dialog v-model="auditDialogVisible" title="商家审核" width="450px">
       <div style="margin-bottom: 16px;">
         <p><strong>商家名称：</strong>{{ currentRow?.shopName }}</p>
-        <p><strong>联系电话：</strong>{{ currentRow?.phone }}</p>
+        <p><strong>联系电话：</strong>{{ currentRow?.contactPhone }}</p>
       </div>
       <el-input
         v-model="auditRemark"

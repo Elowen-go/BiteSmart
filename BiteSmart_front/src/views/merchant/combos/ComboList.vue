@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { Plus, Delete, Refresh, Search } from '@element-plus/icons-vue'
 import { getComboList, getComboDetail, addCombo, updateCombo, deleteCombo, comboTypeOptions, suitableForOptions, type DishItem, type ComboRequest } from '../../../api/merchant/combos'
 import { getDishList } from '../../../api/merchant/dishes'
+import { uploadFile } from '../../../api/merchant/profile'
 
 const loading = ref(false)
 const comboList = ref<any[]>([])
@@ -14,6 +16,8 @@ const dialogTitle = ref('')
 const editingId = ref<number | null>(null)
 const viewDialogVisible = ref(false)
 const viewData = ref<any>(null)
+const searchKeyword = ref('')
+const statusFilter = ref<number | 'all'>('all')
 
 // 菜品列表
 const dishList = ref<any[]>([])
@@ -24,6 +28,9 @@ const selectedDishItems = ref<DishItem[]>([])
 
 /** 可替换菜品池（选中的菜品ID列表） */
 const replaceablePoolIds = ref<number[]>([])
+
+/** 套餐图片预览 */
+const comboImagePreview = ref('')
 
 /** 根据dishId获取菜品信息 */
 const getDishById = (dishId: number) => {
@@ -37,6 +44,7 @@ const selectedDishDetails = computed(() => {
     return {
       ...item,
       dishName: dish ? dish.dishName : `菜品${item.dishId}`,
+      dishImage: dish ? dish.dishImage : '',
       price: dish ? dish.price : 0,
       calories: dish ? dish.calories : 0,
       protein: dish ? dish.protein : 0,
@@ -44,6 +52,16 @@ const selectedDishDetails = computed(() => {
       carbs: dish ? dish.carbs : 0
     }
   })
+})
+
+const selectedDishAmount = computed(() => {
+  return selectedDishDetails.value.reduce((sum, item) => {
+    return sum + Number(item.price || 0) * Number(item.quantity || 1)
+  }, 0)
+})
+
+const replaceableDishCount = computed(() => {
+  return selectedDishItems.value.filter((item) => item.isFixed === 0).length
 })
 
 /** 自动计算营养数据 */
@@ -65,7 +83,43 @@ const availableDishes = computed(() => {
   return dishList.value.filter((d: any) => !selectedIds.has(d.id))
 })
 
-const form = ref({
+const filteredComboList = computed(() => {
+  return comboList.value.filter((item) => {
+    const keywordMatched = !searchKeyword.value || item.comboName?.includes(searchKeyword.value)
+    const statusMatched = statusFilter.value === 'all' || item.status === statusFilter.value
+    return keywordMatched && statusMatched
+  })
+})
+
+const comboStats = computed(() => {
+  const onSale = comboList.value.filter((item) => item.status === 10).length
+  const offSale = comboList.value.filter((item) => item.status !== 10).length
+  const replaceable = comboList.value.filter((item) => Number(item.maxReplaceCount || 0) > 0).length
+  const noNutrition = comboList.value.filter((item) => !item.totalCalories && !item.totalProtein && !item.totalFat && !item.totalCarbs).length
+
+  return [
+    { label: '上架套餐', value: onSale, hint: '用户可购买', className: 'success' },
+    { label: '下架套餐', value: offSale, hint: '暂不展示', className: 'muted' },
+    { label: '支持换菜', value: replaceable, hint: '可自定义套餐', className: 'warning' },
+    { label: '待补营养', value: noNutrition, hint: '缺少营养汇总', className: 'danger' }
+  ]
+})
+
+const form = ref<{
+  comboName: string
+  price: number
+  originalPrice: number
+  comboType: number
+  status: number
+  description: string
+  comboImage: string
+  totalCalories: number
+  totalProtein: number
+  totalFat: number
+  totalCarbs: number
+  maxReplaceCount: number
+  suitableFor: string | null
+}>({
   comboName: '',
   price: 0,
   originalPrice: 0,
@@ -78,8 +132,43 @@ const form = ref({
   totalFat: 0,
   totalCarbs: 0,
   maxReplaceCount: 0,
-  suitableFor: ''
+  suitableFor: null
 })
+
+const syncCalculatedFields = (syncPrice = false) => {
+  const amount = Number(selectedDishAmount.value.toFixed(2))
+  const nutrition = autoCalculatedNutrition.value
+
+  form.value.originalPrice = amount
+  form.value.totalCalories = Math.round(nutrition.calories || 0)
+  form.value.totalProtein = Number((nutrition.protein || 0).toFixed(2))
+  form.value.totalFat = Number((nutrition.fat || 0).toFixed(2))
+  form.value.totalCarbs = Number((nutrition.carbs || 0).toFixed(2))
+  form.value.maxReplaceCount = replaceableDishCount.value
+
+  if (replaceableDishCount.value === 0) {
+    replaceablePoolIds.value = []
+  }
+
+  if (syncPrice && (!form.value.price || form.value.price <= 0)) {
+    form.value.price = amount
+  }
+}
+
+watch(
+  () => [
+    selectedDishAmount.value,
+    autoCalculatedNutrition.value.calories,
+    autoCalculatedNutrition.value.protein,
+    autoCalculatedNutrition.value.fat,
+    autoCalculatedNutrition.value.carbs,
+    replaceableDishCount.value
+  ],
+  () => {
+    if (!dialogVisible.value || selectedDishItems.value.length === 0) return
+    syncCalculatedFields(!editingId.value)
+  }
+)
 
 // 获取菜品列表
 const fetchDishList = async () => {
@@ -131,6 +220,36 @@ const resetForm = () => {
   }
   selectedDishItems.value = []
   replaceablePoolIds.value = []
+  comboImagePreview.value = ''
+}
+
+const handleComboImageUpload = async (file: any) => {
+  const rawFile = file.raw || file
+  const reader = new FileReader()
+  reader.onload = async (e) => {
+    comboImagePreview.value = e.target?.result as string
+    try {
+      const res = await uploadFile(rawFile, 'combo')
+      if (res.code === 200) {
+        form.value.comboImage = res.data.url
+        ElMessage.success('图片上传成功')
+      } else {
+        ElMessage.error(res.message || '上传失败')
+        comboImagePreview.value = ''
+      }
+    } catch (e) {
+      ElMessage.error('上传失败')
+      comboImagePreview.value = ''
+      console.error('上传套餐图片失败', e)
+    }
+  }
+  reader.readAsDataURL(rawFile)
+  return false
+}
+
+const handleRemoveComboImage = () => {
+  form.value.comboImage = ''
+  comboImagePreview.value = ''
 }
 
 const handleAdd = () => {
@@ -166,10 +285,10 @@ const removeDish = (dishId: number) => {
   replaceablePoolIds.value = replaceablePoolIds.value.filter(id => id !== dishId)
 }
 
-const toggleFixed = (dishId: number) => {
+const setDishReplaceable = (dishId: number, replaceable: boolean) => {
   const item = selectedDishItems.value.find(i => i.dishId === dishId)
   if (item) {
-    item.isFixed = item.isFixed === 1 ? 0 : 1
+    item.isFixed = replaceable ? 0 : 1
   }
 }
 
@@ -204,8 +323,9 @@ const handleEdit = async (row: any) => {
         totalFat: combo.totalFat || 0,
         totalCarbs: combo.totalCarbs || 0,
         maxReplaceCount: combo.maxReplaceCount || 0,
-        suitableFor: combo.suitableFor || null
+        suitableFor: normalizeSuitableFor(combo.suitableFor)
       }
+      comboImagePreview.value = combo.comboImage ? `/api/files/download${combo.comboImage}` : ''
       selectedDishItems.value = dishItems || []
       // 初始化可替换菜品池
       if (combo.replaceableDishPool) {
@@ -218,6 +338,7 @@ const handleEdit = async (row: any) => {
   }
   
   dialogVisible.value = true
+  syncCalculatedFields(false)
 }
 
 const handleView = async (row: any) => {
@@ -265,14 +386,19 @@ const handleSubmit = async () => {
     ElMessage.warning('价格必须大于0')
     return
   }
+  if (selectedDishItems.value.length === 0) {
+    ElMessage.warning('请至少添加一个菜品')
+    return
+  }
 
   loading.value = true
   try {
+    syncCalculatedFields(!editingId.value)
     const comboRequest: ComboRequest = {
       combo: { 
         ...form.value,
-        suitableFor: form.value.suitableFor || null,
-        replaceableDishPool: replaceablePoolIds.value.length > 0 ? JSON.stringify(replaceablePoolIds.value) : null
+        suitableFor: normalizeSuitableFor(form.value.suitableFor) || undefined,
+        replaceableDishPool: replaceablePoolIds.value.length > 0 ? JSON.stringify(replaceablePoolIds.value) : undefined
       },
       dishItems: selectedDishItems.value
     }
@@ -331,6 +457,47 @@ const getDishName = (dishId: number) => {
   return dish ? dish.dishName : `菜品${dishId}`
 }
 
+const getDishImage = (dishId: number) => {
+  const dish = dishList.value.find(d => d.id == dishId)
+  return dish?.dishImage || ''
+}
+
+const getDishInitial = (dish: any) => {
+  return (dish?.dishName || '菜').slice(0, 1)
+}
+
+const formatAmount = (amount: number | string | undefined) => {
+  return Number(amount || 0).toFixed(2)
+}
+
+const formatDateTime = (dateTime: string) => {
+  if (!dateTime) return '-'
+  return dateTime.replace('T', ' ').slice(0, 16)
+}
+
+const normalizeSuitableFor = (value?: string | null): string | null => {
+  if (!value) return null
+
+  let current: any = value
+  for (let i = 0; i < 5; i += 1) {
+    if (typeof current !== 'string') break
+    try {
+      const parsed = JSON.parse(current)
+      if (parsed === current) break
+      current = parsed
+    } catch (e) {
+      break
+    }
+  }
+
+  if (Array.isArray(current)) return current.join('、')
+  return typeof current === 'string' ? current : String(current)
+}
+
+const formatSuitableFor = (value?: string) => {
+  return normalizeSuitableFor(value) || '未设置'
+}
+
 onMounted(() => {
   fetchList()
   fetchDishList()
@@ -339,13 +506,47 @@ onMounted(() => {
 
 <template>
   <div class="page-container">
-    <div class="card-panel">
-      <div class="card-header">
-        <h3>套餐管理</h3>
-        <button class="btn btn-primary" @click="handleAdd">添加套餐</button>
+    <div class="combo-page">
+      <div class="page-head">
+        <div>
+          <h2>套餐管理</h2>
+          <p>组合菜品，发布减脂、增肌、控糖等健康套餐</p>
+        </div>
+        <div class="head-actions">
+          <el-button :icon="Refresh" :loading="loading" @click="fetchList">刷新</el-button>
+          <el-button type="primary" :icon="Plus" @click="handleAdd">添加套餐</el-button>
+        </div>
       </div>
-      <div style="padding-top: 20px;">
-        <el-table :data="comboList" border v-loading="loading">
+
+      <div class="summary-grid">
+        <div v-for="item in comboStats" :key="item.label" class="summary-item" :class="item.className">
+          <span>{{ item.label }}</span>
+          <strong>{{ item.value }}</strong>
+          <em>{{ item.hint }}</em>
+        </div>
+      </div>
+
+      <div class="card-panel combo-panel">
+        <div class="toolbar">
+          <el-input
+            v-model="searchKeyword"
+            :prefix-icon="Search"
+            clearable
+            placeholder="搜索套餐名称"
+            class="search-input"
+          />
+          <el-segmented
+            v-model="statusFilter"
+            :options="[
+              { label: '全部', value: 'all' },
+              { label: '上架', value: 10 },
+              { label: '下架', value: 20 }
+            ]"
+          />
+          <span class="toolbar-count">当前 {{ filteredComboList.length }} 个套餐</span>
+        </div>
+
+        <el-table :data="filteredComboList" v-loading="loading" empty-text="暂无符合条件的套餐">
           <el-table-column label="套餐" min-width="200">
             <template #default="{ row }">
               <div class="combo-info">
@@ -354,21 +555,31 @@ onMounted(() => {
                 <div class="combo-name-wrapper">
                   <span class="combo-name">{{ row.comboName }}</span>
                   <el-tag size="small" type="info" class="combo-type-tag">{{ getComboTypeLabel(row.comboType) }}</el-tag>
+                  <span class="sub-text">{{ formatSuitableFor(row.suitableFor) }}</span>
                 </div>
               </div>
             </template>
           </el-table-column>
-          <el-table-column prop="price" label="价格" width="120">
+          <el-table-column prop="price" label="价格" width="130" align="right">
             <template #default="{ row }">
               <div class="price-wrapper">
-                <span class="current-price">¥{{ row.price }}</span>
+                <span class="current-price">¥{{ formatAmount(row.price) }}</span>
                 <span v-if="row.originalPrice && row.originalPrice > row.price" class="original-price">¥{{ row.originalPrice }}</span>
               </div>
             </template>
           </el-table-column>
-          <el-table-column prop="totalCalories" label="热量" width="100">
+          <el-table-column prop="totalCalories" label="营养汇总" min-width="190">
             <template #default="{ row }">
-              {{ row.totalCalories || 0 }} kcal
+              <div class="nutrition-brief">{{ row.totalCalories || 0 }} 千卡</div>
+              <div class="sub-text">蛋白 {{ row.totalProtein || 0 }}g / 脂肪 {{ row.totalFat || 0 }}g / 碳水 {{ row.totalCarbs || 0 }}g</div>
+            </template>
+          </el-table-column>
+          <el-table-column prop="maxReplaceCount" label="换菜" width="110">
+            <template #default="{ row }">
+              <el-tag v-if="Number(row.maxReplaceCount || 0) > 0" type="warning" effect="plain">
+                可换 {{ row.maxReplaceCount }}
+              </el-tag>
+              <el-tag v-else type="info" effect="plain">固定</el-tag>
             </template>
           </el-table-column>
           <el-table-column prop="status" label="状态" width="100">
@@ -376,8 +587,11 @@ onMounted(() => {
               <el-tag :type="getStatusTag(row.status)">{{ getStatusLabel(row.status) }}</el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="createTime" label="创建时间" width="180" />
-          <el-table-column label="操作" width="220" fixed="right">
+          <el-table-column prop="salesCount" label="销量" width="90" />
+          <el-table-column prop="createTime" label="创建时间" width="170">
+            <template #default="{ row }">{{ formatDateTime(row.createTime) }}</template>
+          </el-table-column>
+          <el-table-column label="操作" width="220" fixed="right" align="right">
             <template #default="{ row }">
               <el-button size="small" @click="handleView(row)">查看</el-button>
               <el-button size="small" type="primary" @click="handleEdit(row)">编辑</el-button>
@@ -385,7 +599,7 @@ onMounted(() => {
             </template>
           </el-table-column>
         </el-table>
-        <div style="display: flex; justify-content: flex-end; margin-top: 20px;">
+        <div class="pagination-row">
           <el-pagination
             v-if="total > 0"
             :current-page="page"
@@ -400,7 +614,7 @@ onMounted(() => {
       </div>
     </div>
 
-    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="700px" destroy-on-close>
+    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="880px" destroy-on-close>
       <el-form :model="form" label-width="120px">
         <el-row :gutter="20">
           <el-col :span="12">
@@ -431,6 +645,9 @@ onMounted(() => {
           <el-col :span="12">
             <el-form-item label="原价">
               <el-input-number v-model="form.originalPrice" :min="0" :precision="2" style="width: 100%;" />
+              <span v-if="selectedDishAmount > 0" class="nutrition-hint">
+                已同步菜品原价: ¥{{ formatAmount(selectedDishAmount) }}
+              </span>
             </el-form-item>
           </el-col>
         </el-row>
@@ -446,7 +663,10 @@ onMounted(() => {
           </el-col>
           <el-col :span="12">
             <el-form-item label="最大替换数量">
-              <el-input-number v-model="form.maxReplaceCount" :min="0" :max="10" style="width: 100%;" />
+              <el-input-number v-model="form.maxReplaceCount" :min="0" :max="10" disabled style="width: 100%;" />
+              <span class="nutrition-hint">
+                已按可替换菜品数同步：{{ replaceableDishCount }} 个
+              </span>
             </el-form-item>
           </el-col>
         </el-row>
@@ -456,7 +676,7 @@ onMounted(() => {
             <el-form-item label="总热量 (kcal)">
               <el-input-number v-model="form.totalCalories" :min="0" :precision="0" style="width: 100%;" />
               <span v-if="autoCalculatedNutrition.calories > 0" class="nutrition-hint">
-                自动计算: {{ Math.round(autoCalculatedNutrition.calories) }} kcal
+                已同步: {{ Math.round(autoCalculatedNutrition.calories) }} kcal
               </span>
             </el-form-item>
           </el-col>
@@ -464,7 +684,7 @@ onMounted(() => {
             <el-form-item label="蛋白质 (g)">
               <el-input-number v-model="form.totalProtein" :min="0" :precision="2" style="width: 100%;" />
               <span v-if="autoCalculatedNutrition.protein > 0" class="nutrition-hint">
-                自动计算: {{ autoCalculatedNutrition.protein.toFixed(2) }} g
+                已同步: {{ autoCalculatedNutrition.protein.toFixed(2) }} g
               </span>
             </el-form-item>
           </el-col>
@@ -475,7 +695,7 @@ onMounted(() => {
             <el-form-item label="脂肪 (g)">
               <el-input-number v-model="form.totalFat" :min="0" :precision="2" style="width: 100%;" />
               <span v-if="autoCalculatedNutrition.fat > 0" class="nutrition-hint">
-                自动计算: {{ autoCalculatedNutrition.fat.toFixed(2) }} g
+                已同步: {{ autoCalculatedNutrition.fat.toFixed(2) }} g
               </span>
             </el-form-item>
           </el-col>
@@ -483,7 +703,7 @@ onMounted(() => {
             <el-form-item label="碳水 (g)">
               <el-input-number v-model="form.totalCarbs" :min="0" :precision="2" style="width: 100%;" />
               <span v-if="autoCalculatedNutrition.carbs > 0" class="nutrition-hint">
-                自动计算: {{ autoCalculatedNutrition.carbs.toFixed(2) }} g
+                已同步: {{ autoCalculatedNutrition.carbs.toFixed(2) }} g
               </span>
             </el-form-item>
           </el-col>
@@ -500,8 +720,24 @@ onMounted(() => {
           </el-select>
         </el-form-item>
 
-        <el-form-item label="图片URL">
-          <el-input v-model="form.comboImage" placeholder="请输入图片URL" />
+        <el-form-item label="套餐图片">
+          <div class="combo-image-upload">
+            <img v-if="comboImagePreview" :src="comboImagePreview" alt="套餐图片" class="combo-image-preview" />
+            <el-upload
+              v-else
+              class="combo-image-uploader"
+              :before-upload="handleComboImageUpload"
+              accept="image/*"
+            >
+              <div class="upload-hint">
+                <el-icon class="el-icon--plus"><Plus /></el-icon>
+                <span>点击上传图片</span>
+              </div>
+            </el-upload>
+            <button v-if="comboImagePreview" class="remove-image-btn" @click="handleRemoveComboImage">
+              <Delete style="width: 16px; height: 16px;" />
+            </button>
+          </div>
         </el-form-item>
 
         <el-form-item label="套餐描述">
@@ -510,17 +746,43 @@ onMounted(() => {
 
         <el-form-item label="关联菜品">
           <div class="dish-select-area">
+            <div class="combo-builder-summary">
+              <div>
+                <span>菜品原价</span>
+                <strong>¥{{ formatAmount(selectedDishAmount) }}</strong>
+              </div>
+              <div>
+                <span>套餐售价</span>
+                <strong>¥{{ formatAmount(form.price) }}</strong>
+              </div>
+              <div>
+                <span>总热量</span>
+                <strong>{{ Math.round(autoCalculatedNutrition.calories || 0) }} 千卡</strong>
+              </div>
+              <div>
+                <span>营养</span>
+                <strong>{{ autoCalculatedNutrition.protein.toFixed(1) }} / {{ autoCalculatedNutrition.fat.toFixed(1) }} / {{ autoCalculatedNutrition.carbs.toFixed(1) }}g</strong>
+              </div>
+            </div>
+
             <!-- 添加菜品按钮 -->
             <div class="add-dish-row">
-              <el-select ref="dishSelectRef" class="dish-add-select" placeholder="添加菜品到套餐" @change="addDish" size="small" clearable>
+              <el-select ref="dishSelectRef" class="dish-add-select" popper-class="dish-option-popper" placeholder="添加菜品到套餐" @change="addDish" size="small" clearable>
                 <el-option
                   v-for="dish in availableDishes"
                   :key="dish.id"
                   :label="dish.dishName"
                   :value="dish.id"
                 >
-                  <span>{{ dish.dishName }}</span>
-                  <span style="float: right; color: #909399; font-size: 12px;">¥{{ dish.price }}</span>
+                  <div class="dish-option">
+                    <img v-if="dish.dishImage" :src="getImageUrl(dish.dishImage)" class="dish-option-image" alt="菜品图片" />
+                    <div v-else class="dish-option-placeholder">{{ getDishInitial(dish) }}</div>
+                    <div class="dish-option-main">
+                      <span class="dish-option-name">{{ dish.dishName }}</span>
+                      <span class="dish-option-meta">{{ dish.calories || 0 }} 千卡 · 蛋白 {{ dish.protein || 0 }}g</span>
+                    </div>
+                    <span class="dish-option-price">¥{{ formatAmount(dish.price) }}</span>
+                  </div>
                 </el-option>
               </el-select>
               <el-tag type="info" class="dish-count-tag">已选 {{ selectedDishItems.length }} 个</el-tag>
@@ -534,18 +796,29 @@ onMounted(() => {
                 <span class="col-fixed">可替换</span>
                 <span class="col-action">操作</span>
               </div>
-              <div v-for="(item, index) in selectedDishItems" :key="item.dishId" class="dish-table-row">
-                <span class="col-name">{{ getDishName(item.dishId) }}</span>
+              <div v-for="item in selectedDishDetails" :key="item.dishId" class="dish-table-row">
+                <span class="col-name">
+                  <span class="dish-mini-card">
+                    <img v-if="item.dishImage" :src="getImageUrl(item.dishImage)" class="dish-mini-image" alt="菜品图片" />
+                    <span v-else class="dish-mini-placeholder">{{ getDishInitial(item) }}</span>
+                    <span class="dish-mini-main">
+                      <span class="dish-mini-name">{{ item.dishName }}</span>
+                      <span class="dish-mini-meta">¥{{ formatAmount(item.price) }} · {{ item.calories || 0 }} 千卡</span>
+                    </span>
+                  </span>
+                </span>
                 <span class="col-qty">
-                  <el-input-number v-model="selectedDishItems[index].quantity" :min="1" :max="99" size="small" controls-position="right" style="width: 100px;" />
+                  <el-input-number v-model="item.quantity" :min="1" :max="99" size="small" controls-position="right" style="width: 100px;" />
                 </span>
                 <span class="col-fixed">
-                  <el-switch
-                    :model-value="selectedDishItems[index].isFixed === 0"
-                    @change="toggleFixed(item.dishId)"
-                    active-text="可换"
-                    inactive-text="固定"
+                  <el-segmented
+                    :model-value="item.isFixed === 0 ? 'replaceable' : 'fixed'"
+                    :options="[
+                      { label: '固定', value: 'fixed' },
+                      { label: '可换', value: 'replaceable' }
+                    ]"
                     size="small"
+                    @update:model-value="(value) => setDishReplaceable(item.dishId, value === 'replaceable')"
                   />
                 </span>
                 <span class="col-action">
@@ -564,14 +837,34 @@ onMounted(() => {
               <el-tag size="small" type="warning" effect="plain">套餐中 {{ selectedDishItems.filter(i => i.isFixed === 0).length }} 个菜品可替换</el-tag>
             </div>
             <p class="pool-hint">选择允许替换入的菜品（顾客可将套餐中可替换菜品换成以下菜品）：</p>
-            <el-select v-model="replaceablePoolIds" multiple placeholder="选择可替换的菜品" style="width: 100%;" collapse-tags collapse-tags-tooltip>
+            <el-select v-model="replaceablePoolIds" multiple popper-class="dish-option-popper" placeholder="选择可替换的菜品" style="width: 100%;" collapse-tags collapse-tags-tooltip>
               <el-option
                 v-for="dish in dishList"
                 :key="dish.id"
                 :label="dish.dishName"
                 :value="dish.id"
-              />
+              >
+                <div class="dish-option">
+                  <img v-if="dish.dishImage" :src="getImageUrl(dish.dishImage)" class="dish-option-image" alt="菜品图片" />
+                  <div v-else class="dish-option-placeholder">{{ getDishInitial(dish) }}</div>
+                  <div class="dish-option-main">
+                    <span class="dish-option-name">{{ dish.dishName }}</span>
+                    <span class="dish-option-meta">{{ dish.calories || 0 }} 千卡 · 脂肪 {{ dish.fat || 0 }}g · 碳水 {{ dish.carbs || 0 }}g</span>
+                  </div>
+                  <span class="dish-option-price">¥{{ formatAmount(dish.price) }}</span>
+                </div>
+              </el-option>
             </el-select>
+            <div v-if="replaceablePoolIds.length > 0" class="replaceable-preview-grid">
+              <div v-for="id in replaceablePoolIds" :key="id" class="replaceable-preview-card">
+                <img v-if="getDishImage(id)" :src="getImageUrl(getDishImage(id))" class="replaceable-preview-image" alt="菜品图片" />
+                <div v-else class="replaceable-preview-placeholder">{{ getDishName(id).slice(0, 1) }}</div>
+                <div class="replaceable-preview-main">
+                  <span>{{ getDishName(id) }}</span>
+                  <small>可替换入套餐</small>
+                </div>
+              </div>
+            </div>
           </div>
         </el-form-item>
       </el-form>
@@ -614,8 +907,15 @@ onMounted(() => {
           <h4>关联菜品 ({{ viewData.dishItems?.length || 0 }}个)</h4>
           <div v-if="viewData.dishItems && viewData.dishItems.length > 0" class="view-dish-table">
             <div class="view-dish-row" v-for="item in viewData.dishItems" :key="item.dishId">
-              <span>{{ getDishName(item.dishId) }}</span>
-              <el-tag size="small" :type="item.isFixed === 1 ? '' : 'warning'" effect="plain">
+              <span class="dish-mini-card">
+                <img v-if="getDishImage(item.dishId)" :src="getImageUrl(getDishImage(item.dishId))" class="dish-mini-image" alt="菜品图片" />
+                <span v-else class="dish-mini-placeholder">{{ getDishName(item.dishId).slice(0, 1) }}</span>
+                <span class="dish-mini-main">
+                  <span class="dish-mini-name">{{ getDishName(item.dishId) }}</span>
+                  <span class="dish-mini-meta">{{ getDishById(item.dishId)?.calories || 0 }} 千卡 · ¥{{ formatAmount(getDishById(item.dishId)?.price) }}</span>
+                </span>
+              </span>
+              <el-tag size="small" :type="item.isFixed === 1 ? undefined : 'warning'" effect="plain">
                 {{ item.isFixed === 1 ? '固定' : '可替换' }}
               </el-tag>
               <span class="view-dish-qty">x{{ item.quantity || 1 }}</span>
@@ -626,16 +926,15 @@ onMounted(() => {
         
         <div class="view-section" v-if="viewData.combo?.replaceableDishPool">
           <h4>可替换菜品池</h4>
-          <div class="dish-tags">
-            <el-tag 
-              v-for="id in JSON.parse(viewData.combo.replaceableDishPool || '[]')" 
-              :key="id" 
-              size="small" 
-              type="warning"
-              class="dish-tag"
-            >
-              {{ getDishName(id) }}
-            </el-tag>
+          <div class="replaceable-preview-grid">
+            <div v-for="id in JSON.parse(viewData.combo.replaceableDishPool || '[]')" :key="id" class="replaceable-preview-card">
+              <img v-if="getDishImage(id)" :src="getImageUrl(getDishImage(id))" class="replaceable-preview-image" alt="菜品图片" />
+              <div v-else class="replaceable-preview-placeholder">{{ getDishName(id).slice(0, 1) }}</div>
+              <div class="replaceable-preview-main">
+                <span>{{ getDishName(id) }}</span>
+                <small>{{ getDishById(id)?.calories || 0 }} 千卡 · ¥{{ formatAmount(getDishById(id)?.price) }}</small>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -656,11 +955,117 @@ onMounted(() => {
   to { opacity: 1; transform: translateY(0); }
 }
 
+.combo-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.page-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.page-head h2 {
+  margin: 0;
+  color: var(--bs-text-title);
+  font-size: 20px;
+  font-weight: 650;
+}
+
+.page-head p {
+  margin-top: 4px;
+  color: var(--bs-text-muted);
+  font-size: 13px;
+}
+
+.head-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.summary-item {
+  min-height: 104px;
+  padding: 16px;
+  background: #fff;
+  border: 1px solid var(--bs-border-light);
+  border-radius: var(--bs-radius-md);
+  box-shadow: var(--bs-card-shadow);
+}
+
+.summary-item span,
+.summary-item em {
+  display: block;
+  color: var(--bs-text-muted);
+  font-size: 13px;
+  font-style: normal;
+}
+
+.summary-item strong {
+  display: block;
+  margin: 6px 0 4px;
+  color: var(--bs-text-title);
+  font-size: 28px;
+  line-height: 1.1;
+}
+
+.summary-item.success {
+  border-left: 3px solid #1b6b4a;
+}
+
+.summary-item.warning {
+  border-left: 3px solid #b76e2a;
+}
+
+.summary-item.danger {
+  border-left: 3px solid var(--bs-status-danger);
+}
+
+.summary-item.muted {
+  border-left: 3px solid #8a9299;
+}
+
 .card-panel {
   background: var(--bs-card-bg);
   border-radius: var(--bs-radius-md);
   box-shadow: var(--bs-card-shadow);
   padding: var(--bs-spacing-lg);
+}
+
+.combo-panel {
+  padding-top: 16px;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.search-input {
+  width: 260px;
+}
+
+.toolbar-count {
+  margin-left: auto;
+  color: var(--bs-text-muted);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.pagination-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 20px;
 }
 
 .card-header {
@@ -734,6 +1139,11 @@ onMounted(() => {
   color: var(--bs-text-title);
 }
 
+.sub-text {
+  color: var(--bs-text-muted);
+  font-size: 12px;
+}
+
 .combo-type-tag {
   width: fit-content;
 }
@@ -746,7 +1156,7 @@ onMounted(() => {
 
 .current-price {
   font-weight: 600;
-  color: #f56c6c;
+  color: var(--bs-text-title);
 }
 
 .original-price {
@@ -755,9 +1165,45 @@ onMounted(() => {
   text-decoration: line-through;
 }
 
+.nutrition-brief {
+  color: var(--bs-text-title);
+  font-weight: 600;
+}
+
 /* 菜品选择区域 */
 .dish-select-area {
   width: 100%;
+}
+
+.combo-builder-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.combo-builder-summary > div {
+  padding: 12px;
+  background: var(--bs-bg-hover);
+  border: 1px solid var(--bs-border-light);
+  border-radius: var(--bs-radius-md);
+}
+
+.combo-builder-summary span,
+.combo-builder-summary strong {
+  display: block;
+}
+
+.combo-builder-summary span {
+  color: var(--bs-text-muted);
+  font-size: 12px;
+}
+
+.combo-builder-summary strong {
+  margin-top: 4px;
+  color: var(--bs-text-title);
+  font-size: 15px;
+  font-weight: 600;
 }
 
 .add-dish-row {
@@ -773,6 +1219,103 @@ onMounted(() => {
 
 .dish-count-tag {
   flex-shrink: 0;
+}
+
+.dish-option {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  height: 48px;
+  min-height: 48px;
+  padding: 0 26px 0 0;
+  box-sizing: border-box;
+}
+
+/* 下拉项默认高度只有 34px，无法容纳图片和两行营养信息 */
+:global(.dish-option-popper .el-select-dropdown__item) {
+  height: 64px !important;
+  min-height: 64px !important;
+  line-height: normal !important;
+  padding: 5px 12px;
+  box-sizing: border-box;
+  overflow: hidden !important;
+}
+
+:global(.dish-option-popper .el-select-dropdown__item.hover),
+:global(.dish-option-popper .el-select-dropdown__item:hover) {
+  background: #f4f7f6;
+}
+
+/* 菜品信息较多，给价格和右侧选中状态留出足够空间 */
+:global(.dish-option-popper) {
+  min-width: 620px !important;
+}
+
+:global(.dish-option-popper .dish-option) {
+  height: 52px;
+  min-height: 52px;
+}
+
+:global(.dish-option-popper .dish-option-image),
+:global(.dish-option-popper .dish-option-placeholder) {
+  width: 48px;
+  height: 48px;
+  flex-basis: 48px;
+}
+
+.dish-option-image,
+.dish-option-placeholder {
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  border-radius: 6px;
+}
+
+.dish-option-image {
+  object-fit: cover;
+  border: 1px solid var(--bs-border-light);
+}
+
+.dish-option-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #eef3f0;
+  color: var(--bs-primary);
+  font-weight: 600;
+}
+
+.dish-option-main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.dish-option-name {
+  color: var(--bs-text-title);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dish-option-meta {
+  color: var(--bs-text-muted);
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dish-option-price {
+  align-self: center;
+  white-space: nowrap;
+  color: var(--bs-text-title);
+  font-weight: 600;
+  font-size: 13px;
 }
 
 .selected-dish-table {
@@ -803,10 +1346,66 @@ onMounted(() => {
   background: #fafafa;
 }
 
-.col-name { flex: 1; font-weight: 500; }
+.col-name { flex: 1; min-width: 0; font-weight: 500; }
 .col-qty { width: 120px; }
-.col-fixed { width: 120px; }
+.col-fixed { width: 150px; }
 .col-action { width: 60px; text-align: right; }
+
+.dish-mini-card {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.dish-mini-image,
+.dish-mini-placeholder {
+  width: 46px;
+  height: 46px;
+  flex: 0 0 46px;
+  border-radius: 6px;
+}
+
+.dish-mini-image {
+  object-fit: cover;
+  border: 1px solid var(--bs-border-light);
+}
+
+.dish-mini-placeholder {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #eef3f0;
+  color: var(--bs-primary);
+  font-weight: 600;
+}
+
+.dish-mini-main {
+  min-width: 0;
+  display: inline-flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.dish-mini-name,
+.dish-mini-meta {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dish-mini-name {
+  color: var(--bs-text-title);
+  font-weight: 600;
+}
+
+.dish-mini-meta {
+  color: var(--bs-text-muted);
+  font-size: 12px;
+  font-weight: 400;
+}
 
 .replaceable-pool-section {
   margin-top: 12px;
@@ -828,6 +1427,69 @@ onMounted(() => {
   font-size: 12px;
   color: #909399;
   margin: 0 0 8px 0;
+}
+
+.replaceable-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.replaceable-preview-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 10px;
+  background: #fff;
+  border: 1px solid var(--bs-border-light);
+  border-radius: 8px;
+}
+
+.replaceable-preview-image,
+.replaceable-preview-placeholder {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  border-radius: 6px;
+}
+
+.replaceable-preview-image {
+  object-fit: cover;
+}
+
+.replaceable-preview-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff4e5;
+  color: #b76e2a;
+  font-weight: 600;
+}
+
+.replaceable-preview-main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.replaceable-preview-main span,
+.replaceable-preview-main small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.replaceable-preview-main span {
+  color: var(--bs-text-title);
+  font-weight: 600;
+}
+
+.replaceable-preview-main small {
+  color: var(--bs-text-muted);
+  font-size: 12px;
 }
 
 /* 查看弹窗 - 菜品列表 */
@@ -938,5 +1600,95 @@ onMounted(() => {
   font-size: 12px;
   color: #67c23a;
   margin-left: 8px;
+}
+
+.combo-image-upload {
+  position: relative;
+  width: 180px;
+  height: 180px;
+}
+
+.combo-image-preview {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.combo-image-uploader {
+  width: 100%;
+  height: 100%;
+  border: 2px dashed #d9d9d9;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.combo-image-uploader:hover {
+  border-color: var(--bs-primary);
+}
+
+.upload-hint {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: #909399;
+  font-size: 14px;
+}
+
+.remove-image-btn {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #f56c6c;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.remove-image-btn:hover {
+  background: #f78989;
+}
+
+@media (max-width: 1100px) {
+  .summary-grid,
+  .combo-builder-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .page-head,
+  .toolbar,
+  .add-dish-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .head-actions,
+  .search-input,
+  .dish-add-select {
+    width: 100%;
+  }
+
+  .summary-grid,
+  .combo-builder-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .toolbar-count {
+    margin-left: 0;
+  }
 }
 </style>

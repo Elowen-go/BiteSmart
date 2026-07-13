@@ -1,15 +1,23 @@
 package com.ws.bitesmart.service.order;
 
+import com.alibaba.fastjson2.JSON;
 import com.ws.bitesmart.common.enums.ResultCodeEnum;
 import com.ws.bitesmart.common.util.SnowflakeUtil;
+import com.ws.bitesmart.dto.order.ComboCustomizationSnapshot;
 import com.ws.bitesmart.entity.order.ShoppingCart;
+import com.ws.bitesmart.entity.dish.Combo;
+import com.ws.bitesmart.entity.dish.Dish;
 import com.ws.bitesmart.exception.BusinessException;
 import com.ws.bitesmart.mapper.order.ShoppingCartMapper;
+import com.ws.bitesmart.service.dish.ComboService;
+import com.ws.bitesmart.mapper.dish.ComboMapper;
+import com.ws.bitesmart.mapper.dish.DishMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -25,10 +33,31 @@ import java.util.List;
 public class ShoppingCartService {
 
     private final ShoppingCartMapper shoppingCartMapper;
+    private final ComboService comboService;
+    private final DishMapper dishMapper;
+    private final ComboMapper comboMapper;
 
     /** 查用户购物车列表 */
     public List<ShoppingCart> findByUserId(Long userId) {
-        return shoppingCartMapper.findByUserId(userId);
+        List<ShoppingCart> items = shoppingCartMapper.findByUserId(userId);
+        for (ShoppingCart item : items) {
+            if (item.getItemType() != null && item.getItemType() == 10 && item.getDishId() != null) {
+                Dish dish = dishMapper.findById(item.getDishId());
+                if (dish != null) {
+                    item.setDishName(dish.getDishName());
+                    item.setDishImage(dish.getDishImage());
+                    item.setPrice(dish.getPrice());
+                }
+            } else if (item.getItemType() != null && item.getItemType() == 20 && item.getComboId() != null) {
+                Combo combo = comboMapper.findById(item.getComboId());
+                if (combo != null) {
+                    item.setComboName(combo.getComboName());
+                    item.setComboImage(combo.getComboImage());
+                    item.setPrice(combo.getPrice());
+                }
+            }
+        }
+        return items;
     }
 
     /**
@@ -94,5 +123,47 @@ public class ShoppingCartService {
             throw new BusinessException(ResultCodeEnum.NOT_FOUND, "购物车商品不存在");
         }
         shoppingCartMapper.updateSelected(id, selected);
+    }
+
+    @Transactional
+    public ComboCustomizationSnapshot replaceComboDish(Long id, Long userId, Long oldDishId, Long newDishId) {
+        ShoppingCart cart = shoppingCartMapper.findById(id);
+        if (cart == null || !cart.getUserId().equals(userId)) {
+            throw new BusinessException(ResultCodeEnum.NOT_FOUND, "璐墿杞﹀晢鍝佷笉瀛樺湪");
+        }
+        if (cart.getItemType() == null || cart.getItemType() != 20 || cart.getComboId() == null) {
+            throw new BusinessException("只有套餐支持换菜");
+        }
+
+        List<ComboCustomizationSnapshot.ReplacementItem> replacements = loadReplacements(cart.getCustomizationJson());
+        boolean updated = false;
+        for (ComboCustomizationSnapshot.ReplacementItem item : replacements) {
+            if (item.getOldDishId().equals(oldDishId)) {
+                item.setNewDishId(newDishId);
+                updated = true;
+                break;
+            }
+        }
+        if (!updated) {
+            ComboCustomizationSnapshot.ReplacementItem item = new ComboCustomizationSnapshot.ReplacementItem();
+            item.setOldDishId(oldDishId);
+            item.setNewDishId(newDishId);
+            replacements.add(item);
+        }
+
+        ComboCustomizationSnapshot snapshot = comboService.buildCustomizedSnapshot(cart.getComboId(), replacements);
+        shoppingCartMapper.updateCustomization(id, JSON.toJSONString(snapshot));
+        return snapshot;
+    }
+
+    private List<ComboCustomizationSnapshot.ReplacementItem> loadReplacements(String customizationJson) {
+        if (customizationJson == null || customizationJson.isEmpty()) {
+            return new ArrayList<>();
+        }
+        ComboCustomizationSnapshot snapshot = JSON.parseObject(customizationJson, ComboCustomizationSnapshot.class);
+        if (snapshot == null || snapshot.getReplacements() == null) {
+            return new ArrayList<>();
+        }
+        return new ArrayList<>(snapshot.getReplacements());
     }
 }

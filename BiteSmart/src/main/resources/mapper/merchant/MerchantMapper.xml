@@ -43,6 +43,8 @@
         <set>
             <if test="shopName != null">shop_name = #{shopName},</if>
             <if test="shopLogo != null">shop_logo = #{shopLogo},</if>
+            <if test="businessLicense != null">business_license = #{businessLicense},</if>
+            <if test="licenseNumber != null">license_number = #{licenseNumber},</if>
             <if test="contactName != null">contact_name = #{contactName},</if>
             <if test="contactPhone != null">contact_phone = #{contactPhone},</if>
             <if test="shopAddress != null">shop_address = #{shopAddress},</if>

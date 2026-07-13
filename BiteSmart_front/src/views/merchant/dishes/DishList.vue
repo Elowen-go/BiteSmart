@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Upload, Delete, Plus, Minus } from '@element-plus/icons-vue'
+import { Upload, Delete, Plus, Minus, Refresh, Search } from '@element-plus/icons-vue'
 import { getDishList, addDish, updateDish, deleteDish, getDishDetail } from '../../../api/merchant/dishes'
 import { uploadFile } from '../../../api/merchant/shop'
 import { getMerchantIngredientList, getMerchantIngredientCategories } from '../../../api/merchant/ingredients'
+import { getCategoryList } from '../../../api/merchant/categories'
 import type { Dish } from '../../../api/merchant/dishes'
+import type { DishCategory } from '../../../api/merchant/categories'
 
 const loading = ref(false)
 const dishList = ref<Dish[]>([])
@@ -18,6 +20,9 @@ const formRef = ref()
 const editingId = ref<number | null>(null)
 const viewDialogVisible = ref(false)
 const viewForm = ref<any>({})
+const searchKeyword = ref('')
+const statusFilter = ref<number | 'all'>('all')
+const categoryList = ref<DishCategory[]>([])
 
 const form = ref({
   dishName: '',
@@ -27,7 +32,10 @@ const form = ref({
   description: '',
   categoryId: 0,
   dishImage: '',
-  calories: 0
+  calories: 0,
+  protein: 0,
+  fat: 0,
+  carbs: 0
 })
 
 const imagePreview = ref('')
@@ -47,6 +55,28 @@ const filteredIngredients = computed(() => {
   return ingredientList.value.filter(ing => ing.categoryName === selectedCategory.value)
 })
 
+const filteredDishList = computed(() => {
+  return dishList.value.filter((item) => {
+    const keywordMatched = !searchKeyword.value || item.dishName?.includes(searchKeyword.value)
+    const statusMatched = statusFilter.value === 'all' || item.status === statusFilter.value
+    return keywordMatched && statusMatched
+  })
+})
+
+const dishStats = computed(() => {
+  const onSale = dishList.value.filter((item) => item.status === 10).length
+  const offSale = dishList.value.filter((item) => item.status !== 10).length
+  const lowStock = dishList.value.filter((item) => Number(item.stock || 0) <= 5).length
+  const noNutrition = dishList.value.filter((item) => !item.calories && !item.protein && !item.fat && !item.carbs).length
+
+  return [
+    { label: '上架菜品', value: onSale, hint: '当前可售', className: 'success' },
+    { label: '下架菜品', value: offSale, hint: '暂不售卖', className: 'muted' },
+    { label: '低库存', value: lowStock, hint: '库存不高于 5', className: 'warning' },
+    { label: '待补营养', value: noNutrition, hint: '缺少营养数据', className: 'danger' }
+  ]
+})
+
 const fetchList = async () => {
   loading.value = true
   try {
@@ -64,10 +94,22 @@ const fetchList = async () => {
   }
 }
 
+const fetchCategories = async () => {
+  try {
+    const res = await getCategoryList()
+    if (res.code === 200) {
+      const data = res.data?.list || res.data || []
+      categoryList.value = data
+    }
+  } catch (e) {
+    console.error('获取菜品分类失败', e)
+  }
+}
+
 const handleAdd = () => {
   editingId.value = null
   dialogTitle.value = '新增菜品'
-  form.value = { dishName: '', price: 0, stock: 0, status: 10, description: '', categoryId: 0, dishImage: '', calories: 0 }
+  form.value = { dishName: '', price: 0, stock: 0, status: 10, description: '', categoryId: 0, dishImage: '', calories: 0, protein: 0, fat: 0, carbs: 0 }
   imagePreview.value = ''
   selectedImageFile.value = null
   selectedIngredients.value = []
@@ -92,7 +134,10 @@ const handleEdit = async (row: any) => {
         description: detail.description || '',
         categoryId: detail.categoryId || 0,
         dishImage: detail.dishImage || detail.imageUrl || '',
-        calories: detail.calories || 0
+        calories: detail.calories || 0,
+        protein: detail.protein || 0,
+        fat: detail.fat || 0,
+        carbs: detail.carbs || 0
       }
       if (form.value.dishImage) {
         imagePreview.value = form.value.dishImage.startsWith('http') 
@@ -201,6 +246,10 @@ const handleSubmit = async () => {
     // 构建提交数据，包含食材信息
     const submitData = {
       ...form.value,
+      calories: selectedIngredients.value.length ? Math.round(calculatedNutrition.value.calories) : form.value.calories,
+      protein: selectedIngredients.value.length ? Number(calculatedNutrition.value.protein.toFixed(1)) : form.value.protein,
+      fat: selectedIngredients.value.length ? Number(calculatedNutrition.value.fat.toFixed(1)) : form.value.fat,
+      carbs: selectedIngredients.value.length ? Number(calculatedNutrition.value.carbs.toFixed(1)) : form.value.carbs,
       ingredients: selectedIngredients.value.map(item => ({
         ingredientId: item.ingredientId,
         weight: item.weight
@@ -257,6 +306,20 @@ const getStatusTag = (status: number) => {
 
 const getStatusLabel = (status: number) => {
   return status === 10 ? '上架' : '下架'
+}
+
+const getCategoryName = (categoryId: number) => {
+  return categoryList.value.find((item) => item.id === categoryId)?.categoryName || '未分类'
+}
+
+const getStockTag = (stock: number) => {
+  if (Number(stock || 0) <= 0) return { label: '售罄', type: 'danger' as const }
+  if (Number(stock || 0) <= 5) return { label: '低库存', type: 'warning' as const }
+  return { label: '充足', type: 'success' as const }
+}
+
+const formatAmount = (amount: number | string | undefined) => {
+  return Number(amount || 0).toFixed(2)
 }
 
 const previewImage = (imageUrl: string) => {
@@ -354,18 +417,53 @@ const calculatedNutrition = computed(() => {
 
 onMounted(() => {
   fetchList()
+  fetchCategories()
 })
 </script>
 
 <template>
   <div class="page-container">
-    <div class="card-panel">
-      <div class="card-header">
-        <h3>菜品管理</h3>
-        <button class="btn btn-primary" @click="handleAdd">添加菜品</button>
+    <div class="dish-page">
+      <div class="page-head">
+        <div>
+          <h2>菜品管理</h2>
+          <p>维护菜品图片、价格、库存、分类和营养信息</p>
+        </div>
+        <div class="head-actions">
+          <el-button :icon="Refresh" :loading="loading" @click="fetchList">刷新</el-button>
+          <el-button type="primary" :icon="Plus" @click="handleAdd">添加菜品</el-button>
+        </div>
       </div>
-      <div style="padding-top: 20px;">
-        <el-table :data="dishList" border v-loading="loading">
+
+      <div class="summary-grid">
+        <div v-for="item in dishStats" :key="item.label" class="summary-item" :class="item.className">
+          <span>{{ item.label }}</span>
+          <strong>{{ item.value }}</strong>
+          <em>{{ item.hint }}</em>
+        </div>
+      </div>
+
+      <div class="card-panel dish-panel">
+        <div class="toolbar">
+          <el-input
+            v-model="searchKeyword"
+            :prefix-icon="Search"
+            clearable
+            placeholder="搜索菜品名称"
+            class="search-input"
+          />
+          <el-segmented
+            v-model="statusFilter"
+            :options="[
+              { label: '全部', value: 'all' },
+              { label: '上架', value: 10 },
+              { label: '下架', value: 20 }
+            ]"
+          />
+          <span class="toolbar-count">当前 {{ filteredDishList.length }} 个菜品</span>
+        </div>
+
+        <el-table :data="filteredDishList" v-loading="loading" empty-text="暂无符合条件的菜品">
           <el-table-column label="菜品图片" width="100">
             <template #default="{ row }">
               <div class="table-dish-image">
@@ -379,13 +477,31 @@ onMounted(() => {
               </div>
             </template>
           </el-table-column>
-          <el-table-column prop="dishName" label="菜品名称" width="180" />
-          <el-table-column prop="price" label="价格" width="120">
+          <el-table-column prop="dishName" label="菜品信息" min-width="220">
             <template #default="{ row }">
-              ¥{{ row.price }}
+              <div class="dish-name">{{ row.dishName }}</div>
+              <div class="sub-text">{{ getCategoryName(row.categoryId) }}</div>
             </template>
           </el-table-column>
-          <el-table-column prop="stock" label="库存" width="100" />
+          <el-table-column prop="price" label="价格" width="120" align="right">
+            <template #default="{ row }">
+              <span class="amount">¥{{ formatAmount(row.price) }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="营养" min-width="180">
+            <template #default="{ row }">
+              <div class="nutrition-brief">{{ row.calories || 0 }} 千卡</div>
+              <div class="sub-text">蛋白 {{ row.protein || 0 }}g / 脂肪 {{ row.fat || 0 }}g / 碳水 {{ row.carbs || 0 }}g</div>
+            </template>
+          </el-table-column>
+          <el-table-column prop="stock" label="库存" width="120">
+            <template #default="{ row }">
+              <div class="stock-cell">
+                <strong>{{ row.stock || 0 }}</strong>
+                <el-tag :type="getStockTag(row.stock).type" size="small">{{ getStockTag(row.stock).label }}</el-tag>
+              </div>
+            </template>
+          </el-table-column>
           <el-table-column prop="status" label="状态" width="100">
             <template #default="{ row }">
               <el-tag :type="getStatusTag(row.status)">{{ getStatusLabel(row.status) }}</el-tag>
@@ -396,7 +512,7 @@ onMounted(() => {
               {{ formatDateTime(row.createTime) }}
             </template>
           </el-table-column>
-          <el-table-column label="操作" width="260" fixed="right">
+          <el-table-column label="操作" width="260" fixed="right" align="right">
             <template #default="{ row }">
               <el-button size="small" @click="handleView(row)">查看</el-button>
               <el-button size="small" @click="handleEdit(row)">编辑</el-button>
@@ -407,7 +523,7 @@ onMounted(() => {
             </template>
           </el-table-column>
         </el-table>
-        <div style="display: flex; justify-content: flex-end; margin-top: 20px;">
+        <div class="pagination-row">
           <el-pagination
             v-if="total > 0"
             :current-page="page"
@@ -429,10 +545,20 @@ onMounted(() => {
       </div>
     </div>
 
-    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="500px">
+    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="760px">
       <el-form :model="form" label-width="100px">
         <el-form-item label="菜品名称">
           <el-input v-model="form.dishName" placeholder="请输入菜品名称" />
+        </el-form-item>
+        <el-form-item label="菜品分类">
+          <el-select v-model="form.categoryId" placeholder="请选择分类" style="width: 100%;">
+            <el-option
+              v-for="item in categoryList"
+              :key="item.id"
+              :label="item.categoryName"
+              :value="item.id"
+            />
+          </el-select>
         </el-form-item>
         <el-form-item label="价格">
           <el-input-number v-model="form.price" :min="0" :precision="2" style="width: 100%;" />
@@ -510,6 +636,15 @@ onMounted(() => {
                 <span>碳水: {{ calculatedNutrition.carbs.toFixed(1) }} g</span>
               </div>
             </div>
+            <div v-else class="manual-nutrition">
+              <div class="nutrition-title">手动营养信息</div>
+              <div class="manual-grid">
+                <el-input-number v-model="form.calories" :min="0" :precision="0" placeholder="热量" />
+                <el-input-number v-model="form.protein" :min="0" :precision="1" placeholder="蛋白质" />
+                <el-input-number v-model="form.fat" :min="0" :precision="1" placeholder="脂肪" />
+                <el-input-number v-model="form.carbs" :min="0" :precision="1" placeholder="碳水" />
+              </div>
+            </div>
           </div>
         </el-form-item>
       </el-form>
@@ -565,6 +700,9 @@ onMounted(() => {
         <el-form-item label="菜品名称">
           <span class="view-text">{{ viewForm.dishName }}</span>
         </el-form-item>
+        <el-form-item label="菜品分类">
+          <span class="view-text">{{ getCategoryName(viewForm.categoryId) }}</span>
+        </el-form-item>
         <el-form-item label="价格">
           <span class="view-text">¥{{ viewForm.price }}</span>
         </el-form-item>
@@ -579,6 +717,18 @@ onMounted(() => {
         </el-form-item>
         <el-form-item label="菜品描述" v-if="viewForm.description">
           <span class="view-text">{{ viewForm.description }}</span>
+        </el-form-item>
+        <el-form-item label="基础营养">
+          <div class="view-nutrition">
+            <div class="nutrition-row">
+              <span>热量: {{ viewForm.calories || 0 }} 大卡</span>
+              <span>蛋白质: {{ viewForm.protein || 0 }} g</span>
+            </div>
+            <div class="nutrition-row">
+              <span>脂肪: {{ viewForm.fat || 0 }} g</span>
+              <span>碳水: {{ viewForm.carbs || 0 }} g</span>
+            </div>
+          </div>
         </el-form-item>
         
         <!-- 查看关联食材 -->
@@ -622,6 +772,84 @@ onMounted(() => {
   to { opacity: 1; transform: translateY(0); }
 }
 
+.dish-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.page-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.page-head h2 {
+  margin: 0;
+  color: var(--bs-text-title);
+  font-size: 20px;
+  font-weight: 650;
+}
+
+.page-head p {
+  margin-top: 4px;
+  color: var(--bs-text-muted);
+  font-size: 13px;
+}
+
+.head-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.summary-item {
+  min-height: 104px;
+  padding: 16px;
+  background: #fff;
+  border: 1px solid var(--bs-border-light);
+  border-radius: var(--bs-radius-md);
+  box-shadow: var(--bs-card-shadow);
+}
+
+.summary-item span,
+.summary-item em {
+  display: block;
+  color: var(--bs-text-muted);
+  font-size: 13px;
+  font-style: normal;
+}
+
+.summary-item strong {
+  display: block;
+  margin: 6px 0 4px;
+  color: var(--bs-text-title);
+  font-size: 28px;
+  line-height: 1.1;
+}
+
+.summary-item.success {
+  border-left: 3px solid #1b6b4a;
+}
+
+.summary-item.warning {
+  border-left: 3px solid #b76e2a;
+}
+
+.summary-item.danger {
+  border-left: 3px solid var(--bs-status-danger);
+}
+
+.summary-item.muted {
+  border-left: 3px solid #8a9299;
+}
+
 .card-panel {
   background: var(--bs-card-bg);
   border-radius: var(--bs-radius-md);
@@ -640,6 +868,57 @@ onMounted(() => {
   font-size: var(--bs-font-size-lg);
   font-weight: 600;
   color: var(--bs-text-title);
+}
+
+.dish-panel {
+  padding-top: 16px;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.search-input {
+  width: 260px;
+}
+
+.toolbar-count {
+  margin-left: auto;
+  color: var(--bs-text-muted);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.dish-name,
+.amount,
+.nutrition-brief {
+  color: var(--bs-text-title);
+  font-weight: 600;
+}
+
+.sub-text {
+  margin-top: 4px;
+  color: var(--bs-text-muted);
+  font-size: 12px;
+}
+
+.stock-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.stock-cell strong {
+  color: var(--bs-text-title);
+}
+
+.pagination-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 20px;
 }
 
 .btn {
@@ -908,6 +1187,22 @@ onMounted(() => {
   color: var(--bs-text-secondary);
 }
 
+.manual-nutrition {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--bs-border-light);
+}
+
+.manual-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.manual-grid :deep(.el-input-number) {
+  width: 100%;
+}
+
 /* 食材选择器样式 */
 .ingredient-selector {
   max-height: 400px;
@@ -998,5 +1293,37 @@ onMounted(() => {
 .view-nutrition span {
   font-size: 14px;
   color: var(--bs-text-secondary);
+}
+
+@media (max-width: 1100px) {
+  .summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .manual-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .page-head,
+  .toolbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .head-actions,
+  .search-input {
+    width: 100%;
+  }
+
+  .summary-grid,
+  .manual-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .toolbar-count {
+    margin-left: 0;
+  }
 }
 </style>

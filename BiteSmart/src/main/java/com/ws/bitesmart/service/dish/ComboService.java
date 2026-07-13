@@ -5,6 +5,7 @@ import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.ws.bitesmart.common.enums.ResultCodeEnum;
 import com.ws.bitesmart.common.util.SnowflakeUtil;
+import com.ws.bitesmart.dto.order.ComboCustomizationSnapshot;
 import com.ws.bitesmart.entity.dish.Combo;
 import com.ws.bitesmart.entity.dish.ComboDishRel;
 import com.ws.bitesmart.entity.dish.Dish;
@@ -17,19 +18,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * 套餐服务
- *
- * 商家端：创建套餐（含关联菜品）、更新套餐（先删旧关联再插新关联）、上下架。
- * 套餐类型：10-减脂 20-增肌 30-控糖 40-会员专属
- * 按 merchantId 进行数据隔离。
- */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -38,20 +31,17 @@ public class ComboService {
     private final ComboMapper comboMapper;
     private final ComboDishRelMapper comboDishRelMapper;
     private final DishMapper dishMapper;
+    private final NutritionCalculateService nutritionCalculateService;
 
-    /** 查某商家的全部套餐 */
     public List<Combo> findByMerchantId(Long merchantId) {
         return comboMapper.findByMerchantId(merchantId);
     }
 
-    /** 查某商家的全部套餐（分页） */
     public PageInfo<Combo> findByMerchantId(Long merchantId, int pageNum, int pageSize) {
         PageHelper.startPage(pageNum, pageSize);
-        List<Combo> list = comboMapper.findByMerchantId(merchantId);
-        return new PageInfo<>(list);
+        return new PageInfo<>(comboMapper.findByMerchantId(merchantId));
     }
 
-    /** 查套餐详情 */
     public Combo findById(Long id) {
         Combo combo = comboMapper.findById(id);
         if (combo == null) {
@@ -60,55 +50,29 @@ public class ComboService {
         return combo;
     }
 
-    /** 查询上架套餐 */
     public List<Combo> findAvailable() {
         return comboMapper.findAvailable();
     }
 
-    /** 查询上架套餐（分页） */
     public PageInfo<Combo> findAvailable(int pageNum, int pageSize) {
         PageHelper.startPage(pageNum, pageSize);
-        List<Combo> list = comboMapper.findAvailable();
-        return new PageInfo<>(list);
+        return new PageInfo<>(comboMapper.findAvailable());
     }
 
-    /**
-     * 新增套餐
-     *
-     * @param combo     套餐信息
-     * @param dishItems 关联的菜品列表（含 isFixed、quantity）
-     */
     @Transactional
     public void add(Combo combo, List<ComboDishRel> dishItems) {
         combo.setId(SnowflakeUtil.generate());
-        if (combo.getStatus() == null) combo.setStatus(10); // 默认上架
-        // suitable_for 是 JSON 列，需要编码
-        if (combo.getSuitableFor() != null) {
-            combo.setSuitableFor(JSON.toJSONString(combo.getSuitableFor()));
-        }
+        if (combo.getStatus() == null) combo.setStatus(10);
+        if (combo.getSalesCount() == null) combo.setSalesCount(0);
         comboMapper.insert(combo);
 
-        // 批量插入关联
         if (dishItems != null && !dishItems.isEmpty()) {
-            for (ComboDishRel item : dishItems) {
-                item.setId(SnowflakeUtil.generate());
-                item.setComboId(combo.getId());
-                if (item.getQuantity() == null) item.setQuantity(1);
-                if (item.getIsFixed() == null) item.setIsFixed(1);
-            }
+            normalizeDishItems(combo.getId(), dishItems);
             comboDishRelMapper.insertBatch(dishItems);
+            nutritionCalculateService.updateComboNutrition(combo.getId());
         }
     }
 
-    /**
-     * 修改套餐
-     * 先删旧关联，再插新关联
-     *
-     * @param merchantId 商家 ID
-     * @param id         套餐 ID
-     * @param combo      套餐信息
-     * @param dishItems  新的关联菜品列表（含 isFixed、quantity）
-     */
     @Transactional
     public void update(Long merchantId, Long id, Combo combo, List<ComboDishRel> dishItems) {
         Combo exist = comboMapper.findById(id);
@@ -117,144 +81,167 @@ public class ComboService {
         }
         combo.setId(id);
         combo.setMerchantId(merchantId);
-        // suitable_for 是 JSON 列，需要编码
-        if (combo.getSuitableFor() != null) {
-            combo.setSuitableFor(JSON.toJSONString(combo.getSuitableFor()));
-        }
         comboMapper.updateById(combo);
 
-        // 先删旧关联
-        comboDishRelMapper.deleteByComboId(id);
-
-        // 再插新关联
-        if (dishItems != null && !dishItems.isEmpty()) {
-            for (ComboDishRel item : dishItems) {
-                item.setId(SnowflakeUtil.generate());
-                item.setComboId(id);
-                if (item.getQuantity() == null) item.setQuantity(1);
-                if (item.getIsFixed() == null) item.setIsFixed(1);
+        if (dishItems != null) {
+            comboDishRelMapper.deleteByComboId(id);
+            if (!dishItems.isEmpty()) {
+                normalizeDishItems(id, dishItems);
+                comboDishRelMapper.insertBatch(dishItems);
             }
-            comboDishRelMapper.insertBatch(dishItems);
+            nutritionCalculateService.updateComboNutrition(id);
         }
     }
 
-    /** 删除套餐（软删除），同时删除关联菜品 */
     @Transactional
     public void delete(Long merchantId, Long id) {
         Combo exist = comboMapper.findById(id);
         if (exist == null || !exist.getMerchantId().equals(merchantId)) {
             throw new BusinessException(ResultCodeEnum.NOT_FOUND, "套餐不存在");
         }
-        // 软删除关联菜品
         comboDishRelMapper.deleteByComboId(id);
-        // 软删除套餐
         Combo update = new Combo();
         update.setId(id);
         update.setDeleted(1);
         comboMapper.updateById(update);
     }
 
-    /** 查套餐包含的菜品关联列表 */
     public List<ComboDishRel> findRelByComboId(Long comboId) {
         return comboDishRelMapper.findByComboId(comboId);
     }
 
-    /**
-     * 套餐换菜
-     *
-     * 用户在购买套餐时，可以把套餐内可替换的菜品换成替换池里的其他菜品。
-     * 换完后重新计算套餐的总热量和营养素。
-     *
-     * @param comboId   套餐ID
-     * @param oldDishId 要换掉的菜品ID
-     * @param newDishId 替换成的菜品ID（必须在 replaceable_dish_pool 里）
-     * @return 换菜后的套餐信息（含调整后的营养数据）
-     */
-    @Transactional
     public Map<String, Object> replaceDish(Long comboId, Long oldDishId, Long newDishId) {
-        // 1. 查套餐
+        ComboCustomizationSnapshot.ReplacementItem replacement = new ComboCustomizationSnapshot.ReplacementItem();
+        replacement.setOldDishId(oldDishId);
+        replacement.setNewDishId(newDishId);
+        ComboCustomizationSnapshot snapshot = buildCustomizedSnapshot(comboId, List.of(replacement));
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("comboId", comboId);
+        result.put("oldDishId", oldDishId);
+        result.put("newDishId", newDishId);
+        result.put("totalCalories", snapshot.getTotalCalories());
+        result.put("totalProtein", snapshot.getTotalProtein());
+        result.put("totalFat", snapshot.getTotalFat());
+        result.put("totalCarbs", snapshot.getTotalCarbs());
+        result.put("items", snapshot.getItems());
+        result.put("replacements", snapshot.getReplacements());
+        result.put("customizationJson", JSON.toJSONString(snapshot));
+        return result;
+    }
+
+    public ComboCustomizationSnapshot buildCustomizedSnapshot(Long comboId,
+                                                              List<ComboCustomizationSnapshot.ReplacementItem> replacements) {
         Combo combo = comboMapper.findById(comboId);
         if (combo == null) {
             throw new BusinessException(ResultCodeEnum.NOT_FOUND, "套餐不存在");
         }
-        if (combo.getMaxReplaceCount() == null || combo.getMaxReplaceCount() <= 0) {
-            throw new BusinessException("该套餐不支持换菜");
-        }
+        List<ComboDishRel> rels = cloneRels(comboDishRelMapper.findByComboId(comboId));
+        List<Long> pool = parseReplaceablePool(combo.getReplaceableDishPool());
+        List<ComboCustomizationSnapshot.ReplacementItem> normalized = new ArrayList<>();
 
-        // 2. 查替换池
-        String poolJson = combo.getReplaceableDishPool();
-        if (poolJson == null || poolJson.isEmpty()) {
-            throw new BusinessException("该套餐无可替换菜品");
-        }
-        List<Long> pool = JSON.parseArray(poolJson, Long.class);
-        if (!pool.contains(newDishId)) {
-            throw new BusinessException("替换的菜品不在可替换池中");
-        }
-
-        // 3. 查套餐包含的菜品关联，校验 oldDishId 是否在套餐中且可替换
-        List<ComboDishRel> rels = comboDishRelMapper.findByComboId(comboId);
-        ComboDishRel targetRel = null;
-        for (ComboDishRel rel : rels) {
-            if (rel.getDishId().equals(oldDishId)) {
-                targetRel = rel;
-                break;
+        if (replacements != null && !replacements.isEmpty()) {
+            if (combo.getMaxReplaceCount() == null || combo.getMaxReplaceCount() <= 0) {
+                throw new BusinessException("该套餐不支持换菜");
+            }
+            if (replacements.size() > combo.getMaxReplaceCount()) {
+                throw new BusinessException("超出套餐可替换数量限制");
+            }
+            for (ComboCustomizationSnapshot.ReplacementItem replacement : replacements) {
+                applyReplacement(combo, rels, pool, replacement, normalized);
             }
         }
+
+        NutritionCalculateService.NutritionSummary nutrition = nutritionCalculateService.calculateComboNutrition(rels);
+        ComboCustomizationSnapshot snapshot = new ComboCustomizationSnapshot();
+        snapshot.setComboId(comboId);
+        snapshot.setReplacements(normalized);
+        snapshot.setTotalCalories(nutrition.getCalories());
+        snapshot.setTotalProtein(nutrition.getProtein());
+        snapshot.setTotalFat(nutrition.getFat());
+        snapshot.setTotalCarbs(nutrition.getCarbs());
+        for (ComboDishRel rel : rels) {
+            Dish dish = dishMapper.findById(rel.getDishId());
+            if (dish == null) continue;
+            ComboCustomizationSnapshot.SelectedDishItem item = new ComboCustomizationSnapshot.SelectedDishItem();
+            item.setDishId(dish.getId());
+            item.setDishName(dish.getDishName());
+            item.setQuantity(rel.getQuantity() == null ? 1 : rel.getQuantity());
+            snapshot.getItems().add(item);
+        }
+        return snapshot;
+    }
+
+    private void applyReplacement(Combo combo,
+                                  List<ComboDishRel> rels,
+                                  List<Long> pool,
+                                  ComboCustomizationSnapshot.ReplacementItem replacement,
+                                  List<ComboCustomizationSnapshot.ReplacementItem> normalized) {
+        ComboDishRel targetRel = findRel(rels, replacement.getOldDishId());
         if (targetRel == null) {
             throw new BusinessException("该菜品不在当前套餐中");
         }
-        if (targetRel.getIsFixed() == 1) {
+        if (targetRel.getIsFixed() != null && targetRel.getIsFixed() == 1) {
             throw new BusinessException("该菜品为固定菜品，不可替换");
         }
-
-        // 4. 新旧菜品的营养数据
-        Dish oldDish = dishMapper.findById(oldDishId);
-        Dish newDish = dishMapper.findById(newDishId);
+        if (!pool.isEmpty() && !pool.contains(replacement.getNewDishId())) {
+            throw new BusinessException("替换的菜品不在可替换池中");
+        }
+        Dish oldDish = dishMapper.findById(replacement.getOldDishId());
+        Dish newDish = dishMapper.findById(replacement.getNewDishId());
         if (oldDish == null || newDish == null) {
             throw new BusinessException("菜品不存在");
         }
+        if (!newDish.getMerchantId().equals(combo.getMerchantId())) {
+            throw new BusinessException("替换菜品必须属于同一商家");
+        }
+        targetRel.setDishId(newDish.getId());
 
-        // 5. 重新计算套餐营养数据
-        int calDiff = (newDish.getCalories() != null ? newDish.getCalories() : 0)
-                - (oldDish.getCalories() != null ? oldDish.getCalories() : 0);
-        BigDecimal proteinDiff = safeSub(newDish.getProtein(), oldDish.getProtein());
-        BigDecimal fatDiff = safeSub(newDish.getFat(), oldDish.getFat());
-        BigDecimal carbsDiff = safeSub(newDish.getCarbs(), oldDish.getCarbs());
-
-        int newCalories = (combo.getTotalCalories() != null ? combo.getTotalCalories() : 0) + calDiff;
-        BigDecimal newProtein = safeAdd(combo.getTotalProtein(), proteinDiff);
-        BigDecimal newFat = safeAdd(combo.getTotalFat(), fatDiff);
-        BigDecimal newCarbs = safeAdd(combo.getTotalCarbs(), carbsDiff);
-
-        // 6. 更新套餐关联（替换菜品ID）
-        targetRel.setDishId(newDishId);
-        comboDishRelMapper.deleteByComboId(comboId);
-        comboDishRelMapper.insertBatch(rels);
-
-        log.info("套餐换菜: comboId={}, {}→{}, diffCal={}", comboId, oldDishId, newDishId, calDiff);
-
-        // 7. 返回调整后的信息
-        Map<String, Object> result = new HashMap<>();
-        result.put("comboId", comboId);
-        result.put("oldDishId", oldDishId);
-        result.put("oldDishName", oldDish.getDishName());
-        result.put("newDishId", newDishId);
-        result.put("newDishName", newDish.getDishName());
-        result.put("totalCalories", newCalories);
-        result.put("totalProtein", newProtein);
-        result.put("totalFat", newFat);
-        result.put("totalCarbs", newCarbs);
-        return result;
+        ComboCustomizationSnapshot.ReplacementItem item = new ComboCustomizationSnapshot.ReplacementItem();
+        item.setOldDishId(oldDish.getId());
+        item.setOldDishName(oldDish.getDishName());
+        item.setNewDishId(newDish.getId());
+        item.setNewDishName(newDish.getDishName());
+        normalized.add(item);
     }
 
-    /** 安全减法 */
-    private BigDecimal safeSub(BigDecimal a, BigDecimal b) {
-        return (a != null ? a : BigDecimal.ZERO).subtract(b != null ? b : BigDecimal.ZERO);
+    private List<ComboDishRel> cloneRels(List<ComboDishRel> rels) {
+        List<ComboDishRel> cloned = new ArrayList<>();
+        if (rels == null) return cloned;
+        for (ComboDishRel rel : rels) {
+            ComboDishRel copy = new ComboDishRel();
+            copy.setId(rel.getId());
+            copy.setComboId(rel.getComboId());
+            copy.setDishId(rel.getDishId());
+            copy.setQuantity(rel.getQuantity());
+            copy.setIsFixed(rel.getIsFixed());
+            cloned.add(copy);
+        }
+        return cloned;
     }
 
-    /** 安全加法 */
-    private BigDecimal safeAdd(BigDecimal a, BigDecimal b) {
-        return (a != null ? a : BigDecimal.ZERO).add(b != null ? b : BigDecimal.ZERO);
+    private List<Long> parseReplaceablePool(String poolJson) {
+        if (poolJson == null || poolJson.isEmpty()) {
+            return List.of();
+        }
+        return JSON.parseArray(poolJson, Long.class);
     }
 
+    private ComboDishRel findRel(List<ComboDishRel> rels, Long dishId) {
+        for (ComboDishRel rel : rels) {
+            if (rel.getDishId().equals(dishId)) {
+                return rel;
+            }
+        }
+        return null;
+    }
+
+    private void normalizeDishItems(Long comboId, List<ComboDishRel> dishItems) {
+        for (ComboDishRel item : dishItems) {
+            item.setId(SnowflakeUtil.generate());
+            item.setComboId(comboId);
+            if (item.getQuantity() == null) item.setQuantity(1);
+            if (item.getIsFixed() == null) item.setIsFixed(1);
+        }
+    }
 }

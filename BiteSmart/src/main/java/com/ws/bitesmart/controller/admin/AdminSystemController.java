@@ -72,13 +72,13 @@ public class AdminSystemController {
     // ==================== 操作日志 ====================
 
     @GetMapping("/logs")
-    public ResultVO<PageResultVO<OperationLog>> listLogs(
+    public PageResultVO<OperationLog> listLogs(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int size) {
         PageHelper.startPage(page, size);
         List<OperationLog> list = operationLogMapper.findAll();
         PageInfo<OperationLog> pageInfo = new PageInfo<>(list);
-        return ResultVO.success(PageResultVO.success(pageInfo));
+        return PageResultVO.success(pageInfo);
     }
 
 }

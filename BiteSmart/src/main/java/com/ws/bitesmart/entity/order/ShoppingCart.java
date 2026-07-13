@@ -37,4 +37,11 @@ public class ShoppingCart {
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
     private Integer deleted;
+
+    /** 购物车展示快照，由服务层查询商品后填充，不落库。 */
+    private String dishName;
+    private String comboName;
+    private String dishImage;
+    private String comboImage;
+    private java.math.BigDecimal price;
 }

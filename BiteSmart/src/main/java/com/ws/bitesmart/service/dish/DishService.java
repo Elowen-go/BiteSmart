@@ -31,6 +31,7 @@ public class DishService {
 
     private final DishMapper dishMapper;
     private final DishIngredientMapper dishIngredientMapper;
+    private final NutritionCalculateService nutritionCalculateService;
 
     /** 查某商家的全部菜品 */
     public List<Dish> findByMerchantId(Long merchantId) {
@@ -81,6 +82,9 @@ public class DishService {
         
         // 保存菜品-食材关联
         saveDishIngredients(dishId, dish.getIngredients());
+        if (dish.getIngredients() != null && !dish.getIngredients().isEmpty()) {
+            nutritionCalculateService.updateDishNutrition(dishId);
+        }
     }
 
     /** 修改菜品，校验所属权 */
@@ -95,8 +99,11 @@ public class DishService {
         dishMapper.updateById(dish);
         
         // 更新菜品-食材关联：先删除旧关联，再插入新关联
-        dishIngredientMapper.deleteByDishId(id);
-        saveDishIngredients(id, dish.getIngredients());
+        if (dish.getIngredients() != null) {
+            dishIngredientMapper.deleteByDishId(id);
+            saveDishIngredients(id, dish.getIngredients());
+            nutritionCalculateService.updateDishNutrition(id);
+        }
     }
     
     /**

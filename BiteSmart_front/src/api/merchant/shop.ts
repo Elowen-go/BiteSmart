@@ -13,12 +13,18 @@ export interface MerchantShop {
   id: number
   userId: number
   shopName: string
-  shopDesc: string
-  logoUrl: string
-  phone: string
-  address: string
-  businessLicense: string
-  auditStatus: number
+  shopLogo?: string
+  businessLicense?: string
+  licenseNumber?: string
+  contactName?: string
+  contactPhone?: string
+  shopAddress?: string
+  deliveryRange?: string
+  businessHours?: string
+  shopNotice?: string
+  status?: number
+  auditRemark?: string
+  avgRating?: number
   createTime: string
   updateTime: string
 }

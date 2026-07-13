@@ -1,6 +1,7 @@
 package com.ws.bitesmart.entity.dish;
 
 import lombok.Data;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
@@ -22,7 +23,7 @@ public class DishIngredient {
     private Long ingredientId;
 
     /** 食材用量，单位：克(g) */
-    private Integer weight;
+    private BigDecimal weight;
 
     /** 创建时间 */
     private LocalDateTime createTime;

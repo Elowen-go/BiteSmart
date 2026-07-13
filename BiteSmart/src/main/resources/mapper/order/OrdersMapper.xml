@@ -118,6 +118,14 @@
         ORDER BY create_time DESC
     </select>
 
+    <select id="findAllByStatus" resultType="com.ws.bitesmart.entity.order.Orders">
+        SELECT <include refid="BaseColumns"/>
+        FROM orders
+        WHERE deleted = 0
+          AND order_status = #{orderStatus}
+        ORDER BY create_time DESC
+    </select>
+
     <!-- 统计所有订单数量 -->
     <select id="countAll" resultType="long">
         SELECT COUNT(*) FROM orders WHERE deleted = 0

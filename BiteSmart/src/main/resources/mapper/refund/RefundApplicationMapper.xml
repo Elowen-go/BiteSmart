@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ws.bitesmart.mapper.refund.RefundApplicationMapper">
+    <select id="findAll" resultType="com.ws.bitesmart.entity.refund.RefundApplication">
+        SELECT id, order_id, order_no, user_id, refund_amount, refund_reason, refund_desc,
+               evidence_images, apply_time, audit_status, audit_operator_id, audit_remark,
+               audit_time, refund_time, create_time, update_time, deleted
+        FROM refund_application
+        WHERE deleted = 0
+        <if test="auditStatus != null">AND audit_status = #{auditStatus}</if>
+        ORDER BY create_time DESC
+    </select>
+    <select id="findById" resultType="com.ws.bitesmart.entity.refund.RefundApplication">
+        SELECT id, order_id, order_no, user_id, refund_amount, refund_reason, refund_desc,
+               evidence_images, apply_time, audit_status, audit_operator_id, audit_remark,
+               audit_time, refund_time, create_time, update_time, deleted
+        FROM refund_application WHERE id = #{id} AND deleted = 0
+    </select>
+    <update id="updateAudit">
+        UPDATE refund_application
+        SET audit_status = #{status}, audit_operator_id = #{operatorId},
+            audit_remark = #{remark}, audit_time = NOW(),
+            refund_time = CASE WHEN #{status} = 40 THEN NOW() ELSE refund_time END,
+            update_time = NOW()
+        WHERE id = #{id} AND deleted = 0 AND audit_status = 10
+    </update>
+</mapper>

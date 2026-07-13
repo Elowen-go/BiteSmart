@@ -11,6 +11,12 @@ const router = createRouter({
       meta: { title: '登录' }
     },
     {
+      path: '/merchant/apply',
+      name: 'MerchantApply',
+      component: () => import('../views/merchant/apply/MerchantApply.vue'),
+      meta: { title: '商家入驻', requiresAuth: true }
+    },
+    {
       path: '/admin',
       name: 'Admin',
       component: () => import('../layouts/AdminLayout.vue'),
@@ -21,6 +27,12 @@ const router = createRouter({
           name: 'AdminDashboard',
           component: () => import('../views/admin/Dashboard.vue'),
           meta: { title: '仪表盘', subtitle: '总览' }
+        },
+        {
+          path: 'statistics',
+          name: 'AdminStatistics',
+          component: () => import('../views/admin/Statistics.vue'),
+          meta: { title: '数据统计', subtitle: '平台经营数据' }
         },
         {
           path: 'orders',
@@ -34,6 +46,18 @@ const router = createRouter({
           component: () => import('../views/admin/dishes/DishList.vue'),
           meta: { title: '菜品管理', subtitle: '菜品列表' }
         },
+        {
+          path: 'combos',
+          name: 'AdminCombos',
+          component: () => import('../views/admin/dishes/DishList.vue'),
+        },
+        /*
+        /*
+        /*
+          meta: { title: '健康套餐', subtitle: '套餐浏览与替换' }
+        },
+        {
+        */
         {
           path: 'users',
           name: 'AdminUsers',
@@ -51,6 +75,18 @@ const router = createRouter({
           name: 'AdminDrivers',
           component: () => import('../views/admin/drivers/DriverList.vue'),
           meta: { title: '配送员管理', subtitle: '配送员列表' }
+        },
+        {
+          path: 'refunds',
+          name: 'AdminRefunds',
+          component: () => import('../views/admin/RefundList.vue'),
+          meta: { title: '退款工单', subtitle: '退款审核与处理' }
+        },
+        {
+          path: 'complaints',
+          name: 'AdminComplaints',
+          component: () => import('../views/admin/ComplaintList.vue'),
+          meta: { title: '投诉工单', subtitle: '投诉受理与处理' }
         },
         {
           path: 'reviews',
@@ -179,43 +215,58 @@ const router = createRouter({
     {
       path: '/user',
       name: 'User',
-      component: () => import('../layouts/UserLayout.vue'),
+      component: () => import('../layouts/UserBrandLayout.vue'),
       meta: { requiresAuth: true, requiresRole: ['USER', '10'] },
       children: [
         {
           path: '',
           name: 'UserHome',
-          component: () => import('../views/user/Home.vue'),
+          component: () => import('../views/user/HomeEditorial.vue'),
           meta: { title: '首页', subtitle: '推荐' }
         },
         {
           path: 'dishes',
           name: 'UserDishes',
-          component: () => import('../views/user/dishes/DishList.vue'),
+          component: () => import('../views/user/dishes/DishBrowse.vue'),
+        },
+        {
+          path: 'combos',
+          name: 'UserCombos',
+          component: () => import('../views/user/combos/ComboBrowse.vue'),
+          meta: { title: '健康套餐', subtitle: '套餐浏览与替换' },
+        },
+        /*
+          meta: { title: '健康套餐', subtitle: '套餐浏览与替换' }
+        },
           meta: { title: '菜品浏览', subtitle: '全部菜品' }
         },
+        */
+        /*
+          meta: { title: '菜品浏览', subtitle: '全部菜品' }
+        },
+        */
         {
           path: 'cart',
           name: 'UserCart',
-          component: () => import('../views/user/cart/Cart.vue'),
+          component: () => import('../views/user/cart/CartCheckout.vue'),
           meta: { title: '购物车', subtitle: '已选商品' }
         },
         {
           path: 'orders',
           name: 'UserOrders',
-          component: () => import('../views/user/orders/OrderList.vue'),
+          component: () => import('../views/user/orders/OrderHistory.vue'),
           meta: { title: '我的订单', subtitle: '订单列表' }
         },
         {
           path: 'delivery',
           name: 'UserDeliveryList',
-          component: () => import('../views/user/delivery/DeliveryList.vue'),
+          component: () => import('../views/user/delivery/DeliveryCenter.vue'),
           meta: { title: '配送追踪', subtitle: '配送列表' }
         },
         {
           path: 'delivery/:orderId',
           name: 'UserDelivery',
-          component: () => import('../views/user/delivery/DeliveryTracking.vue'),
+          component: () => import('../views/user/delivery/TrackingView.vue'),
           meta: { title: '配送追踪', subtitle: '实时跟踪' }
         },
         {
@@ -227,25 +278,25 @@ const router = createRouter({
         {
           path: 'ai/recommend',
           name: 'UserAiRecommend',
-          component: () => import('../views/user/ai/Recommend.vue'),
+          component: () => import('../views/user/ai/RecommendCenter.vue'),
           meta: { title: 'AI推荐', subtitle: '个性化食谱' }
         },
         {
           path: 'health',
           name: 'UserHealth',
-          component: () => import('../views/user/health/HealthRecord.vue'),
+          component: () => import('../views/user/health/HealthCenter.vue'),
           meta: { title: '健康记录', subtitle: '饮食运动' }
         },
         {
           path: 'profile',
           name: 'UserProfile',
-          component: () => import('../views/user/profile/Profile.vue'),
+          component: () => import('../views/user/profile/ProfileCenter.vue'),
           meta: { title: '个人中心', subtitle: '我的信息' }
         },
         {
           path: 'membership',
           name: 'UserMembership',
-          component: () => import('../views/user/membership/Membership.vue'),
+          component: () => import('../views/user/membership/MembershipCenter.vue'),
           meta: { title: '会员中心', subtitle: '我的会员' }
         },
         {
@@ -255,9 +306,15 @@ const router = createRouter({
           meta: { title: '地址管理', subtitle: '收货地址' }
         },
         {
+          path: 'complaints',
+          name: 'UserComplaints',
+          component: () => import('../views/user/Complaint.vue'),
+          meta: { title: '提交投诉', subtitle: '投诉反馈' }
+        },
+        {
           path: 'reviews',
           name: 'UserReviews',
-          component: () => import('../views/user/reviews/ReviewSubmit.vue'),
+          component: () => import('../views/user/reviews/ReviewCenter.vue'),
           meta: { title: '我的评价', subtitle: '评价管理' }
         },
         {
@@ -289,6 +346,18 @@ router.beforeEach((to, from, next) => {
   // 需要登录的页面
   if (to.meta.requiresAuth && !userStore.isAuthenticated) {
     next('/login')
+    return
+  }
+
+  const requiredRoles = to.meta.requiresRole as string[] | undefined
+  if (requiredRoles && (!userStore.role || !requiredRoles.includes(String(userStore.role)))) {
+    if (userStore.isAdmin) {
+      next('/admin/dashboard')
+    } else if (userStore.isMerchant) {
+      next('/merchant/dashboard')
+    } else {
+      next('/user')
+    }
     return
   }
   

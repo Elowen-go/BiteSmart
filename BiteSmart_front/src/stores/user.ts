@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { getToken, setToken, removeToken, getRole, setRole, removeRole, getUserInfo, setUserInfo, removeUserInfo } from '../utils/auth'
+import { getToken, setToken, removeToken, getRole, setRole, removeRole, getUserInfo, setUserInfo as persistUserInfo, removeUserInfo } from '../utils/auth'
 
 export const useUserStore = defineStore('user', () => {
   const token = ref(getToken())
@@ -37,7 +37,7 @@ export const useUserStore = defineStore('user', () => {
 
   const setUserInfo = (info: any) => {
     userInfo.value = info
-    setUserInfo(info)
+    persistUserInfo(info)
   }
 
   const setBreadcrumbSubtitle = (subtitle: string) => {

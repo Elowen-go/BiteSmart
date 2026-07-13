@@ -19,5 +19,5 @@ export const getReviewList = (params?: { page?: number; size?: number }): Promis
 }
 
 export const replyReview = (id: number, content: string): Promise<any> => {
-  return request.post(`/merchant/reviews/${id}/reply`, { params: { content } })
+  return request.post(`/merchant/reviews/${id}/reply`, null, { params: { content } })
 }

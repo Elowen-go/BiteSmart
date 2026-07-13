@@ -18,6 +18,7 @@ import {
   Collection,
   List,
   DataBoard,
+  DataAnalysis,
   Memo,
   Food
 } from '@element-plus/icons-vue'
@@ -60,6 +61,14 @@ const menuItems = [
       { path: '/admin/ingredients', icon: Food, label: '食材管理' },
       { path: '/admin/nutrition', icon: List, label: '营养标准' },
       { path: '/admin/notices', icon: Memo, label: '公告管理' },
+    ]
+  },
+  {
+    label: '数据',
+    items: [
+      { path: '/admin/statistics', icon: DataAnalysis, label: '数据统计' },
+      { path: '/admin/refunds', icon: Document, label: '退款工单' },
+      { path: '/admin/complaints', icon: HelpFilled, label: '投诉工单' }
     ]
   }
 ]
@@ -494,7 +503,46 @@ const handleLogout = () => {
 .content-body {
   flex: 1;
   overflow-y: auto;
-  padding: var(--bs-spacing-lg) var(--bs-spacing-xl);
+  padding: 28px 32px 36px;
   background: var(--bs-bg-page);
+}
+
+:deep(.page-container) {
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+}
+
+:deep(.card-panel),
+:deep(.panel) {
+  border: 1px solid var(--bs-border-light);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(24, 39, 31, 0.04);
+}
+
+:deep(.card-header) {
+  min-height: 32px;
+  gap: 16px;
+}
+
+:deep(.card-header h3) {
+  margin: 0;
+  line-height: 32px;
+}
+
+@media (max-width: 900px) {
+  .header { padding: 0 20px; }
+  .content-body { padding: 20px; }
+  .breadcrumb { display: none; }
+}
+
+@media (max-width: 640px) {
+  .sidebar { position: absolute; z-index: 20; box-shadow: 8px 0 24px rgba(0, 0, 0, 0.12); }
+  .sidebar.collapsed { position: relative; box-shadow: none; }
+  .header { height: 56px; padding: 0 14px; }
+  .page-title { max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .header-right { gap: 8px; }
+  .content-body { padding: 16px 12px 24px; }
+  .user-info .logout-btn { padding-right: 0; }
 }
 </style>

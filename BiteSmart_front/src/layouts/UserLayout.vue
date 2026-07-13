@@ -17,7 +17,8 @@ import {
   ArrowRight,
   HelpFilled,
   Location,
-  ChatDotRound
+  ChatDotRound,
+  Shop
 } from '@element-plus/icons-vue'
 import { useUserStore } from '../stores/user'
 
@@ -67,7 +68,9 @@ const menuItems = [
       { path: '/user/membership', icon: Star, label: '会员中心' },
       { path: '/user/addresses', icon: Location, label: '地址管理' },
       { path: '/user/reviews', icon: ChatDotRound, label: '我的评价' },
+      { path: '/user/complaints', icon: Help, label: '提交投诉' },
       { path: '/user/notices', icon: Bell, label: '系统公告' },
+      { path: '/merchant/apply', icon: Shop, label: '商家入驻' },
     ]
   }
 ]

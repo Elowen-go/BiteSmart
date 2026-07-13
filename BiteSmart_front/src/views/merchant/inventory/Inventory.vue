@@ -1,5 +1,6 @@
 ﻿<script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { computed, ref, onMounted, watch } from 'vue'
+import { Refresh } from '@element-plus/icons-vue'
 import { getInventoryWarnings, getInventoryLogs } from '../../../api/merchant/inventory'
 import type { InventoryWarning, InventoryLog } from '../../../api/merchant/inventory'
 import { useUserStore } from '../../../stores/user'
@@ -9,6 +10,28 @@ const loading = ref(false)
 const warnings = ref<InventoryWarning[]>([])
 const logs = ref<InventoryLog[]>([])
 const activeTab = ref('warnings')
+
+const sortedWarnings = computed(() => {
+  return [...warnings.value].sort((a, b) => {
+    const aGap = Number(a.currentStock || 0) - Number(a.minStock || 0)
+    const bGap = Number(b.currentStock || 0) - Number(b.minStock || 0)
+    return aGap - bGap
+  })
+})
+
+const inventoryStats = computed(() => {
+  const soldOut = warnings.value.filter((item) => Number(item.currentStock || 0) <= 0).length
+  const lowStock = warnings.value.filter((item) => Number(item.currentStock || 0) > 0 && Number(item.currentStock || 0) <= Number(item.minStock || 0)).length
+  const normal = warnings.value.length - soldOut - lowStock
+  const recentChanges = logs.value.length
+
+  return [
+    { label: '售罄菜品', value: soldOut, hint: '建议立即下架或补货', className: 'danger' },
+    { label: '库存预警', value: lowStock, hint: '低于安全库存', className: 'warning' },
+    { label: '库存正常', value: normal, hint: '可继续售卖', className: 'success' },
+    { label: '变动记录', value: recentChanges, hint: '最近库存流水', className: 'muted' }
+  ]
+})
 
 const updateBreadcrumb = () => {
   const subtitle = activeTab.value === 'warnings' ? '库存预警' : '库存变动日志'
@@ -39,6 +62,23 @@ const fetchData = async () => {
   }
 }
 
+const getStockStatus = (row: any) => {
+  if (Number(row.currentStock || 0) <= 0) return { label: '已售罄', type: 'danger' as const }
+  if (Number(row.currentStock || 0) <= Number(row.minStock || 0)) return { label: '库存不足', type: 'warning' as const }
+  return { label: '正常', type: 'success' as const }
+}
+
+const getChangeTypeText = (type: string) => {
+  const map: Record<string, string> = {
+    IN: '入库',
+    OUT: '出库',
+    LOCK: '锁定',
+    UNLOCK: '释放',
+    ADJUST: '调整'
+  }
+  return map[type] || type || '-'
+}
+
 onMounted(() => {
   fetchData()
   updateBreadcrumb()
@@ -47,31 +87,60 @@ onMounted(() => {
 
 <template>
   <div class="page-container">
-    <div class="card-panel">
-      <div class="card-header">
-        <h3>库存管理</h3>
+    <div class="inventory-page">
+      <div class="page-head">
+        <div>
+          <h2>库存管理</h2>
+          <p>跟踪菜品库存预警和库存变动记录</p>
+        </div>
+        <el-button :icon="Refresh" :loading="loading" @click="fetchData">刷新</el-button>
       </div>
-      <el-tabs v-model="activeTab" style="padding-top: 10px;">
-        <el-tab-pane label="库存预警" name="warnings">
-          <el-table :data="warnings" border v-loading="loading">
-            <el-table-column prop="dishName" label="菜品名称" />
+
+      <div class="summary-grid">
+        <div v-for="item in inventoryStats" :key="item.label" class="summary-item" :class="item.className">
+          <span>{{ item.label }}</span>
+          <strong>{{ item.value }}</strong>
+          <em>{{ item.hint }}</em>
+        </div>
+      </div>
+
+      <div class="card-panel inventory-panel">
+        <el-tabs v-model="activeTab">
+          <el-tab-pane label="库存预警" name="warnings">
+          <el-table :data="sortedWarnings" v-loading="loading" empty-text="暂无库存预警">
+            <el-table-column prop="dishName" label="菜品名称" min-width="180">
+              <template #default="{ row }">
+                <div class="dish-name">{{ row.dishName }}</div>
+                <div class="sub-text">菜品 ID：{{ row.dishId }}</div>
+              </template>
+            </el-table-column>
             <el-table-column prop="currentStock" label="当前库存" width="120" />
             <el-table-column prop="minStock" label="预警值" width="120" />
+            <el-table-column label="库存差额" width="120">
+              <template #default="{ row }">
+                <span :class="Number(row.currentStock || 0) - Number(row.minStock || 0) <= 0 ? 'negative' : 'positive'">
+                  {{ Number(row.currentStock || 0) - Number(row.minStock || 0) }}
+                </span>
+              </template>
+            </el-table-column>
             <el-table-column label="状态" width="120">
               <template #default="{ row }">
-                <el-tag v-if="row.currentStock <= row.minStock" type="danger">库存不足</el-tag>
-                <el-tag v-else type="success">正常</el-tag>
+                <el-tag :type="getStockStatus(row).type">{{ getStockStatus(row).label }}</el-tag>
               </template>
             </el-table-column>
           </el-table>
         </el-tab-pane>
         <el-tab-pane label="库存变动日志" name="logs">
-          <el-table :data="logs" border v-loading="loading">
-            <el-table-column prop="dishName" label="菜品名称" />
-            <el-table-column prop="changeType" label="变动类型" width="120" />
+          <el-table :data="logs" v-loading="loading" empty-text="暂无库存变动记录">
+            <el-table-column prop="dishName" label="菜品名称" min-width="180" />
+            <el-table-column prop="changeType" label="变动类型" width="120">
+              <template #default="{ row }">
+                <el-tag type="info">{{ getChangeTypeText(row.changeType) }}</el-tag>
+              </template>
+            </el-table-column>
             <el-table-column prop="changeAmount" label="变动数量" width="120">
               <template #default="{ row }">
-                <span :style="{ color: row.changeAmount > 0 ? '#2D8F5C' : '#D9534F' }">
+                <span :class="row.changeAmount > 0 ? 'positive' : 'negative'">
                   {{ row.changeAmount > 0 ? '+' : '' }}{{ row.changeAmount }}
                 </span>
               </template>
@@ -83,6 +152,7 @@ onMounted(() => {
           </el-table>
         </el-tab-pane>
       </el-tabs>
+      </div>
     </div>
   </div>
 </template>
@@ -97,6 +167,78 @@ onMounted(() => {
   to { opacity: 1; transform: translateY(0); }
 }
 
+.inventory-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.page-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.page-head h2 {
+  margin: 0;
+  color: var(--bs-text-title);
+  font-size: 20px;
+  font-weight: 650;
+}
+
+.page-head p {
+  margin-top: 4px;
+  color: var(--bs-text-muted);
+  font-size: 13px;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.summary-item {
+  min-height: 104px;
+  padding: 16px;
+  background: #fff;
+  border: 1px solid var(--bs-border-light);
+  border-radius: var(--bs-radius-md);
+  box-shadow: var(--bs-card-shadow);
+}
+
+.summary-item span,
+.summary-item em {
+  display: block;
+  color: var(--bs-text-muted);
+  font-size: 13px;
+  font-style: normal;
+}
+
+.summary-item strong {
+  display: block;
+  margin: 6px 0 4px;
+  color: var(--bs-text-title);
+  font-size: 28px;
+  line-height: 1.1;
+}
+
+.summary-item.danger {
+  border-left: 3px solid var(--bs-status-danger);
+}
+
+.summary-item.warning {
+  border-left: 3px solid #b76e2a;
+}
+
+.summary-item.success {
+  border-left: 3px solid #1b6b4a;
+}
+
+.summary-item.muted {
+  border-left: 3px solid #8a9299;
+}
+
 .card-panel {
   background: var(--bs-card-bg);
   border-radius: var(--bs-radius-md);
@@ -104,17 +246,46 @@ onMounted(() => {
   padding: var(--bs-spacing-lg);
 }
 
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: var(--bs-spacing-lg);
+.inventory-panel {
+  padding-top: 12px;
 }
 
-.card-header h3 {
-  font-size: var(--bs-font-size-lg);
-  font-weight: 600;
+.dish-name {
   color: var(--bs-text-title);
+  font-weight: 600;
+}
+
+.sub-text {
+  margin-top: 4px;
+  color: var(--bs-text-muted);
+  font-size: 12px;
+}
+
+.positive {
+  color: #1b6b4a;
+  font-weight: 600;
+}
+
+.negative {
+  color: var(--bs-status-danger);
+  font-weight: 600;
+}
+
+@media (max-width: 1100px) {
+  .summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .page-head {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .summary-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>
-

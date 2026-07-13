@@ -105,4 +105,12 @@
         ORDER BY create_time DESC
     </select>
 
+    <select id="findAllByStatus" resultType="com.ws.bitesmart.entity.delivery.DeliveryDriver">
+        SELECT <include refid="BaseColumns"/>
+        FROM delivery_driver
+        WHERE deleted = 0
+          AND status = #{status}
+        ORDER BY create_time DESC
+    </select>
+
 </mapper>

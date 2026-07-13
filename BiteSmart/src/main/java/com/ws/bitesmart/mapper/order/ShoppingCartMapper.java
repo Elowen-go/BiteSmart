@@ -38,6 +38,8 @@ public interface ShoppingCartMapper {
     /** 修改选中状态 */
     int updateSelected(@Param("id") Long id, @Param("selected") Integer selected);
 
+    int updateCustomization(@Param("id") Long id, @Param("customizationJson") String customizationJson);
+
     /** 删除购物车商品（逻辑删除） */
     int deleteById(@Param("id") Long id);
 
