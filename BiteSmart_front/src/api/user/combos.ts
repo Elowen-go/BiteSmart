@@ -25,7 +25,7 @@ export interface ComboDishRel {
   isFixed: number
 }
 
-export const getComboList = (params?: { page?: number; size?: number }): Promise<any> => {
+export const getComboList = (params?: { keyword?: string; comboType?: number; sort?: string; page?: number; size?: number }): Promise<any> => {
   return request.get('/combos', { params })
 }
 
@@ -34,9 +34,9 @@ export const getComboDetail = (id: number): Promise<any> => {
 }
 
 export const replaceComboDish = (comboId: number, oldDishId: number, newDishId: number): Promise<any> => {
-  return request.post(`/combos/${comboId}/replace`, { params: { oldDishId, newDishId } })
+  return request.post(`/combos/${comboId}/replace`, null, { params: { oldDishId, newDishId } })
 }
 
 export const replaceCartComboDish = (cartId: number, oldDishId: number, newDishId: number): Promise<any> => {
-  return request.put(`/cart/${cartId}/replace`, { params: { oldDishId, newDishId } })
+  return request.put(`/cart/${cartId}/replace`, null, { params: { oldDishId, newDishId } })
 }

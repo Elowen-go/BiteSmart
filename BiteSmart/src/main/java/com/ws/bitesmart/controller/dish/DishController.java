@@ -4,6 +4,8 @@ import com.ws.bitesmart.common.PageResultVO;
 import com.ws.bitesmart.common.ResultVO;
 import com.ws.bitesmart.entity.dish.Dish;
 import com.ws.bitesmart.service.dish.DishService;
+import com.ws.bitesmart.entity.dish.DishCategory;
+import com.ws.bitesmart.service.dish.DishCategoryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -28,6 +30,7 @@ import java.util.stream.Collectors;
 public class DishController {
 
     private final DishService dishService;
+    private final DishCategoryService dishCategoryService;
 
     /**
      * 查所有上架菜品
@@ -38,10 +41,12 @@ public class DishController {
      */
     @GetMapping
     public ResultVO<?> list(@RequestParam(required = false) Long categoryId,
+                            @RequestParam(required = false) String keyword,
+                            @RequestParam(defaultValue = "latest") String sort,
                             @RequestParam(required = false) Integer page,
                             @RequestParam(defaultValue = "10") int size) {
         if (page != null) {
-            return ResultVO.success(PageResultVO.success(dishService.findAvailable(page, size)));
+            return ResultVO.success(PageResultVO.success(dishService.findAvailableFiltered(keyword, categoryId, sort, page, size)));
         }
         List<Dish> dishes = dishService.findAvailable();
         if (categoryId != null) {
@@ -50,6 +55,11 @@ public class DishController {
                     .collect(Collectors.toList());
         }
         return ResultVO.success(dishes);
+    }
+
+    @GetMapping("/categories")
+    public ResultVO<List<DishCategory>> categories() {
+        return ResultVO.success(dishCategoryService.findAll());
     }
 
     /** 查菜品详情 */

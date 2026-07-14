@@ -7,16 +7,21 @@ import com.ws.bitesmart.common.util.SnowflakeUtil;
 import com.ws.bitesmart.entity.health.DietRecord;
 import com.ws.bitesmart.entity.health.ExerciseRecord;
 import com.ws.bitesmart.entity.health.WeightRecord;
+import com.ws.bitesmart.entity.order.OrderItem;
 import com.ws.bitesmart.exception.BusinessException;
 import com.ws.bitesmart.mapper.health.DietRecordMapper;
 import com.ws.bitesmart.mapper.health.ExerciseRecordMapper;
 import com.ws.bitesmart.mapper.health.WeightRecordMapper;
+import com.ws.bitesmart.mapper.user.UserProfileMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.math.BigDecimal;
 import java.util.List;
 
 /**
@@ -33,6 +38,7 @@ public class HealthRecordService {
     private final DietRecordMapper dietRecordMapper;
     private final ExerciseRecordMapper exerciseRecordMapper;
     private final WeightRecordMapper weightRecordMapper;
+    private final UserProfileMapper userProfileMapper;
 
     // ==================== 饮食记录 ====================
 
@@ -51,8 +57,54 @@ public class HealthRecordService {
     public void addDietRecord(Long userId, DietRecord record) {
         record.setId(SnowflakeUtil.generate());
         record.setUserId(userId);
-        if (record.getSourceType() == null) record.setSourceType(20); // 手动添加
+        record.setSourceType(20); // manual records cannot impersonate order imports
+        if (record.getRecordDate() == null) record.setRecordDate(LocalDate.now());
+        if (record.getRecordTime() == null) record.setRecordTime(LocalTime.now());
+        if (record.getQuantity() == null || record.getQuantity() < 1) record.setQuantity(1);
         dietRecordMapper.insert(record);
+    }
+
+    /** Import completed order items into diet records. The order item ID makes this idempotent. */
+    @Transactional
+    public void importOrderDietRecords(Long userId, List<OrderItem> items, LocalDateTime finishedAt) {
+        if (items == null || items.isEmpty()) return;
+        LocalDateTime recordedAt = finishedAt == null ? LocalDateTime.now() : finishedAt;
+        for (OrderItem item : items) {
+            if (item.getId() == null || dietRecordMapper.findByOrderItemId(item.getId()) != null) continue;
+
+            int quantity = item.getQuantity() == null || item.getQuantity() < 1 ? 1 : item.getQuantity();
+            DietRecord record = new DietRecord();
+            record.setId(SnowflakeUtil.generate());
+            record.setUserId(userId);
+            record.setRecordDate(recordedAt.toLocalDate());
+            record.setRecordTime(recordedAt.toLocalTime());
+            record.setMealType(resolveMealType(recordedAt.toLocalTime()));
+            record.setFoodName(item.getSnapshotName());
+            record.setQuantity(quantity);
+            record.setCalories(scale(item.getSnapshotCalories(), quantity));
+            record.setProtein(scale(item.getSnapshotProtein(), quantity));
+            record.setFat(scale(item.getSnapshotFat(), quantity));
+            record.setCarbs(scale(item.getSnapshotCarbs(), quantity));
+            record.setSourceType(10);
+            record.setOrderItemId(item.getId());
+            dietRecordMapper.insert(record);
+        }
+    }
+
+    private Integer resolveMealType(LocalTime time) {
+        int hour = time.getHour();
+        if (hour < 10) return 10;
+        if (hour < 14) return 20;
+        if (hour < 17) return 40;
+        return 30;
+    }
+
+    private Integer scale(Integer value, int quantity) {
+        return value == null ? 0 : value * quantity;
+    }
+
+    private BigDecimal scale(BigDecimal value, int quantity) {
+        return value == null ? BigDecimal.ZERO : value.multiply(BigDecimal.valueOf(quantity));
     }
 
     /** 修改饮食记录，校验所属权 */
@@ -141,6 +193,7 @@ public class HealthRecordService {
             record.setId(SnowflakeUtil.generate());
             weightRecordMapper.insert(record);
         }
+        userProfileMapper.updateWeight(userId, record.getWeight());
     }
 
 }

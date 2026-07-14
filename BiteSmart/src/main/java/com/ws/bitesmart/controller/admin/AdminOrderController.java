@@ -6,7 +6,10 @@ import com.ws.bitesmart.common.PageResultVO;
 import com.ws.bitesmart.common.ResultVO;
 import com.ws.bitesmart.entity.order.Orders;
 import com.ws.bitesmart.mapper.delivery.DeliveryTaskMapper;
+import com.ws.bitesmart.mapper.merchant.MerchantMapper;
+import com.ws.bitesmart.mapper.order.OrderItemMapper;
 import com.ws.bitesmart.mapper.order.OrdersMapper;
+import com.ws.bitesmart.mapper.user.SysUserMapper;
 import com.ws.bitesmart.service.order.OrderService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,6 +21,8 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.PutMapping;
 
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 /**
  * 管理员端 - 订单管理
@@ -33,6 +38,9 @@ public class AdminOrderController {
     private final OrdersMapper ordersMapper;
     private final DeliveryTaskMapper deliveryTaskMapper;
     private final OrderService orderService;
+    private final OrderItemMapper orderItemMapper;
+    private final SysUserMapper sysUserMapper;
+    private final MerchantMapper merchantMapper;
 
     /**
      * 所有用户订单（分页）
@@ -54,13 +62,18 @@ public class AdminOrderController {
      * GET /api/admin/orders/{id}
      */
     @GetMapping("/{id}")
-    public ResultVO<Orders> detail(@PathVariable Long id) {
+    public ResultVO<Map<String, Object>> detail(@PathVariable Long id) {
         Orders order = ordersMapper.findById(id);
         if (order == null) {
             return ResultVO.error(404, "订单不存在");
         }
         order.setDeliveryTask(deliveryTaskMapper.findByOrderId(id));
-        return ResultVO.success(order);
+        Map<String, Object> result = new HashMap<>();
+        result.put("order", order);
+        result.put("items", orderItemMapper.findByOrderId(id));
+        result.put("buyer", sysUserMapper.findById(order.getUserId()));
+        result.put("merchant", merchantMapper.findById(order.getMerchantId()));
+        return ResultVO.success(result);
     }
 
     @PutMapping("/{id}/cancel")

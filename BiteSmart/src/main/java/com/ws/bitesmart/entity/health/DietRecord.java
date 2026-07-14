@@ -3,6 +3,7 @@ package com.ws.bitesmart.entity.health;
 import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.LocalDateTime;
 
 /**
@@ -21,11 +22,17 @@ public class DietRecord {
     /** 记录日期 */
     private LocalDate recordDate;
 
+    /** 记录时间 */
+    private LocalTime recordTime;
+
     /** 餐次：10-早餐 20-午餐 30-晚餐 40-加餐 */
     private Integer mealType;
 
     /** 食物名称 */
     private String foodName;
+
+    /** 食用份数 */
+    private Integer quantity;
 
     /** 热量（大卡） */
     private Integer calories;

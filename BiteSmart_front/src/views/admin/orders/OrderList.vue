@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { getOrderList, getOrderDetail, cancelOrder } from '../../../api/admin/orders'
 
@@ -12,6 +12,8 @@ const orderStatus = ref<number | undefined>()
 
 const detailDialogVisible = ref(false)
 const detailData = ref<any>(null)
+const currentOrder = computed(() => detailData.value?.order || detailData.value)
+const currentItems = computed(() => detailData.value?.items || [])
 const cancelDialogVisible = ref(false)
 const cancelReason = ref('')
 const cancelTarget = ref<any>(null)
@@ -66,6 +68,9 @@ const submitCancel = async () => {
     loadData()
   }
 }
+
+const formatAmount = (value: any) => Number(value || 0).toFixed(2)
+const imageUrl = (value: string) => value ? (value.startsWith('http') ? value : `/api/files/download${value}`) : ''
 
 onMounted(loadData)
 </script>
@@ -131,27 +136,24 @@ onMounted(loadData)
       </div>
     </div>
 
-    <el-dialog v-model="detailDialogVisible" title="订单详情" width="600px">
-      <div v-if="detailData" class="order-detail">
+    <el-dialog v-model="detailDialogVisible" title="订单详情" width="760px">
+      <div v-if="currentOrder" class="order-detail">
+        <div class="party-grid">
+          <div><span>买家</span><strong>{{ detailData.buyer?.nickname || detailData.buyer?.username || currentOrder.userId }}</strong><small>{{ detailData.buyer?.phone || '未填写手机号' }}</small></div>
+          <div><span>商家</span><strong>{{ detailData.merchant?.shopName || currentOrder.merchantId }}</strong><small>{{ detailData.merchant?.contactPhone || '未填写联系电话' }}</small></div>
+        </div>
         <el-descriptions :column="2" border>
-          <el-descriptions-item label="订单号">{{ detailData.orderNo }}</el-descriptions-item>
-          <el-descriptions-item label="订单状态">
-            <el-tag :type="orderStatusTypeMap[detailData.orderStatus] || 'info'" size="small">
-              {{ orderStatusMap[detailData.orderStatus] || '未知' }}
-            </el-tag>
-          </el-descriptions-item>
-          <el-descriptions-item label="订单金额">¥{{ detailData.totalAmount?.toFixed(2) }}</el-descriptions-item>
-          <el-descriptions-item label="实付金额">¥{{ detailData.payAmount?.toFixed(2) }}</el-descriptions-item>
-          <el-descriptions-item label="配送地址" :span="2">{{ detailData.deliveryAddress }}</el-descriptions-item>
-          <el-descriptions-item label="创建时间" :span="2">{{ detailData.createTime }}</el-descriptions-item>
-          <el-descriptions-item label="配送状态">
-            {{ ({ 0: '未配送', 10: '待取餐', 20: '已取餐', 30: '配送中', 40: '已送达', 60: '异常' } as Record<number, string>)[detailData.deliveryTask?.taskStatus] || '-' }}
-          </el-descriptions-item>
-          <el-descriptions-item label="配送员">{{ detailData.deliveryTask?.driverId || '未分配' }}</el-descriptions-item>
-          <el-descriptions-item v-if="detailData.deliveryTask?.taskStatus === 60" label="异常原因" :span="2">
-            <el-tag type="danger">{{ detailData.deliveryTask.exceptionReason || '未填写原因' }}</el-tag>
-          </el-descriptions-item>
+          <el-descriptions-item label="订单号">{{ currentOrder.orderNo }}</el-descriptions-item>
+          <el-descriptions-item label="订单状态"><el-tag :type="orderStatusTypeMap[currentOrder.orderStatus] || 'info'" size="small">{{ orderStatusMap[currentOrder.orderStatus] || '未知' }}</el-tag></el-descriptions-item>
+          <el-descriptions-item label="订单金额">¥{{ formatAmount(currentOrder.totalAmount) }}</el-descriptions-item>
+          <el-descriptions-item label="实付金额">¥{{ formatAmount(currentOrder.payAmount) }}</el-descriptions-item>
+          <el-descriptions-item label="收货人">{{ currentOrder.receiverName || '未填写' }} {{ currentOrder.receiverPhone || '' }}</el-descriptions-item>
+          <el-descriptions-item label="配送地址" :span="2">{{ currentOrder.deliveryAddress }}</el-descriptions-item>
+          <el-descriptions-item label="备注" :span="2">{{ currentOrder.remark || '无' }}</el-descriptions-item>
+          <el-descriptions-item label="创建时间" :span="2">{{ currentOrder.createTime }}</el-descriptions-item>
         </el-descriptions>
+        <div v-if="currentItems.length" class="detail-section"><h4>商品明细</h4><div v-for="item in currentItems" :key="item.id" class="item-row"><div class="item-image"><img v-if="item.snapshotImage" :src="imageUrl(item.snapshotImage)" alt="商品图片" /><span v-else>餐</span></div><div class="item-copy"><strong>{{ item.snapshotName || '订单商品' }}</strong><small>数量 × {{ item.quantity || 1 }} · 单价 ¥{{ formatAmount(item.snapshotPrice) }}</small></div><b>¥{{ formatAmount(item.subTotal) }}</b></div></div>
+        <div class="detail-section"><h4>配送信息</h4><p>配送状态：{{ ({ 0: '未配送', 10: '待取餐', 20: '已取餐', 30: '配送中', 40: '已送达', 60: '异常' } as Record<number, string>)[currentOrder.deliveryTask?.taskStatus] || '未分配' }} · 配送员：{{ currentOrder.deliveryTask?.driverId || '未分配' }}</p></div>
       </div>
       <template #footer>
         <el-button @click="detailDialogVisible = false">关闭</el-button>
@@ -218,4 +220,7 @@ onMounted(loadData)
 .btn-primary:hover {
   background: var(--bs-primary-hover);
 }
+</style>
+<style scoped>
+.party-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}.party-grid>div{display:flex;flex-direction:column;gap:5px;padding:13px 15px;background:#f5f8f5;border:1px solid #e2e9e2}.party-grid span,.party-grid small{color:#849088;font-size:11px}.party-grid strong{color:#1f2a24;font-size:14px}.detail-section{margin-top:20px}.detail-section h4{margin:0 0 10px;color:#1f2a24;font-size:14px}.item-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #edf1ec}.item-image{display:grid;place-items:center;width:48px;height:48px;flex:0 0 48px;background:#eef4ef;color:#6d8874}.item-image img{width:100%;height:100%;object-fit:cover}.item-copy{display:flex;flex:1;flex-direction:column;gap:5px}.item-copy strong{font-size:13px}.item-copy small{color:#87928a;font-size:11px}.item-row b{color:#1f4d3a}@media(max-width:600px){.party-grid{grid-template-columns:1fr}}
 </style>

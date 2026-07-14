@@ -32,6 +32,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
@@ -103,17 +104,53 @@ public class OrderService {
     @Transactional(rollbackFor = Exception.class)
     public String createOrder(Long userId, String address, String receiverName,
                               String receiverPhone, String remark) {
-        // 1. 查购物车中选中的商品
         List<ShoppingCart> selectedItems = shoppingCartMapper.findSelectedByUserId(userId);
         if (selectedItems == null || selectedItems.isEmpty()) {
             throw new BusinessException("请先选择要购买的商品");
         }
+        Map<Long, List<ShoppingCart>> grouped = groupByMerchant(selectedItems);
+        if (grouped.size() != 1) {
+            throw new BusinessException("购物车中包含不同商家的商品，请使用分商家结算");
+        }
+        Map.Entry<Long, List<ShoppingCart>> group = grouped.entrySet().iterator().next();
+        return createOrderForItems(userId, address, receiverName, receiverPhone, remark, group.getKey(), group.getValue());
+    }
 
-        // 2. 确定商家ID
-        ShoppingCart firstItem = selectedItems.get(0);
-        Long merchantId = getMerchantId(firstItem.getItemType(), firstItem.getDishId(), firstItem.getComboId());
+    /** 一次结算按商家拆成多个订单，整个过程保持在同一事务中。 */
+    @Transactional(rollbackFor = Exception.class)
+    public List<String> createOrders(Long userId, String address, String receiverName,
+                                     String receiverPhone, Map<Long, String> remarksByMerchant) {
+        List<ShoppingCart> selectedItems = shoppingCartMapper.findSelectedByUserId(userId);
+        if (selectedItems == null || selectedItems.isEmpty()) {
+            throw new BusinessException("请先选择要购买的商品");
+        }
+        Map<Long, List<ShoppingCart>> grouped = groupByMerchant(selectedItems);
+        List<String> orderNos = new ArrayList<>();
+        for (Map.Entry<Long, List<ShoppingCart>> entry : grouped.entrySet()) {
+            String remark = remarksByMerchant == null ? null : remarksByMerchant.get(entry.getKey());
+            orderNos.add(createOrderForItems(userId, address, receiverName, receiverPhone,
+                    remark, entry.getKey(), entry.getValue()));
+        }
+        shoppingCartMapper.deleteByUserId(userId);
+        return orderNos;
+    }
 
-        // 3. 锁定库存 + 构建订单明细
+    private Map<Long, List<ShoppingCart>> groupByMerchant(List<ShoppingCart> selectedItems) {
+        Map<Long, List<ShoppingCart>> grouped = new LinkedHashMap<>();
+        for (ShoppingCart cart : selectedItems) {
+            if (cart.getQuantity() == null || cart.getQuantity() < 1 || cart.getQuantity() > 99) {
+                throw new BusinessException("商品数量必须在1到99之间");
+            }
+            Long merchantId = getMerchantId(cart.getItemType(), cart.getDishId(), cart.getComboId());
+            grouped.computeIfAbsent(merchantId, key -> new ArrayList<>()).add(cart);
+        }
+        return grouped;
+    }
+
+    private String createOrderForItems(Long userId, String address, String receiverName,
+                                       String receiverPhone, String remark, Long merchantId,
+                                       List<ShoppingCart> selectedItems) {
+        // 锁定库存 + 构建订单明细
         BigDecimal totalAmount = BigDecimal.ZERO;
         List<OrderItem> orderItems = new ArrayList<>();
 
@@ -215,9 +252,6 @@ public class OrderService {
             item.setOrderId(order.getId());
         }
         orderItemMapper.insertBatch(orderItems);
-
-        // 7. 清空购物车
-        shoppingCartMapper.deleteByUserId(userId);
 
         operateLogService.record(userId, null, null,
                 "创建订单", "OrderService.createOrder", null, orderNo, null, null, null);

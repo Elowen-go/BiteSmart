@@ -18,6 +18,13 @@
         ORDER BY create_time DESC
     </select>
 
+    <select id="findAllAdmin" resultType="com.ws.bitesmart.entity.dish.Dish">
+        SELECT <include refid="BaseColumns"/>
+        FROM dish
+        WHERE (deleted = 0 OR deleted IS NULL)
+        ORDER BY create_time DESC
+    </select>
+
     <select id="findById" resultType="com.ws.bitesmart.entity.dish.Dish">
         SELECT <include refid="BaseColumns"/>
         FROM dish WHERE id = #{id} AND (deleted = 0 OR deleted IS NULL)
@@ -29,6 +36,24 @@
         FROM dish
         WHERE status = 10 AND stock &gt; 0 AND (deleted = 0 OR deleted IS NULL)
         ORDER BY create_time DESC
+    </select>
+
+    <select id="findAvailableFiltered" resultType="com.ws.bitesmart.entity.dish.Dish">
+        SELECT <include refid="BaseColumns"/>
+        FROM dish
+        WHERE status = 10 AND stock &gt; 0 AND (deleted = 0 OR deleted IS NULL)
+        <if test="keyword != null and keyword != ''">
+            AND (dish_name LIKE CONCAT('%', #{keyword}, '%') OR description LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        <if test="categoryId != null">AND category_id = #{categoryId}</if>
+        <choose>
+            <when test="sort == 'priceAsc'">ORDER BY price ASC, create_time DESC</when>
+            <when test="sort == 'priceDesc'">ORDER BY price DESC, create_time DESC</when>
+            <when test="sort == 'calories'">ORDER BY calories ASC, create_time DESC</when>
+            <when test="sort == 'protein'">ORDER BY protein DESC, create_time DESC</when>
+            <when test="sort == 'sales'">ORDER BY sales_count DESC, create_time DESC</when>
+            <otherwise>ORDER BY create_time DESC</otherwise>
+        </choose>
     </select>
 
     <insert id="insert" parameterType="com.ws.bitesmart.entity.dish.Dish">

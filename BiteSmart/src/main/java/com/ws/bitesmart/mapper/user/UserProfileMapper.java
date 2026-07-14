@@ -21,4 +21,6 @@ public interface UserProfileMapper {
     /** 按用户ID更新（只改非空字段） */
     int updateByUserId(UserProfile profile);
 
+    int updateWeight(@Param("userId") Long userId, @Param("weight") java.math.BigDecimal weight);
+
 }

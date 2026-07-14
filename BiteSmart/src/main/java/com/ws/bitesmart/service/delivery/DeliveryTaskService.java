@@ -6,9 +6,11 @@ import com.ws.bitesmart.entity.delivery.DeliveryDriver;
 import com.ws.bitesmart.entity.delivery.DeliveryTask;
 import com.ws.bitesmart.entity.order.Orders;
 import com.ws.bitesmart.exception.BusinessException;
+import com.ws.bitesmart.service.health.HealthRecordService;
 import com.ws.bitesmart.mapper.delivery.DeliveryDriverMapper;
 import com.ws.bitesmart.mapper.delivery.DeliveryTaskMapper;
 import com.ws.bitesmart.mapper.order.OrdersMapper;
+import com.ws.bitesmart.mapper.order.OrderItemMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -31,6 +33,8 @@ public class DeliveryTaskService {
     private final DeliveryTaskMapper deliveryTaskMapper;
     private final DeliveryDriverMapper deliveryDriverMapper;
     private final OrdersMapper ordersMapper;
+    private final OrderItemMapper orderItemMapper;
+    private final HealthRecordService healthRecordService;
 
     /**
      * 创建配送任务（商家出餐后调用）
@@ -171,6 +175,7 @@ public class DeliveryTaskService {
 
         // 原子更新配送员当前订单数
         deliveryDriverMapper.decrementOrders(driver.getId());
+        importCompletedOrderDietRecords(task.getOrderId());
 
         // 同步更新订单状态：配送中(40) → 已完成(50)，并写入完成时间和配送状态(已送达)
         ordersMapper.updateStatusWithLock(
@@ -188,6 +193,13 @@ public class DeliveryTaskService {
      * @param lng       经度
      * @param routeJson 路线JSON
      */
+    private void importCompletedOrderDietRecords(Long orderId) {
+        Orders completedOrder = ordersMapper.findById(orderId);
+        if (completedOrder == null) return;
+        healthRecordService.importOrderDietRecords(
+                completedOrder.getUserId(), orderItemMapper.findByOrderId(orderId), LocalDateTime.now());
+    }
+
     public void updateLocation(Long taskId, BigDecimal lat, BigDecimal lng, String routeJson) {
         deliveryTaskMapper.updateLocation(taskId, lat, lng, routeJson);
     }

@@ -2,6 +2,7 @@ package com.ws.bitesmart.controller.order;
 
 import com.ws.bitesmart.common.PageResultVO;
 import com.ws.bitesmart.common.ResultVO;
+import com.ws.bitesmart.dto.request.BatchOrderRequest;
 import com.ws.bitesmart.entity.order.OrderItem;
 import com.ws.bitesmart.entity.order.Orders;
 import com.ws.bitesmart.security.LoginUser;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -56,6 +58,27 @@ public class UserOrderController {
                 receiverName, receiverPhone, remark);
         Map<String, String> result = new HashMap<>();
         result.put("orderNo", orderNo);
+        return ResultVO.success(result);
+    }
+
+    /** 一次结算，按商家拆分为多个订单。 */
+    @PostMapping("/batch")
+    public ResultVO<Map<String, Object>> createBatch(@AuthenticationPrincipal LoginUser loginUser,
+                                                     @RequestBody BatchOrderRequest request) {
+        if (loginUser == null) return ResultVO.error(401, "未登录");
+        if (request == null || request.getMerchantOrders() == null || request.getMerchantOrders().isEmpty()) {
+            return ResultVO.error(400, "请选择要结算的商品");
+        }
+        Map<Long, String> remarks = new HashMap<>();
+        for (BatchOrderRequest.MerchantOrderRequest merchantOrder : request.getMerchantOrders()) {
+            if (merchantOrder.getMerchantId() == null) return ResultVO.error(400, "商家信息不能为空");
+            remarks.put(merchantOrder.getMerchantId(), merchantOrder.getRemark());
+        }
+        List<String> orderNos = orderService.createOrders(loginUser.getUserId(), request.getAddress(),
+                request.getReceiverName(), request.getReceiverPhone(), remarks);
+        Map<String, Object> result = new HashMap<>();
+        result.put("orderNos", orderNos);
+        result.put("orderCount", orderNos.size());
         return ResultVO.success(result);
     }
 

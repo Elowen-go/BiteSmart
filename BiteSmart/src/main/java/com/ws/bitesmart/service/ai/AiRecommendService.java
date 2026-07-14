@@ -2,6 +2,9 @@ package com.ws.bitesmart.service.ai;
 
 import com.ws.bitesmart.entity.ai.AiRecommendRule;
 import com.ws.bitesmart.entity.ai.NutritionStandard;
+import com.ws.bitesmart.dto.request.AiRecommendRequest;
+import com.ws.bitesmart.entity.dish.Dish;
+import com.ws.bitesmart.mapper.dish.DishMapper;
 import com.ws.bitesmart.entity.user.UserProfile;
 import com.ws.bitesmart.mapper.ai.AiRecommendRuleMapper;
 import com.ws.bitesmart.mapper.ai.NutritionStandardMapper;
@@ -17,9 +20,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * AI食谱推荐服务
@@ -35,6 +43,7 @@ public class AiRecommendService {
     private final UserProfileMapper userProfileMapper;
     private final NutritionStandardMapper nutritionStandardMapper;
     private final AiRecommendRuleMapper aiRecommendRuleMapper;
+    private final DishMapper dishMapper;
     private final RestTemplate restTemplate;
 
     @Value("${ai.api-key}")
@@ -52,8 +61,15 @@ public class AiRecommendService {
      * @param userId 用户ID
      * @return 包含推荐结果的 Map，含营养目标和推荐说明
      */
-    public Map<String, Object> recommend(Long userId) {
+    public Map<String, Object> recommend(Long userId, AiRecommendRequest request) {
         Map<String, Object> result = new HashMap<>();
+        String mealType = request == null || request.getMealType() == null || request.getMealType().isBlank()
+                ? "all" : request.getMealType().trim().toLowerCase();
+        if (!Set.of("all", "breakfast", "lunch", "dinner").contains(mealType)) {
+            result.put("success", false);
+            result.put("message", "餐次参数不正确，请选择早餐、午餐、晚餐或全部");
+            return result;
+        }
 
         // 1. 获取用户健康档案
         UserProfile profile = userProfileMapper.findByUserId(userId);
@@ -75,7 +91,8 @@ public class AiRecommendService {
         AiRecommendRule rule = aiRecommendRuleMapper.findBestRuleByGoal(profile.getHealthGoal());
 
         // 4. 调用 DeepSeek 生成个性化食谱
-        String recommendation = callDeepSeekForRecommendation(profile, standard, rule);
+        List<Dish> candidates = filterCandidates(dishMapper.findAvailable(), request == null ? null : request.getDietaryRestrictions());
+        Map<String, Object> recipe = buildRecipe(candidates, mealType);
 
         // 5. 组装结果
         result.put("success", true);
@@ -94,10 +111,98 @@ public class AiRecommendService {
             result.put("recommendRule", rule);
         }
 
-        result.put("recommendation", recommendation);
+        result.putAll(recipe);
 
         log.info("AI推荐成功: userId={}, goal={}", userId, profile.getHealthGoal());
         return result;
+    }
+
+    private List<Dish> filterCandidates(List<Dish> dishes, String restrictions) {
+        if (dishes == null) return Collections.emptyList();
+        String text = restrictions == null ? "" : restrictions.toLowerCase();
+        return dishes.stream()
+                .filter(d -> d.getId() != null && d.getStock() != null && d.getStock() > 0)
+                .filter(d -> d.getCalories() != null && d.getProtein() != null && d.getFat() != null && d.getCarbs() != null)
+                .filter(d -> !matchesRestriction(d, text))
+                .sorted(Comparator.comparing(Dish::getCalories).thenComparing(Dish::getId))
+                .toList();
+    }
+
+    private boolean matchesRestriction(Dish dish, String restrictions) {
+        if (restrictions.isBlank()) return false;
+        String searchable = ((dish.getDishName() == null ? "" : dish.getDishName()) + " "
+                + (dish.getSuitableFor() == null ? "" : dish.getSuitableFor())).toLowerCase();
+        for (String token : restrictions.split("[,，、;；\\s]+")) {
+            if (token.length() > 1 && searchable.contains(token)) return true;
+            if ((token.contains("海鲜") || token.contains("海產") || token.contains("鱼") || token.contains("魚"))
+                    && (searchable.contains("海鲜") || searchable.contains("虾") || searchable.contains("蟹") || searchable.contains("鱼"))) return true;
+        }
+        return false;
+    }
+
+    private Map<String, Object> buildRecipe(List<Dish> candidates, String requestedMeal) {
+        Map<String, Object> recipe = new LinkedHashMap<>();
+        List<String> mealTypes = "all".equals(requestedMeal)
+                ? List.of("breakfast", "lunch", "dinner") : List.of(requestedMeal);
+        List<Map<String, Object>> meals = new ArrayList<>();
+        Map<String, Object> summary = nutritionMap();
+        Set<Long> used = new HashSet<>();
+        for (int mealIndex = 0; mealIndex < mealTypes.size(); mealIndex++) {
+            String type = mealTypes.get(mealIndex);
+            List<Map<String, Object>> items = new ArrayList<>();
+            for (int offset = 0; offset < candidates.size() && items.size() < 2; offset++) {
+                Dish dish = candidates.get((mealIndex * 2 + offset) % candidates.size());
+                if (!used.add(dish.getId())) continue;
+                items.add(dishMap(dish, type));
+                addNutrition(summary, dish);
+            }
+            Map<String, Object> meal = new LinkedHashMap<>();
+            meal.put("mealType", type);
+            meal.put("items", items);
+            meals.add(meal);
+        }
+        recipe.put("meals", meals);
+        recipe.put("candidates", candidates.stream().map(dish -> dishMap(dish, requestedMeal)).toList());
+        recipe.put("summary", summary);
+        recipe.put("candidateCount", candidates.size());
+        recipe.put("advice", candidates.isEmpty()
+                ? "当前没有同时满足在售、库存和营养数据要求的菜品。"
+                : "已从平台在售菜品中为你搭配，替换菜品后营养数据会重新计算。");
+        return recipe;
+    }
+
+    private Map<String, Object> dishMap(Dish dish, String mealType) {
+        Map<String, Object> item = new LinkedHashMap<>();
+        item.put("dishId", dish.getId());
+        item.put("dishName", dish.getDishName());
+        item.put("merchantId", dish.getMerchantId());
+        item.put("dishImage", dish.getDishImage());
+        item.put("mealType", mealType);
+        item.put("quantity", 1);
+        item.put("price", dish.getPrice());
+        item.put("calories", dish.getCalories());
+        item.put("protein", dish.getProtein());
+        item.put("fat", dish.getFat());
+        item.put("carbs", dish.getCarbs());
+        item.put("stock", dish.getStock());
+        item.put("available", true);
+        return item;
+    }
+
+    private Map<String, Object> nutritionMap() {
+        Map<String, Object> summary = new LinkedHashMap<>();
+        summary.put("calories", 0);
+        summary.put("protein", java.math.BigDecimal.ZERO);
+        summary.put("fat", java.math.BigDecimal.ZERO);
+        summary.put("carbs", java.math.BigDecimal.ZERO);
+        return summary;
+    }
+
+    private void addNutrition(Map<String, Object> summary, Dish dish) {
+        summary.put("calories", ((Integer) summary.get("calories")) + dish.getCalories());
+        summary.put("protein", ((java.math.BigDecimal) summary.get("protein")).add(dish.getProtein()));
+        summary.put("fat", ((java.math.BigDecimal) summary.get("fat")).add(dish.getFat()));
+        summary.put("carbs", ((java.math.BigDecimal) summary.get("carbs")).add(dish.getCarbs()));
     }
 
     /**

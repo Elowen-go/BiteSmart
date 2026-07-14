@@ -68,9 +68,19 @@
     </update>
 
     <select id="findAll" resultType="com.ws.bitesmart.entity.review.Review">
-        SELECT <include refid="BaseColumns"/>
-        FROM review
-        WHERE deleted = 0
+        SELECT r.id, r.order_id, r.user_id, r.merchant_id, r.driver_id, r.dish_id,
+               r.rating_food, r.rating_delivery, r.rating_service, r.overall_rating,
+               r.content, r.images, r.is_anonymous,
+               r.merchant_reply, r.merchant_reply_time,
+               r.status, r.create_time, r.update_time, r.deleted,
+               u.username AS username, u.nickname AS user_nickname, u.avatar AS user_avatar,
+               m.shop_name AS shop_name,
+               d.dish_name AS dish_name, d.dish_image AS dish_image
+        FROM review r
+        LEFT JOIN sys_user u ON u.id = r.user_id
+        LEFT JOIN merchant m ON m.id = r.merchant_id
+        LEFT JOIN dish d ON d.id = r.dish_id
+        WHERE r.deleted = 0
         ORDER BY create_time DESC
     </select>
 

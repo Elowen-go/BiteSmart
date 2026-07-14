@@ -179,6 +179,7 @@ const getStatusClass = (status: number) => {
 const formatAmount = (amount: number | string | undefined) => {
   return Number(amount || 0).toFixed(2)
 }
+const imageUrl = (value: string) => value ? (value.startsWith('http') ? value : `/api/files/download${value}`) : ''
 
 onMounted(() => {
   fetchList()
@@ -273,6 +274,7 @@ onMounted(() => {
 
     <el-dialog v-model="detailVisible" title="订单详情" width="720px">
       <template v-if="currentOrder">
+        <div class="party-strip"><span>买家：<strong>{{ detailData.buyer?.nickname || detailData.buyer?.username || currentOrder.userId }}</strong></span><span>商家：<strong>{{ detailData.merchant?.shopName || currentOrder.merchantId }}</strong></span></div>
         <el-descriptions :column="2" border>
           <el-descriptions-item label="订单号">{{ currentOrder.orderNo }}</el-descriptions-item>
           <el-descriptions-item label="订单状态">{{ getStatusLabel(currentOrder.orderStatus) }}</el-descriptions-item>
@@ -288,13 +290,13 @@ onMounted(() => {
         <div v-if="currentItems.length" class="detail-section">
           <h4>商品明细</h4>
           <el-table :data="currentItems" size="small">
-            <el-table-column prop="itemName" label="商品" min-width="180" />
+            <el-table-column label="商品" min-width="220"><template #default="{ row }"><div class="order-item-cell"><img v-if="row.snapshotImage" :src="imageUrl(row.snapshotImage)" alt="商品图片" /><span v-else class="order-item-placeholder">餐</span><div><strong>{{ row.snapshotName || '订单商品' }}</strong><small>{{ row.itemType === 20 ? '套餐' : '菜品' }}</small></div></div></template></el-table-column>
             <el-table-column prop="quantity" label="数量" width="90" />
-            <el-table-column prop="price" label="单价" width="110">
-              <template #default="{ row }">¥{{ formatAmount(row.price) }}</template>
+            <el-table-column prop="snapshotPrice" label="单价" width="110">
+              <template #default="{ row }">¥{{ formatAmount(row.snapshotPrice) }}</template>
             </el-table-column>
-            <el-table-column prop="totalAmount" label="小计" width="110">
-              <template #default="{ row }">¥{{ formatAmount(row.totalAmount || Number(row.price || 0) * Number(row.quantity || 0)) }}</template>
+            <el-table-column prop="subTotal" label="小计" width="110">
+              <template #default="{ row }">¥{{ formatAmount(row.subTotal) }}</template>
             </el-table-column>
           </el-table>
         </div>
@@ -472,4 +474,7 @@ onMounted(() => {
     grid-template-columns: 1fr;
   }
 }
+</style>
+<style scoped>
+.party-strip{display:flex;gap:28px;margin-bottom:14px;padding:12px 14px;background:#f5f8f5;color:#87928a;font-size:12px}.party-strip strong{color:#1f2a24}.order-item-cell{display:flex;align-items:center;gap:10px}.order-item-cell img,.order-item-placeholder{width:42px;height:42px;flex:0 0 42px;object-fit:cover}.order-item-placeholder{display:grid;place-items:center;background:#eef4ef;color:#5e8069}.order-item-cell div{display:flex;flex-direction:column;gap:4px}.order-item-cell small{color:#87928a;font-size:11px}
 </style>

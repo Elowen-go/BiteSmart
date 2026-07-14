@@ -3,8 +3,10 @@ import request from '../../utils/request'
 export interface DietRecord {
   id: number
   userId: number
+  recordTime: string
   mealType: string
   dishIds: string
+  quantity: number
   totalCalories: number
   totalProtein: number
   totalFat: number

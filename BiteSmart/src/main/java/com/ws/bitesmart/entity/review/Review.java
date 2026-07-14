@@ -65,4 +65,12 @@ public class Review {
     private LocalDateTime updateTime;
     private Integer deleted;
 
+    // Display-only fields populated by admin list queries.
+    private String username;
+    private String userNickname;
+    private String userAvatar;
+    private String shopName;
+    private String dishName;
+    private String dishImage;
+
 }

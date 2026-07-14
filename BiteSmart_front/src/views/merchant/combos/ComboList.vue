@@ -818,7 +818,7 @@ onMounted(() => {
                       { label: '可换', value: 'replaceable' }
                     ]"
                     size="small"
-                    @update:model-value="(value) => setDishReplaceable(item.dishId, value === 'replaceable')"
+                    @update:model-value="(value: string) => setDishReplaceable(item.dishId, value === 'replaceable')"
                   />
                 </span>
                 <span class="col-action">

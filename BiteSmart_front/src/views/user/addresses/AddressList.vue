@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { getAddressList, addAddress, updateAddress, deleteAddress } from '../../../api/user/addresses'
 import type { UserAddress } from '../../../api/user/addresses'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { useRoute, useRouter } from 'vue-router'
 
 const loading = ref(false)
 const addressList = ref<UserAddress[]>([])
@@ -19,6 +20,9 @@ const form = ref({
   detailAddress: '',
   isDefault: 0
 })
+const route = useRoute()
+const router = useRouter()
+const fromCart = computed(() => route.query.from === 'cart')
 
 const rules = {
   receiverName: [{ required: true, message: '请输入收件人姓名', trigger: 'blur' }],
@@ -91,6 +95,8 @@ const setDefault = (row: UserAddress) => {
 onMounted(() => {
   fetchAddresses()
 })
+
+const backToCart = () => router.push('/user/cart')
 </script>
 
 <template>
@@ -98,7 +104,10 @@ onMounted(() => {
     <div class="card-panel">
       <div class="card-header">
         <h3>收货地址</h3>
-        <el-button type="primary" @click="handleAdd">新增地址</el-button>
+        <div class="header-actions">
+          <el-button v-if="fromCart" @click="backToCart">返回购物车</el-button>
+          <el-button type="primary" @click="handleAdd">新增地址</el-button>
+        </div>
       </div>
       <div v-loading="loading" style="padding-top: 20px;">
         <div v-for="item in addressList" :key="item.id" class="address-card">
@@ -214,6 +223,11 @@ onMounted(() => {
   font-size: var(--bs-font-size-lg);
   font-weight: 600;
   color: var(--bs-text-title);
+}
+
+.header-actions {
+  display: flex;
+  gap: 10px;
 }
 
 .address-card {

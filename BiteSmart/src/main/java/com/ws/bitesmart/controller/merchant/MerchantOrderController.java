@@ -6,6 +6,8 @@ import com.ws.bitesmart.entity.order.OrderItem;
 import com.ws.bitesmart.entity.order.Orders;
 import com.ws.bitesmart.security.LoginUser;
 import com.ws.bitesmart.service.order.OrderService;
+import com.ws.bitesmart.mapper.merchant.MerchantMapper;
+import com.ws.bitesmart.mapper.user.SysUserMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -33,6 +35,8 @@ import java.util.Map;
 public class MerchantOrderController {
 
     private final OrderService orderService;
+    private final SysUserMapper sysUserMapper;
+    private final MerchantMapper merchantMapper;
 
     /** 商家收到的订单列表 */
     @GetMapping
@@ -56,6 +60,8 @@ public class MerchantOrderController {
         Map<String, Object> result = new HashMap<>();
         result.put("order", order);
         result.put("items", items);
+        result.put("buyer", sysUserMapper.findById(order.getUserId()));
+        result.put("merchant", merchantMapper.findById(order.getMerchantId()));
         return ResultVO.success(result);
     }
 

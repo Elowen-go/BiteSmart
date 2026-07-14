@@ -76,7 +76,9 @@ onMounted(loadData)
         <el-table :data="tableData" v-loading="loading" border stripe style="width: 100%">
           <el-table-column prop="realName" label="姓名" min-width="120" />
           <el-table-column prop="phone" label="手机号" width="140" />
-          <el-table-column prop="vehicleType" label="交通工具" width="120" />
+          <el-table-column label="交通工具" width="140"><template #default="{ row }">{{ ({ 10: '电动车', 20: '自行车', 30: '汽车' } as Record<number, string>)[row.vehicleType] || row.vehicleType || '-' }}</template></el-table-column>
+          <el-table-column label="配送负载" width="130"><template #default="{ row }">{{ row.currentOrders ?? 0 }} / {{ row.maxOrders ?? 0 }}</template></el-table-column>
+          <el-table-column label="评分 / 累计" width="140"><template #default="{ row }">{{ row.avgRating ?? '-' }} · {{ row.totalDeliveries ?? 0 }} 单</template></el-table-column>
           <el-table-column label="状态" width="100">
             <template #default="{ row }">
               <el-tag :type="statusTypeMap[row.status] || 'info'" size="small">
@@ -116,11 +118,16 @@ onMounted(loadData)
     <el-descriptions v-if="detailData" :column="2" border>
       <el-descriptions-item label="姓名">{{ detailData.realName || '-' }}</el-descriptions-item>
       <el-descriptions-item label="电话">{{ detailData.phone || '-' }}</el-descriptions-item>
+      <el-descriptions-item label="用户 ID">{{ detailData.userId || '-' }}</el-descriptions-item>
+      <el-descriptions-item label="身份证号">{{ detailData.idCard || '-' }}</el-descriptions-item>
+      <el-descriptions-item label="交通工具">{{ ({ 10: '电动车', 20: '自行车', 30: '汽车' } as Record<number, string>)[detailData.vehicleType] || detailData.vehicleType || '-' }}</el-descriptions-item>
       <el-descriptions-item label="当前订单">{{ detailData.currentOrders ?? 0 }}</el-descriptions-item>
       <el-descriptions-item label="最大接单">{{ detailData.maxOrders ?? 0 }}</el-descriptions-item>
       <el-descriptions-item label="配送范围" :span="2">{{ detailData.serviceArea || '-' }}</el-descriptions-item>
       <el-descriptions-item label="平均评分">{{ detailData.avgRating ?? '-' }}</el-descriptions-item>
       <el-descriptions-item label="累计配送">{{ detailData.totalDeliveries ?? 0 }}</el-descriptions-item>
+      <el-descriptions-item label="当前位置" :span="2">{{ detailData.currentLat ?? '-' }}, {{ detailData.currentLng ?? '-' }}</el-descriptions-item>
+      <el-descriptions-item label="注册时间" :span="2">{{ detailData.createTime || '-' }}</el-descriptions-item>
     </el-descriptions>
   </el-dialog>
 </template>

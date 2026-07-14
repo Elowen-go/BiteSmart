@@ -17,7 +17,10 @@ export const getCartList = (): Promise<any> => {
 }
 
 export const addToCart = (itemType: number, dishId?: number, comboId?: number, quantity?: number): Promise<any> => {
-  return request.post('/cart', null, { params: { itemType, dishId, comboId, quantity } })
+  return request.post('/cart', null, { params: { itemType, dishId, comboId, quantity } }).then((res: any) => {
+    if (res.code === 200) window.dispatchEvent(new Event('cart-updated'))
+    return res
+  })
 }
 
 export const updateCartQuantity = (id: number, quantity: number): Promise<any> => {
@@ -29,5 +32,8 @@ export const updateCartSelected = (id: number, selected: number): Promise<any> =
 }
 
 export const deleteCartItem = (id: number): Promise<any> => {
-  return request.delete(`/cart/${id}`)
+  return request.delete(`/cart/${id}`).then((res: any) => {
+    if (res.code === 200) window.dispatchEvent(new Event('cart-updated'))
+    return res
+  })
 }

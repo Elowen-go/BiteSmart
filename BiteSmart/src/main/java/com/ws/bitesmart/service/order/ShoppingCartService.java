@@ -47,6 +47,7 @@ public class ShoppingCartService {
                     item.setDishName(dish.getDishName());
                     item.setDishImage(dish.getDishImage());
                     item.setPrice(dish.getPrice());
+                    item.setMerchantId(dish.getMerchantId());
                 }
             } else if (item.getItemType() != null && item.getItemType() == 20 && item.getComboId() != null) {
                 Combo combo = comboMapper.findById(item.getComboId());
@@ -54,6 +55,7 @@ public class ShoppingCartService {
                     item.setComboName(combo.getComboName());
                     item.setComboImage(combo.getComboImage());
                     item.setPrice(combo.getPrice());
+                    item.setMerchantId(combo.getMerchantId());
                 }
             }
         }
@@ -66,9 +68,26 @@ public class ShoppingCartService {
      */
     @Transactional
     public void add(Long userId, Integer itemType, Long dishId, Long comboId, Integer quantity) {
+        validateQuantity(quantity);
+        if (itemType != null && itemType == 10) {
+            Dish dish = dishMapper.findById(dishId);
+            if (dish == null || dish.getStatus() == null || dish.getStatus() != 10) {
+                throw new BusinessException("菜品已下架，无法加入购物车");
+            }
+            if (dish.getStock() == null || dish.getStock() < quantity) {
+                throw new BusinessException("菜品库存不足，当前仅剩 " + (dish.getStock() == null ? 0 : dish.getStock()) + " 份");
+            }
+        }
         // 查是否已存在
         ShoppingCart exist = shoppingCartMapper.findByUserIdAndItem(userId, itemType, dishId, comboId);
         if (exist != null) {
+            if (itemType != null && itemType == 10) {
+                Dish dish = dishMapper.findById(dishId);
+                int current = exist.getQuantity() == null ? 0 : exist.getQuantity();
+                if (dish == null || dish.getStock() == null || dish.getStock() < current + quantity) {
+                    throw new BusinessException("菜品库存不足，无法继续增加数量");
+                }
+            }
             // 已存在则累加数量
             shoppingCartMapper.updateQuantity(exist.getId(), exist.getQuantity() + quantity);
             log.info("购物车商品已存在，累加数量: userId={}, itemType={}, dishId={}, comboId={}, newQty={}",
@@ -93,11 +112,18 @@ public class ShoppingCartService {
     /** 修改数量（校验所属权） */
     @Transactional
     public void updateQuantity(Long id, Long userId, Integer quantity) {
+        validateQuantity(quantity);
         ShoppingCart cart = shoppingCartMapper.findById(id);
         if (cart == null || !cart.getUserId().equals(userId)) {
             throw new BusinessException(ResultCodeEnum.NOT_FOUND, "购物车商品不存在");
         }
         shoppingCartMapper.updateQuantity(id, quantity);
+    }
+
+    private void validateQuantity(Integer quantity) {
+        if (quantity == null || quantity < 1 || quantity > 99) {
+            throw new BusinessException("商品数量必须在1到99之间");
+        }
     }
 
     /** 删除购物车商品（校验所属权） */

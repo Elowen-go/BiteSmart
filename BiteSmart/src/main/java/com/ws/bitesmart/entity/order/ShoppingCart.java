@@ -44,4 +44,7 @@ public class ShoppingCart {
     private String dishImage;
     private String comboImage;
     private java.math.BigDecimal price;
+
+    /** 商品所属商家，仅用于结算分组，不落库。 */
+    private Long merchantId;
 }

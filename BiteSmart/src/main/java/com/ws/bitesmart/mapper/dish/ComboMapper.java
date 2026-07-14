@@ -17,11 +17,18 @@ public interface ComboMapper {
     /** 查某商家的全部套餐，按创建时间倒序 */
     List<Combo> findByMerchantId(@Param("merchantId") Long merchantId);
 
+    /** 管理员查询全部未删除套餐 */
+    List<Combo> findAllAdmin();
+
     /** 根据 ID 查询套餐 */
     Combo findById(@Param("id") Long id);
 
     /** 查询上架套餐（status=10） */
     List<Combo> findAvailable();
+
+    List<Combo> findAvailableFiltered(@Param("keyword") String keyword,
+                                      @Param("comboType") Integer comboType,
+                                      @Param("sort") String sort);
 
     /** 新增套餐 */
     int insert(Combo combo);

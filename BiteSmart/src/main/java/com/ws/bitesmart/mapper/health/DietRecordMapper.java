@@ -23,6 +23,8 @@ public interface DietRecordMapper {
 
     DietRecord findById(@Param("id") Long id);
 
+    DietRecord findByOrderItemId(@Param("orderItemId") Long orderItemId);
+
     int insert(DietRecord record);
 
     int updateById(DietRecord record);

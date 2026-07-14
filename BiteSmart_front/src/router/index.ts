@@ -43,21 +43,15 @@ const router = createRouter({
         {
           path: 'dishes',
           name: 'AdminDishes',
-          component: () => import('../views/admin/dishes/DishList.vue'),
-          meta: { title: '菜品管理', subtitle: '菜品列表' }
+          component: () => import('../views/admin/catalog/AdminCatalog.vue'),
+          meta: { title: '菜品管理', subtitle: '平台菜品' }
         },
         {
           path: 'combos',
           name: 'AdminCombos',
-          component: () => import('../views/admin/dishes/DishList.vue'),
+          component: () => import('../views/admin/catalog/AdminCatalog.vue'),
+          meta: { title: '套餐管理', subtitle: '平台套餐' }
         },
-        /*
-        /*
-        /*
-          meta: { title: '健康套餐', subtitle: '套餐浏览与替换' }
-        },
-        {
-        */
         {
           path: 'users',
           name: 'AdminUsers',
@@ -232,7 +226,7 @@ const router = createRouter({
         {
           path: 'combos',
           name: 'UserCombos',
-          component: () => import('../views/user/combos/ComboBrowse.vue'),
+          component: () => import('../views/user/combos/ComboBrowseV2.vue'),
           meta: { title: '健康套餐', subtitle: '套餐浏览与替换' },
         },
         /*
@@ -278,25 +272,25 @@ const router = createRouter({
         {
           path: 'ai/recommend',
           name: 'UserAiRecommend',
-          component: () => import('../views/user/ai/RecommendCenter.vue'),
+          component: () => import('../views/user/ai/RecommendCenterV2.vue'),
           meta: { title: 'AI推荐', subtitle: '个性化食谱' }
         },
         {
           path: 'health',
           name: 'UserHealth',
-          component: () => import('../views/user/health/HealthCenter.vue'),
+          component: () => import('../views/user/health/HealthCenterV2.vue'),
           meta: { title: '健康记录', subtitle: '饮食运动' }
         },
         {
           path: 'profile',
           name: 'UserProfile',
-          component: () => import('../views/user/profile/ProfileCenter.vue'),
+          component: () => import('../views/user/profile/ProfileCenterV2.vue'),
           meta: { title: '个人中心', subtitle: '我的信息' }
         },
         {
           path: 'membership',
           name: 'UserMembership',
-          component: () => import('../views/user/membership/MembershipCenter.vue'),
+          component: () => import('../views/user/membership/MembershipCenterV2.vue'),
           meta: { title: '会员中心', subtitle: '我的会员' }
         },
         {

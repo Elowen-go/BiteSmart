@@ -17,11 +17,18 @@ public interface DishMapper {
     /** 查某商家的全部菜品，按创建时间倒序 */
     List<Dish> findByMerchantId(@Param("merchantId") Long merchantId);
 
+    /** 管理员查询全部未删除菜品 */
+    List<Dish> findAllAdmin();
+
     /** 根据 ID 查询菜品 */
     Dish findById(@Param("id") Long id);
 
     /** 查询上架且在售的菜品（status=10 且 stock>0） */
     List<Dish> findAvailable();
+
+    List<Dish> findAvailableFiltered(@Param("keyword") String keyword,
+                                     @Param("categoryId") Long categoryId,
+                                     @Param("sort") String sort);
 
     /** 新增菜品 */
     int insert(Dish dish);

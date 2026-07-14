@@ -20,7 +20,8 @@ import {
   DataBoard,
   DataAnalysis,
   Memo,
-  Food
+  Food,
+  Box
 } from '@element-plus/icons-vue'
 import { useUserStore } from '../stores/user'
 
@@ -40,6 +41,8 @@ const menuItems = [
     items: [
       { path: '/admin/dashboard', icon: PieChart, label: '仪表盘' },
       { path: '/admin/orders', icon: ShoppingBag, label: '订单管理' },
+      { path: '/admin/dishes', icon: Food, label: '菜品管理' },
+      { path: '/admin/combos', icon: Box, label: '套餐管理' },
       { path: '/admin/users', icon: User, label: '用户管理' },
     ]
   },

@@ -17,6 +17,13 @@
         ORDER BY create_time DESC
     </select>
 
+    <select id="findAllAdmin" resultType="com.ws.bitesmart.entity.dish.Combo">
+        SELECT <include refid="BaseColumns"/>
+        FROM combo
+        WHERE deleted = 0
+        ORDER BY create_time DESC
+    </select>
+
     <select id="findById" resultType="com.ws.bitesmart.entity.dish.Combo">
         SELECT <include refid="BaseColumns"/>
         FROM combo WHERE id = #{id} AND deleted = 0
@@ -28,6 +35,24 @@
         FROM combo
         WHERE status = 10 AND deleted = 0
         ORDER BY create_time DESC
+    </select>
+
+    <select id="findAvailableFiltered" resultType="com.ws.bitesmart.entity.dish.Combo">
+        SELECT <include refid="BaseColumns"/>
+        FROM combo
+        WHERE status = 10 AND deleted = 0
+        <if test="keyword != null and keyword != ''">
+            AND (combo_name LIKE CONCAT('%', #{keyword}, '%') OR description LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        <if test="comboType != null">AND combo_type = #{comboType}</if>
+        <choose>
+            <when test="sort == 'priceAsc'">ORDER BY price ASC, create_time DESC</when>
+            <when test="sort == 'priceDesc'">ORDER BY price DESC, create_time DESC</when>
+            <when test="sort == 'calories'">ORDER BY total_calories ASC, create_time DESC</when>
+            <when test="sort == 'protein'">ORDER BY total_protein DESC, create_time DESC</when>
+            <when test="sort == 'sales'">ORDER BY sales_count DESC, create_time DESC</when>
+            <otherwise>ORDER BY create_time DESC</otherwise>
+        </choose>
     </select>
 
     <insert id="insert" parameterType="com.ws.bitesmart.entity.dish.Combo">

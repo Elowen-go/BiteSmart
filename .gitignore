@@ -46,6 +46,9 @@ lerna-debug.log*
 
 # Node.js
 node_modules
+.npm-cache/
+BiteSmart/uploads/
+appendonlydir/
 .DS_Store
 dist
 dist-ssr

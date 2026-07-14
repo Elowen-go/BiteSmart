@@ -38,9 +38,12 @@ public class ComboController {
     /** 查所有上架套餐 */
     @GetMapping
     public ResultVO<?> list(@RequestParam(required = false) Integer page,
+                            @RequestParam(required = false) String keyword,
+                            @RequestParam(required = false) Integer comboType,
+                            @RequestParam(defaultValue = "latest") String sort,
                             @RequestParam(defaultValue = "10") int size) {
         if (page != null) {
-            return ResultVO.success(PageResultVO.success(comboService.findAvailable(page, size)));
+            return ResultVO.success(PageResultVO.success(comboService.findAvailableFiltered(keyword, comboType, sort, page, size)));
         }
         return ResultVO.success(comboService.findAvailable());
     }

@@ -1,5 +1,9 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, nextTick, onBeforeUnmount, onMounted } from 'vue'
+import { use, init, type ECharts } from 'echarts/core'
+import { LineChart, BarChart, PieChart } from 'echarts/charts'
+import { TooltipComponent, LegendComponent, GridComponent } from 'echarts/components'
+import { CanvasRenderer } from 'echarts/renderers'
 import {
   Money,
   ShoppingCart,
@@ -12,8 +16,13 @@ import {
   UserFilled
 } from '@element-plus/icons-vue'
 import StatCard from '../../components/common/StatCard.vue'
-import { getOverview } from '../../api/admin/statistics'
+import { getOverview, getTrend } from '../../api/admin/statistics'
 import { listNotices } from '../../api/admin/notices'
+import { getMerchantList } from '../../api/admin/merchants'
+import { getReviewList } from '../../api/admin/reviews'
+import { getDriverList } from '../../api/admin/drivers'
+
+use([LineChart, BarChart, PieChart, TooltipComponent, LegendComponent, GridComponent, CanvasRenderer])
 
 const loading = ref(true)
 const stats = ref({
@@ -25,6 +34,63 @@ const stats = ref({
 
 const recentOrders = ref<any[]>([])
 const notifications = ref<any[]>([])
+const trends = ref<any[]>([])
+const orderSummary = ref({ pending: 0, delivering: 0, completed: 0 })
+const managementTodos = ref({ merchantAudit: 0, reviewPending: 0, driverFrozen: 0, orderException: 0 })
+const maxTrendRevenue = computed(() => Math.max(...trends.value.map((item) => Number(item.revenue || 0)), 1))
+const trendBarHeight = (value: number) => `${Math.max((Number(value || 0) / maxTrendRevenue.value) * 100, 5)}%`
+const orderTotal = computed(() => orderSummary.value.pending + orderSummary.value.delivering + orderSummary.value.completed)
+const orderDonutStyle = computed(() => {
+  if (!orderTotal.value) return { background: '#e8efea' }
+  const pending = orderSummary.value.pending / orderTotal.value * 100
+  const delivering = orderSummary.value.delivering / orderTotal.value * 100
+  return { background: `conic-gradient(#e5a33d 0 ${pending}%, #4d9b78 ${pending}% ${pending + delivering}%, #2c634b ${pending + delivering}% 100%)` }
+})
+const trendChartRef = ref<HTMLElement | null>(null)
+const orderChartRef = ref<HTMLElement | null>(null)
+const scaleChartRef = ref<HTMLElement | null>(null)
+let trendChart: ECharts | null = null
+let orderChart: ECharts | null = null
+let scaleChart: ECharts | null = null
+
+const renderCharts = () => {
+  if (trendChartRef.value) {
+    trendChart?.dispose()
+    trendChart = init(trendChartRef.value)
+    trendChart.setOption({
+      tooltip: { trigger: 'axis' },
+      legend: { bottom: 0, data: ['收入', '订单'] },
+      grid: { left: 45, right: 48, top: 16, bottom: 32 },
+      xAxis: { type: 'category', data: trends.value.map((item) => item.type === 'day' ? '近1天' : item.type === 'week' ? '近7天' : '近1月') },
+      yAxis: [{ type: 'value', name: '收入', axisLabel: { formatter: '¥{value}' } }, { type: 'value', name: '订单', minInterval: 1 }],
+      series: [
+        { name: '收入', type: 'line', smooth: true, yAxisIndex: 0, data: trends.value.map((item) => Number(item.revenue || 0)), lineStyle: { color: '#2c634b', width: 3 }, itemStyle: { color: '#2c634b' }, areaStyle: { color: 'rgba(44,99,75,.12)' } },
+        { name: '订单', type: 'bar', yAxisIndex: 1, barMaxWidth: 26, data: trends.value.map((item) => Number(item.orderCount || 0)), itemStyle: { color: '#e5a33d', borderRadius: [4, 4, 0, 0] } }
+      ]
+    })
+  }
+  if (orderChartRef.value) {
+    orderChart?.dispose()
+    orderChart = init(orderChartRef.value)
+    orderChart.setOption({
+      tooltip: { trigger: 'item' },
+      legend: { bottom: 0, left: 'center' },
+      series: [{ type: 'pie', radius: ['44%', '70%'], center: ['50%', '45%'], label: { formatter: '{b}\n{c} 单' }, data: [{ value: orderSummary.value.pending, name: '待处理', itemStyle: { color: '#e5a33d' } }, { value: orderSummary.value.delivering, name: '配送中', itemStyle: { color: '#4d9b78' } }, { value: orderSummary.value.completed, name: '已完成', itemStyle: { color: '#2c634b' } }] }]
+    })
+  }
+  if (scaleChartRef.value) {
+    scaleChart?.dispose()
+    scaleChart = init(scaleChartRef.value)
+    scaleChart.setOption({
+      tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+      grid: { left: 48, right: 20, top: 20, bottom: 28 },
+      xAxis: { type: 'category', data: ['注册用户', '商家', '订单'] },
+      yAxis: { type: 'value', minInterval: 1 },
+      series: [{ type: 'bar', barMaxWidth: 48, data: [{ value: stats.value.userCount, itemStyle: { color: '#4d9b78' } }, { value: stats.value.merchantCount, itemStyle: { color: '#e5a33d' } }, { value: stats.value.orderCount, itemStyle: { color: '#2c634b' } }], label: { show: true, position: 'top' }, itemStyle: { borderRadius: [5, 5, 0, 0] } }]
+    })
+  }
+}
+const resizeCharts = () => { trendChart?.resize(); orderChart?.resize(); scaleChart?.resize() }
 
 const noticeTypeMap: Record<number, any> = {
   10: { icon: ChatDotRound, label: '系统公告' },
@@ -57,6 +123,18 @@ onMounted(async () => {
       stats.value.merchantCount = d.merchantCount || 0
     }
 
+    const trendResults = await Promise.all([getTrend('day'), getTrend('week'), getTrend('month')])
+    trends.value = trendResults.filter((res) => res.code === 200).map((res) => res.data)
+
+    const [merchantAuditRes, reviewRes, driverRes] = await Promise.all([
+      getMerchantList({ pageNum: 1, pageSize: 1, status: 10 }),
+      getReviewList({ pageNum: 1, pageSize: 100 }),
+      getDriverList({ pageNum: 1, pageSize: 1, status: 40 })
+    ])
+    managementTodos.value.merchantAudit = merchantAuditRes.code === 200 ? Number(merchantAuditRes.data?.total || 0) : 0
+    managementTodos.value.reviewPending = reviewRes.code === 200 ? (reviewRes.data?.list || []).filter((item: any) => item.status === 10).length : 0
+    managementTodos.value.driverFrozen = driverRes.code === 200 ? Number(driverRes.data?.total || 0) : 0
+
     const { getOrderList } = await import('../../api/admin/orders')
     const orderRes = await getOrderList({ pageNum: 1, pageSize: 5 })
     if (orderRes.code === 200) {
@@ -68,7 +146,17 @@ onMounted(async () => {
         status: o.orderStatus >= 50 ? 'completed' : o.orderStatus >= 40 ? 'delivering' : 'pending',
         time: o.createTime?.slice(0, 16) || ''
       }))
+      orderSummary.value = list.reduce((summary: any, order: any) => {
+        if (order.orderStatus >= 50) summary.completed += 1
+        else if (order.orderStatus >= 40) summary.delivering += 1
+        else summary.pending += 1
+        return summary
+      }, { pending: 0, delivering: 0, completed: 0 })
     }
+    const exceptionRes = await getOrderList({ pageNum: 1, pageSize: 1, orderStatus: 60 })
+    managementTodos.value.orderException = exceptionRes.code === 200 ? Number(exceptionRes.data?.total || 0) : 0
+    await nextTick()
+    renderCharts()
 
     const noticeRes = await listNotices(1, 3)
     if (noticeRes.code === 200) {
@@ -80,12 +168,16 @@ onMounted(async () => {
         time: formatTime(n.createTime || '')
       }))
     }
+    await nextTick()
+    renderCharts()
   } catch (err) {
     console.error('获取Dashboard数据失败', err)
   } finally {
     loading.value = false
   }
 })
+onMounted(() => window.addEventListener('resize', resizeCharts))
+onBeforeUnmount(() => { window.removeEventListener('resize', resizeCharts); trendChart?.dispose(); orderChart?.dispose(); scaleChart?.dispose() })
 
 const getStatusBadge = (status: string) => {
   switch (status) {
@@ -125,7 +217,30 @@ const getStatusBadge = (status: string) => {
         :value="stats.merchantCount"
       />
     </div>
+
+    <div class="management-strip">
+      <div class="todo-card"><span>待审核商家</span><strong>{{ managementTodos.merchantAudit }}</strong><small>需要管理员审核</small></div>
+      <div class="todo-card"><span>待处理评价</span><strong>{{ managementTodos.reviewPending }}</strong><small>已发布评价</small></div>
+      <div class="todo-card"><span>冻结配送员</span><strong>{{ managementTodos.driverFrozen }}</strong><small>需要复核状态</small></div>
+      <div class="todo-card danger"><span>异常订单</span><strong>{{ managementTodos.orderException }}</strong><small>需要跟进处理</small></div>
+    </div>
     
+    <div class="dashboard-insights">
+      <div class="card-panel trend-panel">
+        <div class="card-header"><div><h3>经营趋势</h3><p>按时间范围查看订单与收入</p></div><span class="insight-label">实时汇总</span></div>
+        <div ref="trendChartRef" class="echart trend-chart"></div>
+      </div>
+      <div class="card-panel summary-panel">
+        <div class="card-header"><div><h3>订单状态</h3><p>当前列表中的订单分布</p></div></div>
+        <div ref="orderChartRef" class="echart order-chart"></div>
+      </div>
+    </div>
+
+    <div class="card-panel platform-chart-panel">
+      <div class="card-header"><div><h3>平台规模</h3><p>用户、商家与订单总量对比</p></div></div>
+      <div ref="scaleChartRef" class="echart scale-chart"></div>
+    </div>
+
     <div class="grid-2col">
       <div class="card-panel">
         <div class="card-header">
@@ -174,7 +289,7 @@ const getStatusBadge = (status: string) => {
           </h3>
           <span style="font-size: 13px; color: var(--bs-text-muted);">3条未读</span>
         </div>
-        <div class="notifications-list">
+        <div v-if="notifications.length" class="notifications-list">
           <div v-for="(item, index) in notifications" :key="index" class="notification-item">
             <component :is="item.icon" style="color: var(--bs-primary); width: 20px;" />
             <div class="notification-content">
@@ -184,6 +299,7 @@ const getStatusBadge = (status: string) => {
             <span style="font-size: 12px; color: var(--bs-text-muted);">{{ item.time }}</span>
           </div>
         </div>
+        <div v-else class="empty-notifications">暂无通知</div>
       </div>
     </div>
   </div>
@@ -205,12 +321,43 @@ const getStatusBadge = (status: string) => {
   gap: var(--bs-spacing-lg);
   margin-bottom: var(--bs-spacing-lg);
 }
+.management-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--bs-spacing-lg); margin-bottom: var(--bs-spacing-lg); }
+.todo-card { display: flex; flex-direction: column; gap: 6px; padding: 15px 18px; background: var(--bs-card-bg); border: 1px solid #e5eee8; border-left: 4px solid #e5a33d; border-radius: 8px; box-shadow: var(--bs-card-shadow); }
+.todo-card span, .todo-card small { color: var(--bs-text-muted); font-size: 12px; }.todo-card strong { color: var(--bs-text-title); font-size: 25px; }.todo-card small { font-size: 11px; }.todo-card.danger { border-left-color: #c95c5c; }
 
 .grid-2col {
   display: grid;
   grid-template-columns: 2fr 1fr;
   gap: var(--bs-spacing-lg);
 }
+
+.dashboard-insights {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: var(--bs-spacing-lg);
+  margin-bottom: var(--bs-spacing-lg);
+}
+
+.trend-panel, .summary-panel { min-height: 188px; }
+.card-header p { margin: 5px 0 0; color: var(--bs-text-muted); font-size: 12px; }
+.insight-label { color: var(--bs-primary); font-size: 12px; }
+.trend-chart { height: 150px; display: flex; gap: 10px; }
+.echart { width: 100%; }
+.order-chart { height: 160px; }
+.scale-chart { height: 250px; }
+.platform-chart-panel { margin-bottom: var(--bs-spacing-lg); }
+.chart-axis { width: 54px; display: flex; flex-direction: column; justify-content: space-between; color: var(--bs-text-muted); font-size: 11px; }
+.bars { flex: 1; display: flex; align-items: flex-end; justify-content: space-around; gap: 18px; border-bottom: 1px solid #dfe9e2; padding: 0 12px; }
+.bar-column { height: 100%; flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 5px; color: var(--bs-text-muted); font-size: 11px; }
+.bar-column small { font-size: 10px; }
+.bar-value { color: var(--bs-text-title); font-size: 11px; }
+.bar { width: min(44px, 70%); min-height: 7px; background: linear-gradient(180deg, #6db18f, #2c634b); border-radius: 5px 5px 0 0; transition: height .3s ease; }
+.donut-layout { display: flex; align-items: center; gap: 25px; padding-top: 10px; }
+.donut { width: 128px; height: 128px; border-radius: 50%; display: grid; place-items: center; flex: 0 0 128px; }
+.donut > div { width: 78px; height: 78px; border-radius: 50%; background: var(--bs-card-bg); display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.donut strong { color: var(--bs-text-title); font-size: 24px; }.donut span { color: var(--bs-text-muted); font-size: 11px; }
+.legend { flex: 1; display: flex; flex-direction: column; gap: 11px; }.legend div { display: grid; grid-template-columns: 10px 1fr auto; gap: 8px; align-items: center; font-size: 12px; }.legend i { width: 8px; height: 8px; border-radius: 50%; }.legend .pending { background: #e5a33d; }.legend .delivering { background: #4d9b78; }.legend .completed { background: #2c634b; }.legend span { color: var(--bs-text-muted); }.legend strong { color: var(--bs-text-title); }
+.empty-insight, .empty-notifications { padding: 28px 0; text-align: center; color: var(--bs-text-muted); font-size: 13px; }
 
 .card-panel {
   background: var(--bs-card-bg);
@@ -351,14 +498,19 @@ table tr:hover td {
   .stats-row {
     grid-template-columns: repeat(2, 1fr);
   }
+  .management-strip { grid-template-columns: repeat(2, 1fr); }
   .grid-2col {
     grid-template-columns: 1fr;
   }
+  .dashboard-insights { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 768px) {
   .stats-row {
     grid-template-columns: 1fr;
   }
+  .management-strip { grid-template-columns: 1fr; }
+  .trend-chart { height: 145px; }
+  .donut-layout { justify-content: center; }
 }
 </style>

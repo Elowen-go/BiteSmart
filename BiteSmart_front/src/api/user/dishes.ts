@@ -17,9 +17,11 @@ export interface Dish {
   createTime: string
 }
 
-export const getDishList = (params?: { categoryId?: number; page?: number; size?: number }): Promise<any> => {
+export const getDishList = (params?: { categoryId?: number; keyword?: string; sort?: string; page?: number; size?: number }): Promise<any> => {
   return request.get('/dishes', { params })
 }
+
+export const getDishCategories = (): Promise<any> => request.get('/dishes/categories')
 
 export const getDishDetail = (id: number): Promise<any> => {
   return request.get(`/dishes/${id}`)

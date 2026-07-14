@@ -1,12 +1,14 @@
 package com.ws.bitesmart.controller.ai;
 
 import com.ws.bitesmart.common.ResultVO;
+import com.ws.bitesmart.dto.request.AiRecommendRequest;
 import com.ws.bitesmart.security.LoginUser;
 import com.ws.bitesmart.service.ai.AiRecommendService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -32,10 +34,11 @@ public class AiRecommendController {
      *
      * 如果用户没填健康档案，返回提示信息。
      */
-    @GetMapping("/recommend")
-    public ResultVO<Map<String, Object>> recommend(@AuthenticationPrincipal LoginUser loginUser) {
+    @PostMapping("/recommend")
+    public ResultVO<Map<String, Object>> recommend(@AuthenticationPrincipal LoginUser loginUser,
+                                                    @RequestBody(required = false) AiRecommendRequest request) {
         if (loginUser == null) return ResultVO.error(401, "未登录");
-        Map<String, Object> result = aiRecommendService.recommend(loginUser.getUserId());
+        Map<String, Object> result = aiRecommendService.recommend(loginUser.getUserId(), request);
         return ResultVO.success(result);
     }
 

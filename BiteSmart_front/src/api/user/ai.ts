@@ -9,6 +9,11 @@ export interface AiConversation {
   createTime: string
 }
 
+export interface AiRecommendRequest {
+  mealType?: 'all' | 'breakfast' | 'lunch' | 'dinner'
+  dietaryRestrictions?: string
+}
+
 export const aiChat = (question: string, sessionId?: string): Promise<any> => {
   return request.post('/ai/chat', { params: { question, sessionId } })
 }
@@ -17,6 +22,6 @@ export const getChatHistory = (sessionId: string): Promise<any> => {
   return request.get('/ai/chat/history', { params: { sessionId } })
 }
 
-export const aiRecommend = (params?: { mealType?: string; dietaryRestrictions?: string }): Promise<any> => {
-  return request.post('/ai/recommend', { params })
+export const aiRecommend = (data: AiRecommendRequest = {}): Promise<any> => {
+  return request.post('/ai/recommend', data)
 }

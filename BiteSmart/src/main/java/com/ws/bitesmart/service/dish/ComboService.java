@@ -42,6 +42,39 @@ public class ComboService {
         return new PageInfo<>(comboMapper.findByMerchantId(merchantId));
     }
 
+    public PageInfo<Combo> findAllAdmin(int pageNum, int pageSize) {
+        PageHelper.startPage(pageNum, pageSize);
+        return new PageInfo<>(comboMapper.findAllAdmin());
+    }
+
+    @Transactional
+    public void updateByAdmin(Long id, Combo combo, List<ComboDishRel> dishItems) {
+        Combo exist = comboMapper.findById(id);
+        if (exist == null) throw new BusinessException(ResultCodeEnum.NOT_FOUND, "套餐不存在");
+        combo.setId(id);
+        combo.setMerchantId(exist.getMerchantId());
+        comboMapper.updateById(combo);
+        if (dishItems != null) {
+            comboDishRelMapper.deleteByComboId(id);
+            if (!dishItems.isEmpty()) {
+                normalizeDishItems(id, dishItems);
+                comboDishRelMapper.insertBatch(dishItems);
+            }
+            nutritionCalculateService.updateComboNutrition(id);
+        }
+    }
+
+    @Transactional
+    public void deleteByAdmin(Long id) {
+        Combo exist = comboMapper.findById(id);
+        if (exist == null) throw new BusinessException(ResultCodeEnum.NOT_FOUND, "套餐不存在");
+        comboDishRelMapper.deleteByComboId(id);
+        Combo update = new Combo();
+        update.setId(id);
+        update.setDeleted(1);
+        comboMapper.updateById(update);
+    }
+
     public Combo findById(Long id) {
         Combo combo = comboMapper.findById(id);
         if (combo == null) {
@@ -57,6 +90,11 @@ public class ComboService {
     public PageInfo<Combo> findAvailable(int pageNum, int pageSize) {
         PageHelper.startPage(pageNum, pageSize);
         return new PageInfo<>(comboMapper.findAvailable());
+    }
+
+    public PageInfo<Combo> findAvailableFiltered(String keyword, Integer comboType, String sort, int pageNum, int pageSize) {
+        PageHelper.startPage(pageNum, pageSize);
+        return new PageInfo<>(comboMapper.findAvailableFiltered(keyword, comboType, sort));
     }
 
     @Transactional
@@ -194,6 +232,11 @@ public class ComboService {
         }
         if (!newDish.getMerchantId().equals(combo.getMerchantId())) {
             throw new BusinessException("替换菜品必须属于同一商家");
+        }
+        for (ComboDishRel rel : rels) {
+            if (rel != targetRel && newDish.getId().equals(rel.getDishId())) {
+                throw new BusinessException("该菜品已经在套餐中，不能重复选择");
+            }
         }
         targetRel.setDishId(newDish.getId());
 

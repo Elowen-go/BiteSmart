@@ -29,7 +29,21 @@ export interface OrderItem {
 }
 
 export const createOrder = (address: string, receiverName: string, receiverPhone: string, remark?: string): Promise<any> => {
-  return request.post('/orders', { params: { address, receiverName, receiverPhone, remark } })
+  return request.post('/orders', null, { params: { address, receiverName, receiverPhone, remark } })
+}
+
+export interface MerchantOrderRemark {
+  merchantId: number
+  remark?: string
+}
+
+export const createBatchOrder = (data: {
+  address: string
+  receiverName: string
+  receiverPhone: string
+  merchantOrders: MerchantOrderRemark[]
+}): Promise<any> => {
+  return request.post('/orders/batch', data)
 }
 
 export const getOrderList = (params?: { page?: number; size?: number }): Promise<any> => {
@@ -41,9 +55,9 @@ export const getOrderDetail = (id: number): Promise<any> => {
 }
 
 export const cancelOrder = (id: number, reason?: string): Promise<any> => {
-  return request.post(`/orders/${id}/cancel`, { params: { reason } })
+  return request.post(`/orders/${id}/cancel`, null, { params: { reason } })
 }
 
 export const payOrder = (id: number, payMethod: number): Promise<any> => {
-  return request.post(`/orders/${id}/pay`, { params: { payMethod } })
+  return request.post(`/orders/${id}/pay`, null, { params: { payMethod } })
 }

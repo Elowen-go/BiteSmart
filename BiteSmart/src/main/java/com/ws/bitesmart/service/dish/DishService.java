@@ -45,6 +45,29 @@ public class DishService {
         return new PageInfo<>(list);
     }
 
+    public PageInfo<Dish> findAllAdmin(int pageNum, int pageSize) {
+        PageHelper.startPage(pageNum, pageSize);
+        return new PageInfo<>(dishMapper.findAllAdmin());
+    }
+
+    @Transactional
+    public void updateByAdmin(Long id, Dish dish) {
+        Dish exist = dishMapper.findById(id);
+        if (exist == null) throw new BusinessException(ResultCodeEnum.NOT_FOUND, "菜品不存在");
+        dish.setId(id);
+        dishMapper.updateById(dish);
+    }
+
+    @Transactional
+    public void deleteByAdmin(Long id) {
+        Dish exist = dishMapper.findById(id);
+        if (exist == null) throw new BusinessException(ResultCodeEnum.NOT_FOUND, "菜品不存在");
+        Dish update = new Dish();
+        update.setId(id);
+        update.setDeleted(1);
+        dishMapper.updateById(update);
+    }
+
     /** 查菜品详情 */
     public Dish findById(Long id) {
         Dish dish = dishMapper.findById(id);
@@ -67,6 +90,11 @@ public class DishService {
         PageHelper.startPage(pageNum, pageSize);
         List<Dish> list = dishMapper.findAvailable();
         return new PageInfo<>(list);
+    }
+
+    public PageInfo<Dish> findAvailableFiltered(String keyword, Long categoryId, String sort, int pageNum, int pageSize) {
+        PageHelper.startPage(pageNum, pageSize);
+        return new PageInfo<>(dishMapper.findAvailableFiltered(keyword, categoryId, sort));
     }
 
     /** 新增菜品 */

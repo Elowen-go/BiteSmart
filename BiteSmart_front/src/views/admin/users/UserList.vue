@@ -66,7 +66,9 @@ onMounted(loadData)
       </div>
       <div style="padding-top: 20px;">
         <el-table :data="tableData" v-loading="loading" border stripe style="width: 100%">
-          <el-table-column prop="id" label="ID" width="80" />
+          <el-table-column label="ID" width="190" class-name="user-id-column">
+            <template #default="{ row }"><span class="user-id-cell">{{ row.id }}</span></template>
+          </el-table-column>
           <el-table-column prop="username" label="账号" min-width="140" />
           <el-table-column prop="nickname" label="昵称" min-width="120" />
           <el-table-column prop="phone" label="手机号" width="140" />
@@ -176,5 +178,12 @@ onMounted(loadData)
 
 .btn-primary:hover {
   background: var(--bs-primary-hover);
+}
+
+.user-id-cell {
+  display: block;
+  white-space: nowrap;
+  color: var(--bs-text-title);
+  font-variant-numeric: tabular-nums;
 }
 </style>
