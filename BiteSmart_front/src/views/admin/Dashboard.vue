@@ -16,7 +16,7 @@ import {
   UserFilled
 } from '@element-plus/icons-vue'
 import StatCard from '../../components/common/StatCard.vue'
-import { getOverview, getTrend } from '../../api/admin/statistics'
+import { getOverview, getTrend, getDashboardStats } from '../../api/admin/statistics'
 import { listNotices } from '../../api/admin/notices'
 import { getMerchantList } from '../../api/admin/merchants'
 import { getReviewList } from '../../api/admin/reviews'
@@ -167,6 +167,18 @@ onMounted(async () => {
         desc: n.content?.slice(0, 20) + '…' || '',
         time: formatTime(n.createTime || '')
       }))
+    }
+    const dashboardRes = await getDashboardStats()
+    if (dashboardRes.code === 200 && dashboardRes.data) {
+      const dashboard = dashboardRes.data
+      if (dashboard.overview) stats.value = { ...stats.value, ...dashboard.overview }
+      trends.value = (dashboard.dailyTrend || []).map((item: any) => ({ type: item.stat_date || item.statDate, revenue: item.revenue, orderCount: item.order_count || item.orderCount }))
+      orderSummary.value = (dashboard.orderStatus || []).reduce((summary: any, item: any) => {
+        if (Number(item.status) >= 50) summary.completed += Number(item.count || 0)
+        else if (Number(item.status) >= 40) summary.delivering += Number(item.count || 0)
+        else summary.pending += Number(item.count || 0)
+        return summary
+      }, { pending: 0, delivering: 0, completed: 0 })
     }
     await nextTick()
     renderCharts()

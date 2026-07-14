@@ -150,4 +150,23 @@
           AND create_time BETWEEN #{start} AND #{end}
     </select>
 
+    <select id="aggregateDaily" resultType="map">
+        SELECT DATE_FORMAT(create_time, '%Y-%m-%d') AS stat_date,
+               COUNT(*) AS order_count,
+               COALESCE(SUM(pay_amount), 0) AS revenue
+        FROM orders
+        WHERE deleted = 0
+          AND create_time BETWEEN #{start} AND #{end}
+        GROUP BY DATE_FORMAT(create_time, '%Y-%m-%d')
+        ORDER BY stat_date ASC
+    </select>
+
+    <select id="aggregateByStatus" resultType="map">
+        SELECT order_status, COUNT(*) AS order_count
+        FROM orders
+        WHERE deleted = 0
+        GROUP BY order_status
+        ORDER BY order_status ASC
+    </select>
+
 </mapper>

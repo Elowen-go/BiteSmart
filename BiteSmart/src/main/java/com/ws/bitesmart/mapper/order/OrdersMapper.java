@@ -7,6 +7,7 @@ import org.apache.ibatis.annotations.Param;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 订单 Mapper
@@ -75,4 +76,9 @@ public interface OrdersMapper {
 
     /** 统计指定时间范围内的实付金额总和 */
     BigDecimal sumPayAmountByTimeRange(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+
+    List<Map<String, Object>> aggregateDaily(@Param("start") LocalDateTime start,
+                                              @Param("end") LocalDateTime end);
+
+    List<Map<String, Object>> aggregateByStatus();
 }

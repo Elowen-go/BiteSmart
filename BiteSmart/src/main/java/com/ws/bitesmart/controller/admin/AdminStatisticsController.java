@@ -18,6 +18,9 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 
 /**
  * 管理员端 - 数据统计
@@ -83,6 +86,28 @@ public class AdminStatisticsController {
         data.put("endTime", endTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
         data.put("orderCount", orderCount);
         data.put("revenue", revenue);
+        return ResultVO.success(data);
+    }
+
+    @GetMapping("/dashboard")
+    public ResultVO<Map<String, Object>> dashboard() {
+        LocalDate today = LocalDate.now();
+        LocalDateTime start = today.minusDays(6).atStartOfDay();
+        LocalDateTime end = LocalDateTime.of(today, LocalTime.MAX);
+
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("overview", overview().getData());
+        data.put("dailyTrend", ordersMapper.aggregateDaily(start, end));
+
+        List<Map<String, Object>> statusRows = ordersMapper.aggregateByStatus();
+        List<Map<String, Object>> orderStatus = new ArrayList<>();
+        for (Map<String, Object> row : statusRows) {
+            Map<String, Object> item = new LinkedHashMap<>();
+            item.put("status", row.get("order_status"));
+            item.put("count", row.get("order_count"));
+            orderStatus.add(item);
+        }
+        data.put("orderStatus", orderStatus);
         return ResultVO.success(data);
     }
 

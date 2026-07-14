@@ -22,3 +22,7 @@ export const getOverview = (): Promise<{ code: number; data: DashboardStats }> =
 export const getTrend = (type?: 'day' | 'week' | 'month'): Promise<{ code: number; data: TrendStats }> => {
   return request.get('/admin/statistics/trend', { params: { type } })
 }
+
+export const getDashboardStats = (): Promise<{ code: number; data: any }> => {
+  return request.get('/admin/statistics/dashboard')
+}
