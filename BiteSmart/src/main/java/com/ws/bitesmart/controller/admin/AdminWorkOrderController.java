@@ -33,6 +33,12 @@ public class AdminWorkOrderController {
         return PageResultVO.success(new PageInfo<>(list));
     }
 
+    @GetMapping("/refunds/{id}")
+    public ResultVO<RefundApplication> refundDetail(@PathVariable Long id) {
+        RefundApplication item = refundMapper.findById(id);
+        return item == null ? ResultVO.error(404, "退款工单不存在") : ResultVO.success(item);
+    }
+
     @PutMapping("/refunds/{id}")
     public ResultVO<Void> auditRefund(@PathVariable Long id,
                                       @RequestParam Integer status,
@@ -51,6 +57,12 @@ public class AdminWorkOrderController {
         PageHelper.startPage(pageNum, pageSize);
         List<ComplaintTicket> list = complaintMapper.findAll(status);
         return PageResultVO.success(new PageInfo<>(list));
+    }
+
+    @GetMapping("/complaints/{id}")
+    public ResultVO<ComplaintTicket> complaintDetail(@PathVariable Long id) {
+        ComplaintTicket item = complaintMapper.findById(id);
+        return item == null ? ResultVO.error(404, "投诉工单不存在") : ResultVO.success(item);
     }
 
     @PutMapping("/complaints/{id}")
