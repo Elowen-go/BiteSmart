@@ -42,6 +42,15 @@ const notifications = ref<any[]>([])
 const trends = ref<any[]>([])
 const orderSummary = ref({ pending: 0, delivering: 0, completed: 0 })
 const managementTodos = ref({ merchantAudit: 0, reviewPending: 0, driverFrozen: 0, orderException: 0 })
+const workQueue = computed(() => [
+  { label: '待审核商家', value: managementTodos.value.merchantAudit, hint: '商家审核', tone: 'warning' },
+  { label: '待处理评价', value: managementTodos.value.reviewPending, hint: '评价管理', tone: 'warning' },
+  { label: '冻结配送员', value: managementTodos.value.driverFrozen, hint: '配送员复核', tone: 'warning' },
+  { label: '异常订单', value: managementTodos.value.orderException, hint: '订单跟进', tone: 'danger' },
+  { label: '待审核退款', value: stats.value.pendingRefundCount, hint: '退款工单', tone: 'warning' },
+  { label: '待处理投诉', value: stats.value.pendingComplaintCount, hint: '投诉工单', tone: 'warning' },
+  { label: '库存预警', value: stats.value.lowStockDishCount, hint: '库存补货', tone: 'warning' }
+])
 const maxTrendRevenue = computed(() => Math.max(...trends.value.map((item) => Number(item.revenue || 0)), 1))
 const trendBarHeight = (value: number) => `${Math.max((Number(value || 0) / maxTrendRevenue.value) * 100, 5)}%`
 const orderTotal = computed(() => orderSummary.value.pending + orderSummary.value.delivering + orderSummary.value.completed)
@@ -240,19 +249,18 @@ const getStatusBadge = (status: string) => {
       />
     </div>
 
-    <div class="management-strip">
-      <div class="todo-card"><span>待审核商家</span><strong>{{ managementTodos.merchantAudit }}</strong><small>需要管理员审核</small></div>
-      <div class="todo-card"><span>待处理评价</span><strong>{{ managementTodos.reviewPending }}</strong><small>已发布评价</small></div>
-      <div class="todo-card"><span>冻结配送员</span><strong>{{ managementTodos.driverFrozen }}</strong><small>需要复核状态</small></div>
-      <div class="todo-card danger"><span>异常订单</span><strong>{{ managementTodos.orderException }}</strong><small>需要跟进处理</small></div>
-    </div>
-
-    <div class="operations-strip">
-      <div class="operation-card"><span>待审核退款</span><strong>{{ stats.pendingRefundCount }}</strong><small>退款工单</small></div>
-      <div class="operation-card"><span>待处理投诉</span><strong>{{ stats.pendingComplaintCount }}</strong><small>投诉工单</small></div>
-      <div class="operation-card"><span>有效会员</span><strong>{{ stats.activeMembershipCount }}</strong><small>当前有效</small></div>
-      <div class="operation-card"><span>AI 使用次数</span><strong>{{ stats.aiConversationCount }}</strong><small>累计对话</small></div>
-      <div class="operation-card warning"><span>库存预警</span><strong>{{ stats.lowStockDishCount }}</strong><small>需要补货</small></div>
+    <div class="work-queue card-panel">
+      <div class="card-header">
+        <div><h3>待处理事项</h3><p>需要管理员关注的运营任务</p></div>
+        <span class="queue-summary">{{ workQueue.filter(item => item.value > 0).length }} 项待跟进</span>
+      </div>
+      <div class="queue-grid">
+        <div v-for="item in workQueue" :key="item.label" :class="['queue-item', item.tone, { active: item.value > 0 }]">
+          <span class="queue-label">{{ item.label }}</span>
+          <strong>{{ item.value }}</strong>
+          <small>{{ item.hint }}</small>
+        </div>
+      </div>
     </div>
     
     <div class="dashboard-insights">
@@ -351,12 +359,15 @@ const getStatusBadge = (status: string) => {
   gap: var(--bs-spacing-lg);
   margin-bottom: var(--bs-spacing-lg);
 }
-.management-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--bs-spacing-lg); margin-bottom: var(--bs-spacing-lg); }
-.todo-card { display: flex; flex-direction: column; gap: 6px; padding: 15px 18px; background: var(--bs-card-bg); border: 1px solid #e5eee8; border-left: 4px solid #e5a33d; border-radius: 8px; box-shadow: var(--bs-card-shadow); }
-.todo-card span, .todo-card small { color: var(--bs-text-muted); font-size: 12px; }.todo-card strong { color: var(--bs-text-title); font-size: 25px; }.todo-card small { font-size: 11px; }.todo-card.danger { border-left-color: #c95c5c; }
-.operations-strip { display: grid; grid-template-columns: repeat(5, 1fr); gap: var(--bs-spacing-lg); margin-bottom: var(--bs-spacing-lg); }
-.operation-card { display: flex; flex-direction: column; gap: 5px; padding: 13px 16px; background: #f8fbf8; border: 1px solid #e5eee8; border-radius: 8px; }
-.operation-card span, .operation-card small { color: var(--bs-text-muted); font-size: 12px; }.operation-card strong { color: var(--bs-text-title); font-size: 22px; }.operation-card small { font-size: 11px; }.operation-card.warning { border-left: 4px solid #e5a33d; }
+.work-queue { margin-bottom: var(--bs-spacing-lg); }
+.work-queue .card-header { margin-bottom: 14px; }
+.queue-summary { color: var(--bs-text-muted); font-size: 13px; }
+.queue-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; }
+.queue-item { display: grid; grid-template-columns: 1fr auto; gap: 4px 8px; padding: 11px 12px; background: #f8fbf8; border: 1px solid #e5eee8; border-radius: 6px; color: var(--bs-text-muted); }
+.queue-item strong { grid-column: 2; grid-row: 1 / span 2; align-self: center; color: var(--bs-text-title); font-size: 22px; }
+.queue-item small { grid-column: 1; color: var(--bs-text-muted); font-size: 11px; }
+.queue-item.active.warning { border-left: 3px solid #e5a33d; }
+.queue-item.active.danger { border-left: 3px solid #c95c5c; }
 
 .grid-2col {
   display: grid;
@@ -531,7 +542,7 @@ table tr:hover td {
   .stats-row {
     grid-template-columns: repeat(2, 1fr);
   }
-  .management-strip, .operations-strip { grid-template-columns: repeat(2, 1fr); }
+  .queue-grid { grid-template-columns: repeat(3, 1fr); }
   .grid-2col {
     grid-template-columns: 1fr;
   }
@@ -542,7 +553,7 @@ table tr:hover td {
   .stats-row {
     grid-template-columns: 1fr;
   }
-  .management-strip, .operations-strip { grid-template-columns: 1fr; }
+  .queue-grid { grid-template-columns: 1fr; }
   .trend-chart { height: 145px; }
   .donut-layout { justify-content: center; }
 }
