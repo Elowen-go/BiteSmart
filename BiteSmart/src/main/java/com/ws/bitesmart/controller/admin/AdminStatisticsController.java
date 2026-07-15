@@ -3,7 +3,12 @@ package com.ws.bitesmart.controller.admin;
 import com.ws.bitesmart.common.ResultVO;
 import com.ws.bitesmart.mapper.merchant.MerchantMapper;
 import com.ws.bitesmart.mapper.order.OrdersMapper;
+import com.ws.bitesmart.mapper.ai.AiConversationMapper;
+import com.ws.bitesmart.mapper.complaint.ComplaintTicketMapper;
+import com.ws.bitesmart.mapper.dish.DishMapper;
+import com.ws.bitesmart.mapper.refund.RefundApplicationMapper;
 import com.ws.bitesmart.mapper.user.SysUserMapper;
+import com.ws.bitesmart.mapper.user.UserMembershipMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -36,6 +41,11 @@ public class AdminStatisticsController {
     private final SysUserMapper sysUserMapper;
     private final MerchantMapper merchantMapper;
     private final OrdersMapper ordersMapper;
+    private final RefundApplicationMapper refundApplicationMapper;
+    private final ComplaintTicketMapper complaintTicketMapper;
+    private final UserMembershipMapper userMembershipMapper;
+    private final AiConversationMapper aiConversationMapper;
+    private final DishMapper dishMapper;
 
     /**
      * 平台总览
@@ -108,6 +118,11 @@ public class AdminStatisticsController {
             orderStatus.add(item);
         }
         data.put("orderStatus", orderStatus);
+        data.put("pendingRefundCount", refundApplicationMapper.countByStatus(10));
+        data.put("pendingComplaintCount", complaintTicketMapper.countByStatus(10));
+        data.put("activeMembershipCount", userMembershipMapper.countActive());
+        data.put("aiConversationCount", aiConversationMapper.countAll());
+        data.put("lowStockDishCount", dishMapper.countLowStock());
         return ResultVO.success(data);
     }
 

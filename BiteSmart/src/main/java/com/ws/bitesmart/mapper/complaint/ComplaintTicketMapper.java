@@ -11,6 +11,7 @@ public interface ComplaintTicketMapper {
     List<ComplaintTicket> findAll(@Param("status") Integer status);
     List<ComplaintTicket> findByUserId(@Param("userId") Long userId);
     ComplaintTicket findById(@Param("id") Long id);
+    long countByStatus(@Param("status") Integer status);
     int updateHandle(@Param("id") Long id, @Param("status") Integer status,
                      @Param("operatorId") Long operatorId, @Param("remark") String remark,
                      @Param("result") String result);

@@ -23,6 +23,9 @@
         WHERE user_id = #{userId} AND deleted = 0
         ORDER BY create_time DESC
     </select>
+    <select id="countAll" resultType="long">
+        SELECT COUNT(*) FROM ai_conversation WHERE deleted = 0
+    </select>
 
     <insert id="insert" parameterType="com.ws.bitesmart.entity.ai.AiConversation">
         INSERT INTO ai_conversation (id, user_id, session_id, question, answer, model_name,

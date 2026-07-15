@@ -27,6 +27,10 @@
         WHERE user_id = #{userId} AND deleted = 0
         ORDER BY create_time DESC
     </select>
+    <select id="countActive" resultType="long">
+        SELECT COUNT(*) FROM user_membership
+        WHERE status = 10 AND end_time > NOW() AND deleted = 0
+    </select>
 
     <insert id="insert" parameterType="com.ws.bitesmart.entity.user.UserMembership">
         INSERT INTO user_membership (id, user_id, plan_id, membership_type, status,

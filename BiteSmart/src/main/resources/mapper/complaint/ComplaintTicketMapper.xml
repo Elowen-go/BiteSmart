@@ -31,6 +31,10 @@
                handle_time, create_time, update_time, deleted
         FROM complaint_ticket WHERE id = #{id} AND deleted = 0
     </select>
+    <select id="countByStatus" resultType="long">
+        SELECT COUNT(*) FROM complaint_ticket
+        WHERE deleted = 0 AND status = #{status}
+    </select>
     <update id="updateHandle">
         UPDATE complaint_ticket
         SET status = #{status}, admin_operator_id = #{operatorId}, admin_remark = #{remark},

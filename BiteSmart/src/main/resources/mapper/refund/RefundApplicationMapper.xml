@@ -16,6 +16,10 @@
                audit_time, refund_time, create_time, update_time, deleted
         FROM refund_application WHERE id = #{id} AND deleted = 0
     </select>
+    <select id="countByStatus" resultType="long">
+        SELECT COUNT(*) FROM refund_application
+        WHERE deleted = 0 AND audit_status = #{auditStatus}
+    </select>
     <update id="updateAudit">
         UPDATE refund_application
         SET audit_status = #{status}, audit_operator_id = #{operatorId},

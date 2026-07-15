@@ -29,7 +29,12 @@ const stats = ref({
   totalRevenue: 0,
   orderCount: 0,
   userCount: 0,
-  merchantCount: 0
+  merchantCount: 0,
+  pendingRefundCount: 0,
+  pendingComplaintCount: 0,
+  activeMembershipCount: 0,
+  aiConversationCount: 0,
+  lowStockDishCount: 0
 })
 
 const recentOrders = ref<any[]>([])
@@ -172,6 +177,11 @@ onMounted(async () => {
     if (dashboardRes.code === 200 && dashboardRes.data) {
       const dashboard = dashboardRes.data
       if (dashboard.overview) stats.value = { ...stats.value, ...dashboard.overview }
+      stats.value.pendingRefundCount = Number(dashboard.pendingRefundCount || 0)
+      stats.value.pendingComplaintCount = Number(dashboard.pendingComplaintCount || 0)
+      stats.value.activeMembershipCount = Number(dashboard.activeMembershipCount || 0)
+      stats.value.aiConversationCount = Number(dashboard.aiConversationCount || 0)
+      stats.value.lowStockDishCount = Number(dashboard.lowStockDishCount || 0)
       trends.value = (dashboard.dailyTrend || []).map((item: any) => ({ type: item.stat_date || item.statDate, revenue: item.revenue, orderCount: item.order_count || item.orderCount }))
       orderSummary.value = (dashboard.orderStatus || []).reduce((summary: any, item: any) => {
         if (Number(item.status) >= 50) summary.completed += Number(item.count || 0)
@@ -235,6 +245,14 @@ const getStatusBadge = (status: string) => {
       <div class="todo-card"><span>待处理评价</span><strong>{{ managementTodos.reviewPending }}</strong><small>已发布评价</small></div>
       <div class="todo-card"><span>冻结配送员</span><strong>{{ managementTodos.driverFrozen }}</strong><small>需要复核状态</small></div>
       <div class="todo-card danger"><span>异常订单</span><strong>{{ managementTodos.orderException }}</strong><small>需要跟进处理</small></div>
+    </div>
+
+    <div class="operations-strip">
+      <div class="operation-card"><span>待审核退款</span><strong>{{ stats.pendingRefundCount }}</strong><small>退款工单</small></div>
+      <div class="operation-card"><span>待处理投诉</span><strong>{{ stats.pendingComplaintCount }}</strong><small>投诉工单</small></div>
+      <div class="operation-card"><span>有效会员</span><strong>{{ stats.activeMembershipCount }}</strong><small>当前有效</small></div>
+      <div class="operation-card"><span>AI 使用次数</span><strong>{{ stats.aiConversationCount }}</strong><small>累计对话</small></div>
+      <div class="operation-card warning"><span>库存预警</span><strong>{{ stats.lowStockDishCount }}</strong><small>需要补货</small></div>
     </div>
     
     <div class="dashboard-insights">
@@ -336,6 +354,9 @@ const getStatusBadge = (status: string) => {
 .management-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--bs-spacing-lg); margin-bottom: var(--bs-spacing-lg); }
 .todo-card { display: flex; flex-direction: column; gap: 6px; padding: 15px 18px; background: var(--bs-card-bg); border: 1px solid #e5eee8; border-left: 4px solid #e5a33d; border-radius: 8px; box-shadow: var(--bs-card-shadow); }
 .todo-card span, .todo-card small { color: var(--bs-text-muted); font-size: 12px; }.todo-card strong { color: var(--bs-text-title); font-size: 25px; }.todo-card small { font-size: 11px; }.todo-card.danger { border-left-color: #c95c5c; }
+.operations-strip { display: grid; grid-template-columns: repeat(5, 1fr); gap: var(--bs-spacing-lg); margin-bottom: var(--bs-spacing-lg); }
+.operation-card { display: flex; flex-direction: column; gap: 5px; padding: 13px 16px; background: #f8fbf8; border: 1px solid #e5eee8; border-radius: 8px; }
+.operation-card span, .operation-card small { color: var(--bs-text-muted); font-size: 12px; }.operation-card strong { color: var(--bs-text-title); font-size: 22px; }.operation-card small { font-size: 11px; }.operation-card.warning { border-left: 4px solid #e5a33d; }
 
 .grid-2col {
   display: grid;
@@ -510,7 +531,7 @@ table tr:hover td {
   .stats-row {
     grid-template-columns: repeat(2, 1fr);
   }
-  .management-strip { grid-template-columns: repeat(2, 1fr); }
+  .management-strip, .operations-strip { grid-template-columns: repeat(2, 1fr); }
   .grid-2col {
     grid-template-columns: 1fr;
   }
@@ -521,7 +542,7 @@ table tr:hover td {
   .stats-row {
     grid-template-columns: 1fr;
   }
-  .management-strip { grid-template-columns: 1fr; }
+  .management-strip, .operations-strip { grid-template-columns: 1fr; }
   .trend-chart { height: 145px; }
   .donut-layout { justify-content: center; }
 }

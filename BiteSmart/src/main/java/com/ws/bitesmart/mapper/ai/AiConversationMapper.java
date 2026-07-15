@@ -17,6 +17,7 @@ public interface AiConversationMapper {
 
     /** 查用户的所有历史消息 */
     List<AiConversation> findSessionsByUserId(@Param("userId") Long userId);
+    long countAll();
 
     /** 保存一次问答 */
     int insert(AiConversation conversation);

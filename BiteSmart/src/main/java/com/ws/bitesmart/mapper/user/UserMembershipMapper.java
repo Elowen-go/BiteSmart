@@ -19,6 +19,7 @@ public interface UserMembershipMapper {
 
     /** 所有会员记录（含已过期的），按时间倒序 */
     List<UserMembership> findByUserId(@Param("userId") Long userId);
+    long countActive();
 
     /** 新增会员记录 */
     int insert(UserMembership membership);
