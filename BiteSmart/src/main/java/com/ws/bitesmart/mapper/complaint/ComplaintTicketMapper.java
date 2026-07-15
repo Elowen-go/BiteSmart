@@ -9,6 +9,7 @@ import java.util.List;
 public interface ComplaintTicketMapper {
     int insert(ComplaintTicket ticket);
     List<ComplaintTicket> findAll(@Param("status") Integer status);
+    List<ComplaintTicket> findByUserId(@Param("userId") Long userId);
     ComplaintTicket findById(@Param("id") Long id);
     int updateHandle(@Param("id") Long id, @Param("status") Integer status,
                      @Param("operatorId") Long operatorId, @Param("remark") String remark,

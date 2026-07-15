@@ -17,6 +17,14 @@
         <if test="status != null">AND status = #{status}</if>
         ORDER BY create_time DESC
     </select>
+    <select id="findByUserId" resultType="com.ws.bitesmart.entity.complaint.ComplaintTicket">
+        SELECT id, order_id, user_id, target_type, target_id, complaint_reason, complaint_desc,
+               evidence_images, status, admin_operator_id, admin_remark, result,
+               handle_time, create_time, update_time, deleted
+        FROM complaint_ticket
+        WHERE user_id = #{userId} AND deleted = 0
+        ORDER BY create_time DESC
+    </select>
     <select id="findById" resultType="com.ws.bitesmart.entity.complaint.ComplaintTicket">
         SELECT id, order_id, user_id, target_type, target_id, complaint_reason, complaint_desc,
                evidence_images, status, admin_operator_id, admin_remark, result,
