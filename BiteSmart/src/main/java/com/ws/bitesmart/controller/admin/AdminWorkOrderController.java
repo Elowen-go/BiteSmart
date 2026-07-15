@@ -8,6 +8,9 @@ import com.ws.bitesmart.entity.complaint.ComplaintTicket;
 import com.ws.bitesmart.entity.refund.RefundApplication;
 import com.ws.bitesmart.mapper.complaint.ComplaintTicketMapper;
 import com.ws.bitesmart.mapper.refund.RefundApplicationMapper;
+import com.ws.bitesmart.mapper.order.OrdersMapper;
+import com.ws.bitesmart.mapper.user.SysUserMapper;
+import com.ws.bitesmart.mapper.merchant.MerchantMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -16,6 +19,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
+import java.util.Map;
+import java.util.LinkedHashMap;
 
 @RestController
 @RequestMapping("/api/admin/work-orders")
@@ -23,6 +28,9 @@ import java.util.List;
 public class AdminWorkOrderController {
     private final RefundApplicationMapper refundMapper;
     private final ComplaintTicketMapper complaintMapper;
+    private final OrdersMapper ordersMapper;
+    private final SysUserMapper sysUserMapper;
+    private final MerchantMapper merchantMapper;
 
     @GetMapping("/refunds")
     public PageResultVO<RefundApplication> refunds(@RequestParam(defaultValue = "1") int pageNum,
@@ -34,9 +42,15 @@ public class AdminWorkOrderController {
     }
 
     @GetMapping("/refunds/{id}")
-    public ResultVO<RefundApplication> refundDetail(@PathVariable Long id) {
+    public ResultVO<Map<String, Object>> refundDetail(@PathVariable Long id) {
         RefundApplication item = refundMapper.findById(id);
-        return item == null ? ResultVO.error(404, "退款工单不存在") : ResultVO.success(item);
+        if (item == null) return ResultVO.error(404, "退款工单不存在");
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("workOrder", item);
+        result.put("order", ordersMapper.findById(item.getOrderId()));
+        result.put("user", sysUserMapper.findById(item.getUserId()));
+        result.put("merchant", result.get("order") == null ? null : merchantMapper.findById(((com.ws.bitesmart.entity.order.Orders) result.get("order")).getMerchantId()));
+        return ResultVO.success(result);
     }
 
     @PutMapping("/refunds/{id}")
@@ -60,9 +74,15 @@ public class AdminWorkOrderController {
     }
 
     @GetMapping("/complaints/{id}")
-    public ResultVO<ComplaintTicket> complaintDetail(@PathVariable Long id) {
+    public ResultVO<Map<String, Object>> complaintDetail(@PathVariable Long id) {
         ComplaintTicket item = complaintMapper.findById(id);
-        return item == null ? ResultVO.error(404, "投诉工单不存在") : ResultVO.success(item);
+        if (item == null) return ResultVO.error(404, "投诉工单不存在");
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("workOrder", item);
+        result.put("order", ordersMapper.findById(item.getOrderId()));
+        result.put("user", sysUserMapper.findById(item.getUserId()));
+        result.put("merchant", result.get("order") == null ? null : merchantMapper.findById(((com.ws.bitesmart.entity.order.Orders) result.get("order")).getMerchantId()));
+        return ResultVO.success(result);
     }
 
     @PutMapping("/complaints/{id}")
