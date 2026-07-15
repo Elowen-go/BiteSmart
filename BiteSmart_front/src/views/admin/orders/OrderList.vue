@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { getOrderList, getOrderDetail, cancelOrder } from '../../../api/admin/orders'
+import ListState from '../../../components/common/ListState.vue'
 
 const loading = ref(false)
 const tableData = ref<any[]>([])
@@ -13,6 +14,7 @@ const userId = ref<number | undefined>()
 const merchantId = ref<number | undefined>()
 const paymentStatus = ref<number | undefined>()
 const deliveryStatus = ref<number | undefined>()
+const loadError = ref('')
 
 const detailDialogVisible = ref(false)
 const detailData = ref<any>(null)
@@ -24,6 +26,7 @@ const cancelTarget = ref<any>(null)
 
 const loadData = async () => {
   loading.value = true
+  loadError.value = ''
   try {
     const res = await getOrderList({
       pageNum: pageNum.value,
@@ -37,8 +40,11 @@ const loadData = async () => {
     if (res.code === 200) {
       tableData.value = res.data.list || []
       total.value = res.data.total || 0
+    } else {
+      loadError.value = res.message || '订单列表暂时无法获取'
     }
   } catch (err) {
+    loadError.value = '请检查网络连接后重试'
     console.error('获取订单列表失败', err)
   } finally {
     loading.value = false
@@ -128,7 +134,8 @@ onMounted(loadData)
         </div>
       </div>
       <div style="padding-top: 20px;">
-        <el-table :data="tableData" v-loading="loading" border stripe style="width: 100%">
+        <ListState :loading="loading" :error="loadError" :empty="!tableData.length" empty-text="暂无订单记录" @retry="loadData">
+        <el-table :data="tableData" border stripe style="width: 100%">
           <el-table-column prop="orderNo" label="订单号" min-width="180" />
           <el-table-column label="订单金额" width="120">
             <template #default="{ row }">
@@ -160,6 +167,7 @@ onMounted(loadData)
             </template>
           </el-table-column>
         </el-table>
+        </ListState>
         <div style="display:flex;justify-content:flex-end;padding-top:16px;">
           <el-pagination
             v-model:current-page="pageNum"

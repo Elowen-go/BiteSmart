@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { getUserList, getUserDetail, updateUserStatus } from '../../../api/admin/users'
+import ListState from '../../../components/common/ListState.vue'
 
 const loading = ref(false)
 const tableData = ref<any[]>([])
@@ -10,6 +11,7 @@ const pageNum = ref(1)
 const pageSize = ref(10)
 const detailDialogVisible = ref(false)
 const detailData = ref<any>(null)
+const loadError = ref('')
 
 const roleMap: Record<number, string> = { 10: '普通用户', 20: '商家', 30: '配送员', 40: '管理员' }
 const statusMap: Record<number, string> = { 10: '正常', 20: '冻结', 30: '注销' }
@@ -32,13 +34,17 @@ const parseList = (value: any) => {
 
 const loadData = async () => {
   loading.value = true
+  loadError.value = ''
   try {
     const res = await getUserList({ pageNum: pageNum.value, pageSize: pageSize.value })
     if (res.code === 200) {
       tableData.value = res.data.list || []
       total.value = res.data.total || 0
+    } else {
+      loadError.value = res.message || '用户列表暂时无法获取'
     }
   } catch (err) {
+    loadError.value = '请检查网络连接后重试'
     console.error('获取用户列表失败', err)
   } finally {
     loading.value = false
@@ -81,7 +87,8 @@ onMounted(loadData)
         <button class="btn btn-primary">新增用户</button>
       </div>
       <div style="padding-top: 20px;">
-        <el-table :data="tableData" v-loading="loading" border stripe style="width: 100%">
+        <ListState :loading="loading" :error="loadError" :empty="!tableData.length" empty-text="暂无用户记录" @retry="loadData">
+        <el-table :data="tableData" border stripe style="width: 100%">
           <el-table-column label="ID" width="190" class-name="user-id-column">
             <template #default="{ row }"><span class="user-id-cell">{{ row.id }}</span></template>
           </el-table-column>
@@ -119,6 +126,7 @@ onMounted(loadData)
             </template>
           </el-table-column>
         </el-table>
+        </ListState>
         <div style="display:flex;justify-content:flex-end;padding-top:16px;">
           <el-pagination
             v-model:current-page="pageNum"
