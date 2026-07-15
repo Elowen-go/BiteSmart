@@ -22,6 +22,7 @@ import {
 import { useUserStore } from '../stores/user'
 import { getShopInfo, getShopList } from '../api/merchant/shop'
 import { getProfile } from '../api/merchant/profile'
+import { getNoticeList } from '../api/user/notices'
 
 // 店铺选择器样式 - 全局样式
 const shopSelectorStyles = `
@@ -104,6 +105,16 @@ const collapsed = ref(false)
 const logoUrl = ref('')
 const shopName = ref('')
 const shopList = ref<any[]>([])
+const notificationCount = ref(0)
+
+const loadNotificationCount = async () => {
+  try {
+    const res = await getNoticeList({ pageNum: 1, pageSize: 1 })
+    if (res.code === 200) notificationCount.value = Number(res.data?.total || res.data?.list?.length || 0)
+  } catch (err) {
+    console.error('获取通知数量失败', err)
+  }
+}
 
 const toggleSidebar = () => {
   collapsed.value = !collapsed.value
@@ -223,6 +234,7 @@ onMounted(() => {
   fetchLogo()
   fetchShopList()
   fetchUserInfo()
+  loadNotificationCount()
   
   // 注入全局样式
   const styleEl = document.createElement('style')
@@ -306,7 +318,7 @@ onMounted(() => {
         <div class="header-right">
           <button class="icon-btn notification-btn">
             <Bell />
-            <span class="notification-badge">3</span>
+            <span v-if="notificationCount > 0" class="notification-badge">{{ notificationCount > 99 ? '99+' : notificationCount }}</span>
           </button>
           <button class="icon-btn">
             <HelpFilled />

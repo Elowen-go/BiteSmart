@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   House,
@@ -21,12 +21,23 @@ import {
   Shop
 } from '@element-plus/icons-vue'
 import { useUserStore } from '../stores/user'
+import { getNoticeList } from '../api/user/notices'
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
 
 const collapsed = ref(false)
+const notificationCount = ref(0)
+
+const loadNotificationCount = async () => {
+  try {
+    const res = await getNoticeList({ pageNum: 1, pageSize: 1 })
+    if (res.code === 200) notificationCount.value = Number(res.data?.total || res.data?.list?.length || 0)
+  } catch (err) {
+    console.error('获取通知数量失败', err)
+  }
+}
 
 const toggleSidebar = () => {
   collapsed.value = !collapsed.value
@@ -85,6 +96,8 @@ const handleLogout = () => {
   userStore.logout()
   router.push('/login')
 }
+
+onMounted(loadNotificationCount)
 </script>
 
 <template>
@@ -140,7 +153,7 @@ const handleLogout = () => {
         <div class="header-right">
           <button class="icon-btn notification-btn">
             <Bell />
-            <span class="notification-badge">3</span>
+            <span v-if="notificationCount > 0" class="notification-badge">{{ notificationCount > 99 ? '99+' : notificationCount }}</span>
           </button>
           <button class="icon-btn">
             <HelpFilled />

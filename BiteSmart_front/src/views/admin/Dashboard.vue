@@ -317,7 +317,7 @@ const getStatusBadge = (status: string) => {
             <Bell style="width: 18px; height: 18px; margin-right: 8px; color: var(--bs-primary);" />
             最新通知
           </h3>
-          <span style="font-size: 13px; color: var(--bs-text-muted);">3条未读</span>
+          <span style="font-size: 13px; color: var(--bs-text-muted);">{{ notifications.length }}条通知</span>
         </div>
         <div v-if="notifications.length" class="notifications-list">
           <div v-for="(item, index) in notifications" :key="index" class="notification-item">
