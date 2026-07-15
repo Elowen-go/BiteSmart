@@ -362,12 +362,12 @@ const getStatusBadge = (status: string) => {
 .work-queue { margin-bottom: var(--bs-spacing-lg); }
 .work-queue .card-header { margin-bottom: 14px; }
 .queue-summary { color: var(--bs-text-muted); font-size: 13px; }
-.queue-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; }
-.queue-item { display: grid; grid-template-columns: 1fr auto; gap: 4px 8px; padding: 11px 12px; background: #f8fbf8; border: 1px solid #e5eee8; border-radius: 6px; color: var(--bs-text-muted); }
-.queue-item strong { grid-column: 2; grid-row: 1 / span 2; align-self: center; color: var(--bs-text-title); font-size: 22px; }
+.queue-grid { display: grid; grid-template-columns: repeat(4, 1fr); column-gap: 28px; }
+.queue-item { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; align-items: center; min-height: 62px; padding: 10px 0; border-top: 1px solid #e8efea; color: var(--bs-text-muted); }
+.queue-item strong { grid-column: 2; grid-row: 1 / span 2; align-self: center; color: var(--bs-text-title); font-size: 22px; font-variant-numeric: tabular-nums; }
 .queue-item small { grid-column: 1; color: var(--bs-text-muted); font-size: 11px; }
-.queue-item.active.warning { border-left: 3px solid #e5a33d; }
-.queue-item.active.danger { border-left: 3px solid #c95c5c; }
+.queue-item.active.warning .queue-label::before, .queue-item.active.danger .queue-label::before { display: inline-block; width: 6px; height: 6px; margin: 0 7px 2px 0; border-radius: 50%; background: #e5a33d; content: ''; }
+.queue-item.active.danger .queue-label::before { background: #c95c5c; }
 
 .grid-2col {
   display: grid;
@@ -542,7 +542,7 @@ table tr:hover td {
   .stats-row {
     grid-template-columns: repeat(2, 1fr);
   }
-  .queue-grid { grid-template-columns: repeat(3, 1fr); }
+  .queue-grid { grid-template-columns: repeat(2, 1fr); column-gap: 24px; }
   .grid-2col {
     grid-template-columns: 1fr;
   }
