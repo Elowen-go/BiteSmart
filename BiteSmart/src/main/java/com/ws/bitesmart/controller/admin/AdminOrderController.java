@@ -50,11 +50,13 @@ public class AdminOrderController {
     @GetMapping
     public PageResultVO<Orders> list(@RequestParam(defaultValue = "1") int pageNum,
                                       @RequestParam(defaultValue = "10") int pageSize,
-                                      @RequestParam(required = false) Integer orderStatus) {
+                                      @RequestParam(required = false) Integer orderStatus,
+                                      @RequestParam(required = false) Long userId,
+                                      @RequestParam(required = false) Long merchantId,
+                                      @RequestParam(required = false) Integer paymentStatus,
+                                      @RequestParam(required = false) Integer deliveryStatus) {
         PageHelper.startPage(pageNum, pageSize);
-        List<Orders> list = orderStatus == null
-                ? ordersMapper.findAll()
-                : ordersMapper.findAllByStatus(orderStatus);
+        List<Orders> list = ordersMapper.findAdminList(userId, merchantId, paymentStatus, deliveryStatus, orderStatus);
         return PageResultVO.success(new PageInfo<>(list));
     }
 

@@ -126,6 +126,19 @@
         ORDER BY create_time DESC
     </select>
 
+    <select id="findAdminList" resultType="com.ws.bitesmart.entity.order.Orders">
+        SELECT <include refid="BaseColumns"/>
+        FROM orders
+        WHERE deleted = 0
+        <if test="userId != null">AND user_id = #{userId}</if>
+        <if test="merchantId != null">AND merchant_id = #{merchantId}</if>
+        <if test="paymentStatus == 10">AND pay_time IS NOT NULL</if>
+        <if test="paymentStatus == 0">AND pay_time IS NULL</if>
+        <if test="deliveryStatus != null">AND delivery_status = #{deliveryStatus}</if>
+        <if test="orderStatus != null">AND order_status = #{orderStatus}</if>
+        ORDER BY create_time DESC
+    </select>
+
     <!-- 统计所有订单数量 -->
     <select id="countAll" resultType="long">
         SELECT COUNT(*) FROM orders WHERE deleted = 0

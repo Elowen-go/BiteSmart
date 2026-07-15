@@ -17,7 +17,15 @@ export interface Order {
   updateTime: string
 }
 
-export const getOrderList = (params?: { pageNum?: number; pageSize?: number; orderStatus?: number }): Promise<any> => {
+export const getOrderList = (params?: {
+  pageNum?: number
+  pageSize?: number
+  orderStatus?: number
+  userId?: number
+  merchantId?: number
+  paymentStatus?: number
+  deliveryStatus?: number
+}): Promise<any> => {
   return request.get('/admin/orders', { params })
 }
 

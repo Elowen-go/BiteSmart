@@ -65,6 +65,12 @@ public interface OrdersMapper {
     /** 按订单状态分页查询订单 */
     List<Orders> findAllByStatus(@Param("orderStatus") Integer orderStatus);
 
+    List<Orders> findAdminList(@Param("userId") Long userId,
+                               @Param("merchantId") Long merchantId,
+                               @Param("paymentStatus") Integer paymentStatus,
+                               @Param("deliveryStatus") Integer deliveryStatus,
+                               @Param("orderStatus") Integer orderStatus);
+
     /** 统计所有订单数量 */
     long countAll();
 

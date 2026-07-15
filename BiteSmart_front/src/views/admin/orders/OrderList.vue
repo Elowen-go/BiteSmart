@@ -9,6 +9,10 @@ const total = ref(0)
 const pageNum = ref(1)
 const pageSize = ref(10)
 const orderStatus = ref<number | undefined>()
+const userId = ref<number | undefined>()
+const merchantId = ref<number | undefined>()
+const paymentStatus = ref<number | undefined>()
+const deliveryStatus = ref<number | undefined>()
 
 const detailDialogVisible = ref(false)
 const detailData = ref<any>(null)
@@ -21,7 +25,15 @@ const cancelTarget = ref<any>(null)
 const loadData = async () => {
   loading.value = true
   try {
-    const res = await getOrderList({ pageNum: pageNum.value, pageSize: pageSize.value, orderStatus: orderStatus.value })
+    const res = await getOrderList({
+      pageNum: pageNum.value,
+      pageSize: pageSize.value,
+      orderStatus: orderStatus.value,
+      userId: userId.value,
+      merchantId: merchantId.value,
+      paymentStatus: paymentStatus.value,
+      deliveryStatus: deliveryStatus.value
+    })
     if (res.code === 200) {
       tableData.value = res.data.list || []
       total.value = res.data.total || 0
@@ -53,6 +65,15 @@ const handleFilterChange = () => {
   loadData()
 }
 
+const clearFilters = () => {
+  userId.value = undefined
+  merchantId.value = undefined
+  orderStatus.value = undefined
+  paymentStatus.value = undefined
+  deliveryStatus.value = undefined
+  handleFilterChange()
+}
+
 const openCancelDialog = (row: any) => {
   cancelTarget.value = row
   cancelReason.value = ''
@@ -78,16 +99,33 @@ onMounted(loadData)
 <template>
   <div class="page-container">
     <div class="card-panel">
-      <div class="card-header">
-        <el-select v-model="orderStatus" clearable placeholder="按订单状态筛选" size="small" style="width: 170px" @change="handleFilterChange">
-          <el-option label="待支付" :value="10" />
-          <el-option label="待接单" :value="20" />
-          <el-option label="备餐中" :value="30" />
-          <el-option label="配送中" :value="40" />
-          <el-option label="已完成" :value="50" />
-          <el-option label="已取消" :value="60" />
-        </el-select>
+      <div class="card-header order-toolbar">
         <h3>订单管理</h3>
+        <div class="filter-group">
+          <el-input v-model.number="userId" clearable placeholder="用户 ID" size="small" class="filter-id" @keyup.enter="handleFilterChange" />
+          <el-input v-model.number="merchantId" clearable placeholder="商家 ID" size="small" class="filter-id" @keyup.enter="handleFilterChange" />
+          <el-select v-model="paymentStatus" clearable placeholder="支付状态" size="small" class="filter-select" @change="handleFilterChange">
+            <el-option label="未支付" :value="0" />
+            <el-option label="已支付" :value="10" />
+          </el-select>
+          <el-select v-model="deliveryStatus" clearable placeholder="配送状态" size="small" class="filter-select" @change="handleFilterChange">
+            <el-option label="未配送" :value="0" />
+            <el-option label="待取餐" :value="10" />
+            <el-option label="已取餐" :value="20" />
+            <el-option label="配送中" :value="30" />
+            <el-option label="已送达" :value="40" />
+            <el-option label="配送异常" :value="60" />
+          </el-select>
+          <el-select v-model="orderStatus" clearable placeholder="订单状态" size="small" class="filter-select" @change="handleFilterChange">
+            <el-option label="待支付" :value="10" />
+            <el-option label="待接单" :value="20" />
+            <el-option label="备餐中" :value="30" />
+            <el-option label="配送中" :value="40" />
+            <el-option label="已完成" :value="50" />
+            <el-option label="已取消" :value="60" />
+          </el-select>
+          <el-button size="small" @click="clearFilters">重置</el-button>
+        </div>
       </div>
       <div style="padding-top: 20px;">
         <el-table :data="tableData" v-loading="loading" border stripe style="width: 100%">
@@ -220,6 +258,27 @@ onMounted(loadData)
 
 .btn-primary:hover {
   background: var(--bs-primary-hover);
+}
+
+.order-toolbar {
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.filter-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+  flex: 1;
+}
+
+.filter-id {
+  width: 130px;
+}
+
+.filter-select {
+  width: 125px;
 }
 </style>
 <style scoped>
