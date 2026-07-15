@@ -47,6 +47,13 @@
         ORDER BY create_time DESC
     </select>
 
+    <select id="findAllAdmin" resultType="com.ws.bitesmart.entity.delivery.DeliveryTask">
+        SELECT <include refid="BaseColumns"/> FROM delivery_task
+        WHERE deleted = 0
+        <if test="taskStatus != null">AND task_status = #{taskStatus}</if>
+        ORDER BY create_time DESC
+    </select>
+
     <!-- 新增配送任务 -->
     <insert id="insert" parameterType="com.ws.bitesmart.entity.delivery.DeliveryTask">
         INSERT INTO delivery_task (id, order_id, order_no, driver_id, merchant_id,

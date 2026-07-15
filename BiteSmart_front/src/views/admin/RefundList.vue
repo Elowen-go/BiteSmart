@@ -11,6 +11,8 @@ const statusMap: Record<number, string> = { 10: '待审核', 20: '审核通过',
 const load = async () => { loading.value = true; try { const r = await getRefundList({ pageNum: pageNum.value, pageSize: pageSize.value, status: status.value }); if (r.code === 200) { rows.value = r.data.list || []; total.value = r.data.total || 0 } } finally { loading.value = false } }
 const open = (row: any) => { current.value = row; remark.value = ''; dialog.value = true }
 const openDetail = async (row: any) => { const r = await getRefundDetail(row.id); if (r.code === 200) { detail.value = r.data; detailDialog.value = true } }
+const evidenceImages = (value: any): string[] => { if (!value) return []; try { const parsed = typeof value === 'string' ? JSON.parse(value) : value; return Array.isArray(parsed) ? parsed : [] } catch { return [] } }
+const imageUrl = (value: string) => value?.startsWith('http') ? value : `/api/files/download${value}`
 const submit = async (next: number) => { const r = await auditRefund(current.value.id, next, remark.value); if (r.code === 200) { ElMessage.success('退款工单已处理'); dialog.value = false; load() } }
 onMounted(load)
 </script>

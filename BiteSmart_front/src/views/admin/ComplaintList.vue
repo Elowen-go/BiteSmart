@@ -9,6 +9,8 @@ const statusMap:Record<number,string>={10:'待处理',20:'处理中',30:'已完�
 const load=async()=>{loading.value=true;try{const r=await getComplaintList({pageNum:pageNum.value,pageSize:pageSize.value,status:status.value});if(r.code===200){rows.value=r.data.list||[];total.value=r.data.total||0}}finally{loading.value=false}}
 const open=(row:any)=>{current.value=row;remark.value='';result.value='';dialog.value=true}
 const openDetail=async(row:any)=>{const r=await getComplaintDetail(row.id);if(r.code===200){detail.value=r.data;detailDialog.value=true}}
+const evidenceImages=(value:any):string[]=>{if(!value)return[];try{const parsed=typeof value==='string'?JSON.parse(value):value;return Array.isArray(parsed)?parsed:[]}catch{return[]}}
+const imageUrl=(value:string)=>value?.startsWith('http')?value:`/api/files/download${value}`
 const submit=async(next:number)=>{const r=await handleComplaint(current.value.id,next,remark.value,result.value);if(r.code===200){ElMessage.success('投诉工单已处理');dialog.value=false;load()}}
 onMounted(load)
 </script>

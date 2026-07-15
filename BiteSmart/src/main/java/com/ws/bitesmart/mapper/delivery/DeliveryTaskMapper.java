@@ -29,6 +29,7 @@ public interface DeliveryTaskMapper {
 
     /** 按商家ID查配送任务列表 */
     List<DeliveryTask> findByMerchantId(@Param("merchantId") Long merchantId);
+    List<DeliveryTask> findAllAdmin(@Param("taskStatus") Integer taskStatus);
 
     /** 新增配送任务 */
     int insert(DeliveryTask task);

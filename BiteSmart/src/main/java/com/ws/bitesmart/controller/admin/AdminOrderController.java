@@ -85,4 +85,22 @@ public class AdminOrderController {
         return ResultVO.ok("订单已取消");
     }
 
+    @GetMapping("/delivery-tasks")
+    public PageResultVO<com.ws.bitesmart.entity.delivery.DeliveryTask> deliveryTasks(
+            @RequestParam(defaultValue = "1") int pageNum,
+            @RequestParam(defaultValue = "20") int pageSize,
+            @RequestParam(required = false) Integer taskStatus) {
+        PageHelper.startPage(pageNum, pageSize);
+        return PageResultVO.success(new PageInfo<>(deliveryTaskMapper.findAllAdmin(taskStatus)));
+    }
+
+    @GetMapping("/delivery-tasks")
+    public PageResultVO<com.ws.bitesmart.entity.delivery.DeliveryTask> deliveryTasks(
+            @RequestParam(defaultValue = "1") int pageNum,
+            @RequestParam(defaultValue = "20") int pageSize,
+            @RequestParam(required = false) Integer taskStatus) {
+        PageHelper.startPage(pageNum, pageSize);
+        return PageResultVO.success(new PageInfo<>(deliveryTaskMapper.findAllAdmin(taskStatus)));
+    }
+
 }

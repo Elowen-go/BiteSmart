@@ -71,6 +71,12 @@ const router = createRouter({
           meta: { title: '配送员管理', subtitle: '配送员列表' }
         },
         {
+          path: 'delivery-tasks',
+          name: 'AdminDeliveryTasks',
+          component: () => import('../views/admin/DeliveryTasks.vue'),
+          meta: { title: '配送任务运营', subtitle: '全平台配送任务' }
+        },
+        {
           path: 'refunds',
           name: 'AdminRefunds',
           component: () => import('../views/admin/RefundList.vue'),

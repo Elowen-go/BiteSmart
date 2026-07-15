@@ -51,6 +51,7 @@ const menuItems = [
     items: [
       { path: '/admin/merchants', icon: Shop, label: '商家管理' },
       { path: '/admin/drivers', icon: Ship, label: '配送员管理' },
+      { path: '/admin/delivery-tasks', icon: Ship, label: '配送任务运营' },
       { path: '/admin/reviews', icon: Star, label: '评论管理' },
     ]
   },
