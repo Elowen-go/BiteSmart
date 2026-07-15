@@ -24,6 +24,13 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: (id) => id.includes('node_modules/echarts') ? 'echarts' : undefined
+      }
+    }
+  },
   server: {
     proxy: {
       '/api': {

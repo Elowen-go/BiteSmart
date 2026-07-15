@@ -3,6 +3,7 @@ import { onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { auditRefund, getRefundList, getRefundDetail } from '../../api/admin/work-orders'
 import ListState from '../../components/common/ListState.vue'
+import { resolveFileUrl } from '../../utils/fileUrl'
 
 const loading = ref(false); const rows = ref<any[]>([]); const total = ref(0)
 const pageNum = ref(1); const pageSize = ref(10); const status = ref<number | undefined>()
@@ -14,7 +15,7 @@ const load = async () => { loading.value = true; loadError.value = ''; try { con
 const open = (row: any) => { current.value = row; remark.value = ''; dialog.value = true }
 const openDetail = async (row: any) => { const r = await getRefundDetail(row.id); if (r.code === 200) { detail.value = r.data; detailDialog.value = true } }
 const evidenceImages = (value: any): string[] => { if (!value) return []; try { const parsed = typeof value === 'string' ? JSON.parse(value) : value; return Array.isArray(parsed) ? parsed : [] } catch { return [] } }
-const imageUrl = (value: string) => value?.startsWith('http') ? value : `/api/files/download${value}`
+const imageUrl = (value: string) => resolveFileUrl(value)
 const submit = async (next: number) => { const r = await auditRefund(current.value.id, next, remark.value); if (r.code === 200) { ElMessage.success('退款工单已处理'); dialog.value = false; load() } }
 onMounted(load)
 </script>

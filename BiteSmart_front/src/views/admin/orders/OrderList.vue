@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { getOrderList, getOrderDetail, cancelOrder } from '../../../api/admin/orders'
 import ListState from '../../../components/common/ListState.vue'
+import { resolveFileUrl } from '../../../utils/fileUrl'
 
 const loading = ref(false)
 const tableData = ref<any[]>([])
@@ -97,7 +98,7 @@ const submitCancel = async () => {
 }
 
 const formatAmount = (value: any) => Number(value || 0).toFixed(2)
-const imageUrl = (value: string) => value ? (value.startsWith('http') ? value : `/api/files/download${value}`) : ''
+const imageUrl = (value: string) => resolveFileUrl(value)
 
 onMounted(loadData)
 </script>
