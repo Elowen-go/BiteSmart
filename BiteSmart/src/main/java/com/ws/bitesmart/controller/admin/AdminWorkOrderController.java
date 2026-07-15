@@ -6,6 +6,7 @@ import com.ws.bitesmart.common.PageResultVO;
 import com.ws.bitesmart.common.ResultVO;
 import com.ws.bitesmart.entity.complaint.ComplaintTicket;
 import com.ws.bitesmart.entity.refund.RefundApplication;
+import com.ws.bitesmart.entity.order.Orders;
 import com.ws.bitesmart.mapper.complaint.ComplaintTicketMapper;
 import com.ws.bitesmart.mapper.refund.RefundApplicationMapper;
 import com.ws.bitesmart.mapper.order.OrdersMapper;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Map;
 import java.util.LinkedHashMap;
@@ -54,6 +56,7 @@ public class AdminWorkOrderController {
     }
 
     @PutMapping("/refunds/{id}")
+    @Transactional
     public ResultVO<Void> auditRefund(@PathVariable Long id,
                                       @RequestParam Integer status,
                                       @RequestParam(required = false) String remark) {
@@ -61,6 +64,16 @@ public class AdminWorkOrderController {
             return ResultVO.error(400, "退款处理状态不合法");
         }
         int affected = refundMapper.updateAudit(id, status, null, remark);
+        if (affected > 0 && (status == 20 || status == 40)) {
+            RefundApplication refund = refundMapper.findById(id);
+            if (refund != null) {
+                Orders order = ordersMapper.findById(refund.getOrderId());
+                if (order != null) {
+                    order.setOrderStatus(status == 40 ? 80 : 70);
+                    ordersMapper.updateStatus(order);
+                }
+            }
+        }
         return affected > 0 ? ResultVO.ok("退款工单已处理") : ResultVO.error(409, "退款工单不存在或已处理");
     }
 
