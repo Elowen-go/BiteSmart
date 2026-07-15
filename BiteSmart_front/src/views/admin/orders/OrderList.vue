@@ -153,7 +153,8 @@ onMounted(loadData)
           <el-descriptions-item label="创建时间" :span="2">{{ currentOrder.createTime }}</el-descriptions-item>
         </el-descriptions>
         <div v-if="currentItems.length" class="detail-section"><h4>商品明细</h4><div v-for="item in currentItems" :key="item.id" class="item-row"><div class="item-image"><img v-if="item.snapshotImage" :src="imageUrl(item.snapshotImage)" alt="商品图片" /><span v-else>餐</span></div><div class="item-copy"><strong>{{ item.snapshotName || '订单商品' }}</strong><small>数量 × {{ item.quantity || 1 }} · 单价 ¥{{ formatAmount(item.snapshotPrice) }}</small></div><b>¥{{ formatAmount(item.subTotal) }}</b></div></div>
-        <div class="detail-section"><h4>配送信息</h4><p>配送状态：{{ ({ 0: '未配送', 10: '待取餐', 20: '已取餐', 30: '配送中', 40: '已送达', 60: '异常' } as Record<number, string>)[currentOrder.deliveryTask?.taskStatus] || '未分配' }} · 配送员：{{ currentOrder.deliveryTask?.driverId || '未分配' }}</p></div>
+        <div class="detail-section"><h4>配送信息</h4><p>配送状态：{{ ({ 0: '未配送', 10: '待取餐', 20: '已取餐', 30: '配送中', 40: '已送达', 60: '异常' } as Record<number, string>)[currentOrder.deliveryTask?.taskStatus] || '未分配' }} · 配送员：{{ currentOrder.deliveryTask?.driverId || '未分配' }}</p><p v-if="currentOrder.deliveryTask?.exceptionReason" class="exception-text">异常原因：{{ currentOrder.deliveryTask.exceptionReason }}</p></div>
+        <div v-if="detailData.statusTimeline?.length" class="detail-section"><h4>状态流转记录</h4><el-timeline><el-timeline-item v-for="(event, index) in detailData.statusTimeline" :key="index" :timestamp="event.time" :type="event.label.includes('异常') ? 'danger' : 'primary'">{{ event.label }}<span v-if="event.reason">：{{ event.reason }}</span></el-timeline-item></el-timeline></div>
       </div>
       <template #footer>
         <el-button @click="detailDialogVisible = false">关闭</el-button>

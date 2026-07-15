@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.ArrayList;
 
 /**
  * 管理员端 - 订单管理
@@ -73,7 +74,28 @@ public class AdminOrderController {
         result.put("items", orderItemMapper.findByOrderId(id));
         result.put("buyer", sysUserMapper.findById(order.getUserId()));
         result.put("merchant", merchantMapper.findById(order.getMerchantId()));
+        List<Map<String, Object>> timeline = new ArrayList<>();
+        addTimeline(timeline, "订单创建", order.getCreateTime());
+        addTimeline(timeline, "完成支付", order.getPayTime());
+        if (order.getDeliveryTask() != null) {
+            addTimeline(timeline, "配送员取餐", order.getDeliveryTask().getPickupTime());
+            addTimeline(timeline, "配送送达", order.getDeliveryTask().getDeliverTime());
+            if (order.getDeliveryTask().getExceptionReason() != null) {
+                Map<String, Object> item = new HashMap<>();
+                item.put("label", "配送异常"); item.put("time", order.getDeliveryTask().getUpdateTime()); item.put("reason", order.getDeliveryTask().getExceptionReason());
+                timeline.add(item);
+            }
+        }
+        addTimeline(timeline, "订单完成", order.getFinishTime());
+        addTimeline(timeline, "订单取消", order.getCancelTime());
+        result.put("statusTimeline", timeline);
         return ResultVO.success(result);
+    }
+
+    private void addTimeline(List<Map<String, Object>> timeline, String label, java.time.LocalDateTime time) {
+        if (time == null) return;
+        Map<String, Object> item = new HashMap<>();
+        item.put("label", label); item.put("time", time); timeline.add(item);
     }
 
     @PutMapping("/{id}/cancel")
