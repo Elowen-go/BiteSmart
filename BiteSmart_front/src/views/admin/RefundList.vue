@@ -2,13 +2,15 @@
 import { onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { auditRefund, getRefundList, getRefundDetail } from '../../api/admin/work-orders'
+import ListState from '../../components/common/ListState.vue'
 
 const loading = ref(false); const rows = ref<any[]>([]); const total = ref(0)
 const pageNum = ref(1); const pageSize = ref(10); const status = ref<number | undefined>()
 const dialog = ref(false); const current = ref<any>(); const remark = ref('')
 const detailDialog = ref(false); const detail = ref<any>()
+const loadError = ref('')
 const statusMap: Record<number, string> = { 10: '待审核', 20: '审核通过', 30: '已驳回', 40: '已退款' }
-const load = async () => { loading.value = true; try { const r = await getRefundList({ pageNum: pageNum.value, pageSize: pageSize.value, status: status.value }); if (r.code === 200) { rows.value = r.data.list || []; total.value = r.data.total || 0 } } finally { loading.value = false } }
+const load = async () => { loading.value = true; loadError.value = ''; try { const r = await getRefundList({ pageNum: pageNum.value, pageSize: pageSize.value, status: status.value }); if (r.code === 200) { rows.value = r.data.list || []; total.value = r.data.total || 0 } else { loadError.value = r.message || '退款工单暂时无法获取'; ElMessage.error(loadError.value) } } catch (err) { loadError.value = '请检查网络连接后重试'; ElMessage.error(loadError.value); console.error('获取退款工单失败', err) } finally { loading.value = false } }
 const open = (row: any) => { current.value = row; remark.value = ''; dialog.value = true }
 const openDetail = async (row: any) => { const r = await getRefundDetail(row.id); if (r.code === 200) { detail.value = r.data; detailDialog.value = true } }
 const evidenceImages = (value: any): string[] => { if (!value) return []; try { const parsed = typeof value === 'string' ? JSON.parse(value) : value; return Array.isArray(parsed) ? parsed : [] } catch { return [] } }
