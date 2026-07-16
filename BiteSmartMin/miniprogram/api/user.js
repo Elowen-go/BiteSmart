@@ -1,0 +1,18 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.buyMembership = exports.getMembershipStatus = exports.getMembershipPlans = exports.addAddress = exports.getAddresses = exports.saveProfile = exports.getProfile = void 0;
+const request_1 = require("../utils/request");
+const getProfile = () => (0, request_1.request)({ url: '/user/profile' });
+exports.getProfile = getProfile;
+const saveProfile = (profile) => (0, request_1.request)({ url: '/user/profile', method: 'PUT', data: profile });
+exports.saveProfile = saveProfile;
+const getAddresses = () => (0, request_1.request)({ url: '/user/addresses' });
+exports.getAddresses = getAddresses;
+const addAddress = (address) => (0, request_1.request)({ url: '/user/addresses', method: 'POST', data: address });
+exports.addAddress = addAddress;
+const getMembershipPlans = () => (0, request_1.request)({ url: '/user/membership/plans' });
+exports.getMembershipPlans = getMembershipPlans;
+const getMembershipStatus = () => (0, request_1.request)({ url: '/user/membership/status' });
+exports.getMembershipStatus = getMembershipStatus;
+const buyMembership = (planId) => (0, request_1.request)({ url: `/user/membership/buy/${planId}`, method: 'POST' });
+exports.buyMembership = buyMembership;

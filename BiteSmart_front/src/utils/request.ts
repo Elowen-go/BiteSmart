@@ -1,5 +1,6 @@
 import axios from 'axios'
 import type { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse } from 'axios'
+import { ElMessage } from 'element-plus'
 
 const request: AxiosInstance = axios.create({
   baseURL: '/api',
@@ -36,9 +37,15 @@ request.interceptors.response.use(
       window.location.href = '/login'
       return Promise.reject(new Error(res.message || '未授权'))
     }
+    if (typeof res.code === 'number' && res.code >= 400) {
+      ElMessage.error(res.message || '请求失败，请稍后重试')
+    }
     return res
   },
   (error) => {
+    if (error.response?.status !== 401) {
+      ElMessage.error(error.response?.data?.message || '数据加载失败，请稍后重试')
+    }
     return Promise.reject(error)
   }
 )

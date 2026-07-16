@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ws.bitesmart.mapper.merchant.MerchantSettlementMapper">
+    <sql id="BaseColumns">
+        id, merchant_id, settlement_no, period_start, period_end,
+        gross_amount, commission_amount, refund_amount, net_amount,
+        settlement_status, payout_method, payout_account_mask, operator_id,
+        operator_remark, paid_time, create_time, update_time, deleted
+    </sql>
+
+    <select id="findById" resultType="com.ws.bitesmart.entity.merchant.MerchantSettlement">
+        SELECT <include refid="BaseColumns"/>
+        FROM merchant_settlement
+        WHERE id = #{id} AND deleted = 0
+    </select>
+
+    <select id="findByMerchantId" resultType="com.ws.bitesmart.entity.merchant.MerchantSettlement">
+        SELECT <include refid="BaseColumns"/>
+        FROM merchant_settlement
+        WHERE merchant_id = #{merchantId} AND deleted = 0
+        ORDER BY create_time DESC
+    </select>
+
+    <select id="findAll" resultType="com.ws.bitesmart.entity.merchant.MerchantSettlement">
+        SELECT <include refid="BaseColumns"/>
+        FROM merchant_settlement
+        WHERE deleted = 0
+        <if test="merchantId != null">AND merchant_id = #{merchantId}</if>
+        <if test="status != null">AND settlement_status = #{status}</if>
+        ORDER BY create_time DESC
+    </select>
+
+    <insert id="insert" parameterType="com.ws.bitesmart.entity.merchant.MerchantSettlement">
+        INSERT INTO merchant_settlement (
+            id, merchant_id, settlement_no, period_start, period_end,
+            gross_amount, commission_amount, refund_amount, net_amount,
+            settlement_status, payout_method, payout_account_mask, operator_id,
+            operator_remark, paid_time, create_time, update_time
+        ) VALUES (
+            #{id}, #{merchantId}, #{settlementNo}, #{periodStart}, #{periodEnd},
+            #{grossAmount}, #{commissionAmount}, #{refundAmount}, #{netAmount},
+            #{settlementStatus}, #{payoutMethod}, #{payoutAccountMask}, #{operatorId},
+            #{operatorRemark}, #{paidTime}, NOW(), NOW()
+        )
+    </insert>
+
+    <update id="updateStatus">
+        UPDATE merchant_settlement
+        SET settlement_status = #{status},
+            operator_id = #{operatorId},
+            operator_remark = #{operatorRemark},
+            paid_time = #{paidTime},
+            update_time = NOW()
+        WHERE id = #{id} AND deleted = 0
+    </update>
+
+    <update id="transitionStatus">
+        UPDATE merchant_settlement
+        SET settlement_status = #{status},
+            operator_id = #{operatorId},
+            operator_remark = #{operatorRemark},
+            paid_time = #{paidTime},
+            update_time = NOW()
+        WHERE id = #{id} AND settlement_status = #{expectedStatus} AND deleted = 0
+    </update>
+</mapper>

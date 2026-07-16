@@ -1,0 +1,10 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.getChatHistory = exports.chat = exports.recommend = void 0;
+const request_1 = require("../utils/request");
+const recommend = (data = {}) => (0, request_1.request)({ url: '/ai/recommend', method: 'POST', data });
+exports.recommend = recommend;
+const chat = (question, sessionId) => (0, request_1.request)({ url: '/ai/chat', method: 'POST', data: { question, sessionId }, contentType: 'form' });
+exports.chat = chat;
+const getChatHistory = (sessionId) => (0, request_1.request)({ url: '/ai/chat/history', data: { sessionId } });
+exports.getChatHistory = getChatHistory;

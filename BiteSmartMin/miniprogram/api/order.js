@@ -1,0 +1,14 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.payOrder = exports.cancelOrder = exports.createOrder = exports.getOrderDetail = exports.getOrders = void 0;
+const request_1 = require("../utils/request");
+const getOrders = (page) => (0, request_1.request)({ url: '/orders', data: page ? { page, size: 10 } : {} });
+exports.getOrders = getOrders;
+const getOrderDetail = (id) => (0, request_1.request)({ url: `/orders/${id}` });
+exports.getOrderDetail = getOrderDetail;
+const createOrder = (data) => (0, request_1.request)({ url: '/orders', method: 'POST', data, contentType: 'form' });
+exports.createOrder = createOrder;
+const cancelOrder = (id, reason) => (0, request_1.request)({ url: `/orders/${id}/cancel`, method: 'POST', data: { reason }, contentType: 'form' });
+exports.cancelOrder = cancelOrder;
+const payOrder = (id, payMethod) => (0, request_1.request)({ url: `/orders/${id}/pay`, method: 'POST', data: { payMethod }, contentType: 'form' });
+exports.payOrder = payOrder;

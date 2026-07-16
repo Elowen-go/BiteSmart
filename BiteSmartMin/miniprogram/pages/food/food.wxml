@@ -1,0 +1,66 @@
+<view class="store-page" style="{{topStyle}}">
+  <view class="store-top">
+    <text class="back" bindtap="back">‹</text>
+    <view class="store-heading">
+      <text class="store-title">商城</text>
+      <text class="store-subtitle">吃得好，也吃得明白</text>
+    </view>
+  </view>
+
+  <view class="store-hero">
+    <image src="https://images.unsplash.com/photo-1498837167922-ddd27525d352?w=1000&q=80" mode="aspectFill" />
+    <view class="hero-copy">
+      <text class="hero-kicker">BITESMART MARKET</text>
+      <text class="hero-title">今天的好营养，<br />现在就选。</text>
+      <text class="hero-link" bindtap="openCombos">看健康套餐 →</text>
+    </view>
+  </view>
+
+  <view class="store-tabs">
+    <text class="active">菜品</text>
+    <text bindtap="openCombos">套餐</text>
+  </view>
+  <input class="store-search" placeholder="搜索菜品、套餐或营养目标" bindinput="search" />
+  <scroll-view class="category-row" scroll-x="true" show-scrollbar="false">
+    <text class="category active">全部</text>
+    <text class="category">高蛋白</text>
+    <text class="category">低脂</text>
+    <text class="category">轻断食</text>
+    <text class="category">低糖</text>
+  </scroll-view>
+
+  <view class="store-section-head">
+    <text>今日推荐</text>
+    <text>{{items.length}} 款可选</text>
+  </view>
+  <view class="food-list">
+    <block wx:for="{{items}}" wx:key="name">
+      <view class="food-card" data-index="{{index}}" bindtap="openDetail">
+        <image src="{{item.image}}" mode="aspectFill" />
+        <view class="food-card-content">
+          <view>
+            <text class="food-name">{{item.name}}</text>
+            <text class="food-desc">{{item.desc}}</text>
+          </view>
+          <view class="food-bottom">
+            <view>
+              <text class="food-price">¥{{item.price}}</text>
+              <text class="food-kcal">{{item.kcal}}</text>
+            </view>
+            <button class="food-add" data-index="{{index}}" catchtap="addDish">+</button>
+          </view>
+        </view>
+      </view>
+    </block>
+  </view>
+  <view class="floating-cart" bindtap="openCart">
+    <view class="floating-cart-info">
+      <text class="floating-cart-title">购物车</text>
+      <text class="floating-cart-note">已选 {{cartCount}} 件商品</text>
+    </view>
+    <view class="floating-cart-action">
+      <text>查看购物车</text>
+      <text class="floating-cart-arrow">›</text>
+    </view>
+  </view>
+</view>

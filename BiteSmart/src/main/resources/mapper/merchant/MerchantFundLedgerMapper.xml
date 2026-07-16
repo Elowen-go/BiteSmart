@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ws.bitesmart.mapper.merchant.MerchantFundLedgerMapper">
+    <sql id="BaseColumns">
+        id, merchant_id, order_id, payment_log_id, refund_id, settlement_id,
+        ledger_type, direction, balance_scope, amount, balance_before, balance_after,
+        idempotency_key, status, remark, create_time, update_time, deleted
+    </sql>
+
+    <select id="findByIdempotencyKey" resultType="com.ws.bitesmart.entity.merchant.MerchantFundLedger">
+        SELECT <include refid="BaseColumns"/>
+        FROM merchant_fund_ledger
+        WHERE idempotency_key = #{idempotencyKey} AND deleted = 0
+    </select>
+
+    <insert id="insert" parameterType="com.ws.bitesmart.entity.merchant.MerchantFundLedger">
+        INSERT INTO merchant_fund_ledger (
+            id, merchant_id, order_id, payment_log_id, refund_id, settlement_id,
+            ledger_type, direction, balance_scope, amount, balance_before, balance_after,
+            idempotency_key, status, remark, create_time, update_time
+        ) VALUES (
+            #{id}, #{merchantId}, #{orderId}, #{paymentLogId}, #{refundId}, #{settlementId},
+            #{ledgerType}, #{direction}, #{balanceScope}, #{amount}, #{balanceBefore}, #{balanceAfter},
+            #{idempotencyKey}, #{status}, #{remark}, NOW(), NOW()
+        )
+    </insert>
+
+    <select id="findByMerchantId" resultType="com.ws.bitesmart.entity.merchant.MerchantFundLedger">
+        SELECT <include refid="BaseColumns"/>
+        FROM merchant_fund_ledger
+        WHERE merchant_id = #{merchantId} AND deleted = 0
+        ORDER BY create_time DESC
+    </select>
+
+    <select id="findAll" resultType="com.ws.bitesmart.entity.merchant.MerchantFundLedger">
+        SELECT <include refid="BaseColumns"/>
+        FROM merchant_fund_ledger
+        WHERE deleted = 0
+        <if test="merchantId != null">AND merchant_id = #{merchantId}</if>
+        <if test="ledgerType != null">AND ledger_type = #{ledgerType}</if>
+        ORDER BY create_time DESC
+    </select>
+</mapper>

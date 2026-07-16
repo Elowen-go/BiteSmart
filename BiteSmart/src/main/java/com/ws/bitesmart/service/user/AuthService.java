@@ -6,6 +6,8 @@ import com.ws.bitesmart.common.util.JwtTokenUtil;
 import com.ws.bitesmart.common.util.SnowflakeUtil;
 import com.ws.bitesmart.dto.request.LoginRequestDTO;
 import com.ws.bitesmart.dto.request.RegisterRequestDTO;
+import com.ws.bitesmart.dto.request.WechatLoginRequestDTO;
+import com.ws.bitesmart.dto.request.UserCredentialSetupRequestDTO;
 import com.ws.bitesmart.dto.response.LoginResponseDTO;
 import com.ws.bitesmart.entity.user.SysUser;
 import com.ws.bitesmart.exception.BusinessException;
@@ -41,6 +43,7 @@ public class AuthService {
     private final StringRedisTemplate redisTemplate;
     private final PasswordEncoder passwordEncoder;
     private final OperateLogService operateLogService;
+    private final WechatIdentityAuthService wechatIdentityAuthService;
 
     /** Token 过期时间（毫秒），从 yml 读取，与 JwtTokenUtil 保持一致 */
     @Value("${jwt.expiration}")
@@ -58,7 +61,7 @@ public class AuthService {
     @Transactional
     public LoginResponseDTO register(RegisterRequestDTO request) {
         // 1. 检查用户名唯一性（业务层先查一次）
-        SysUser existUser = sysUserMapper.findByUsername(request.getUsername());
+        SysUser existUser = sysUserMapper.findByUsernameOrPhone(request.getUsername());
         if (existUser != null) {
             throw new BusinessException(ResultCodeEnum.USERNAME_EXISTS);
         }
@@ -105,7 +108,7 @@ public class AuthService {
     @Transactional
     public LoginResponseDTO login(LoginRequestDTO request, HttpServletRequest servletRequest) {
         // 1. 查询用户
-        SysUser user = sysUserMapper.findByUsername(request.getUsername());
+        SysUser user = sysUserMapper.findByUsernameOrPhone(request.getUsername());
         if (user == null) {
             throw new BusinessException(ResultCodeEnum.USERNAME_NOT_FOUND);
         }
@@ -118,6 +121,10 @@ public class AuthService {
         // 3. 检查账号状态
         if (Constant.STATUS_DISABLED == user.getStatus()) {
             throw new BusinessException(ResultCodeEnum.USER_DISABLED);
+        }
+
+        if (user.getUsername() != null && user.getUsername().startsWith("wx_")) {
+            throw new BusinessException(1008, "请先在小程序完善账号信息");
         }
 
         // 4. 校验角色类型
@@ -144,6 +151,45 @@ public class AuthService {
      * 把 Token 加入 Redis 黑名单，使当前 Token 立即失效。
      * 黑名单过期时间 = Token 剩余有效期，到期自动清理。
      */
+    @Transactional
+    public LoginResponseDTO wechatLogin(WechatLoginRequestDTO request) {
+        return wechatIdentityAuthService.login(request);
+    }
+
+    @Transactional
+    public void bindWechat(Long userId, String code) {
+        WechatLoginRequestDTO request = new WechatLoginRequestDTO();
+        request.setCode(code);
+        wechatIdentityAuthService.bind(userId, request);
+    }
+
+    /** 完善微信临时账号，使同一用户可以使用 PC 账号密码登录。 */
+    @Transactional
+    public void setupCredentials(Long userId, UserCredentialSetupRequestDTO request) {
+        SysUser user = sysUserMapper.findById(userId);
+        if (user == null) {
+            throw new BusinessException(ResultCodeEnum.USERNAME_NOT_FOUND);
+        }
+        if (!Integer.valueOf(10).equals(user.getRoleType())
+                || user.getUsername() == null
+                || !user.getUsername().startsWith("wx_")) {
+            throw new BusinessException(1008, "当前账号不需要重复完善");
+        }
+        SysUser usernameOrPhone = sysUserMapper.findByUsernameOrPhone(request.getUsername());
+        if (usernameOrPhone != null && !userId.equals(usernameOrPhone.getId())) {
+            throw new BusinessException(ResultCodeEnum.USERNAME_EXISTS);
+        }
+        SysUser phoneUser = sysUserMapper.findByPhone(request.getPhone());
+        if (phoneUser != null && !userId.equals(phoneUser.getId())) {
+            throw new BusinessException(1001, "手机号已被其他账号使用");
+        }
+        String encodedPassword = passwordEncoder.encode(request.getPassword());
+        sysUserMapper.updateCredentials(userId, request.getUsername(), request.getPhone(), encodedPassword);
+        user.setUsername(request.getUsername());
+        user.setPhone(request.getPhone());
+        user.setPassword(encodedPassword);
+    }
+
     public void logout(String token) {
         // 解析 Token，计算剩余有效时间作为黑名单过期时间
         long ttl = jwtExpiration; // 默认24小时

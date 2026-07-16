@@ -67,6 +67,53 @@ CREATE TABLE `user_profile` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户健康档案表';
 
 -- 3. 会员套餐定义表
+/* CREATE TABLE `user_third_party_identity` (
+  `id` bigint(20) NOT NULL COMMENT '主键ID',
+  `user_id` bigint(20) NOT NULL COMMENT 'BiteSmart用户ID',
+  `provider` varchar(32) NOT NULL COMMENT '第三方平台：WECHAT_MINI_PROGRAM',
+  `open_id` varchar(128) NOT NULL COMMENT '第三方平台用户标识',
+  `union_id` varchar(128) DEFAULT NULL COMMENT '微信开放平台统一标识',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_provider_open_id` (`provider`, `open_id`),
+  UNIQUE KEY `uk_user_provider` (`user_id`, `provider`),
+  KEY `idx_user_id` (`user_id`),
+  CONSTRAINT `fk_third_party_identity_user` FOREIGN KEY (`user_id`) REFERENCES `sys_user` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户第三方身份绑定表';
+
+*/
+/* CREATE TABLE `user_third_party_identity` (
+  `id` bigint(20) NOT NULL COMMENT '主键ID',
+  `user_id` bigint(20) NOT NULL COMMENT 'BiteSmart用户ID',
+  `provider` varchar(32) NOT NULL COMMENT '第三方平台类型',
+  `open_id` varchar(128) NOT NULL COMMENT '第三方平台用户标识',
+  `union_id` varchar(128) DEFAULT NULL COMMENT '微信开放平台统一标识',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_provider_open_id` (`provider`, `open_id`),
+  UNIQUE KEY `uk_user_provider` (`user_id`, `provider`),
+  KEY `idx_user_id` (`user_id`),
+  CONSTRAINT `fk_third_party_identity_user` FOREIGN KEY (`user_id`) REFERENCES `sys_user` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户第三方身份绑定表';
+
+*/
+CREATE TABLE `user_third_party_identity` (
+  `id` bigint(20) NOT NULL COMMENT 'primary key',
+  `user_id` bigint(20) NOT NULL COMMENT 'BiteSmart user id',
+  `provider` varchar(32) NOT NULL COMMENT 'identity provider',
+  `open_id` varchar(128) NOT NULL COMMENT 'provider open id',
+  `union_id` varchar(128) DEFAULT NULL COMMENT 'provider union id',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT 'created time',
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'updated time',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_provider_open_id` (`provider`, `open_id`),
+  UNIQUE KEY `uk_user_provider` (`user_id`, `provider`),
+  KEY `idx_user_id` (`user_id`),
+  CONSTRAINT `fk_third_party_identity_user` FOREIGN KEY (`user_id`) REFERENCES `sys_user` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='user third-party identity binding';
+
 CREATE TABLE `membership_plan` (
   `id` bigint(20) NOT NULL COMMENT '主键ID',
   `plan_name` varchar(64) NOT NULL COMMENT '套餐名称（月卡/季卡/年卡）',

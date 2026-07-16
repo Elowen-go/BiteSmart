@@ -23,6 +23,7 @@ public interface DishMapper {
     /** 根据 ID 查询菜品 */
     Dish findById(@Param("id") Long id);
     long countLowStock();
+    long countLowStockByMerchantId(@Param("merchantId") Long merchantId);
 
     /** 查询上架且在售的菜品（status=10 且 stock>0） */
     List<Dish> findAvailable();

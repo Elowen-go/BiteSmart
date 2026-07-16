@@ -7,6 +7,8 @@ import com.ws.bitesmart.mapper.delivery.DeliveryTaskMapper;
 import com.ws.bitesmart.mapper.merchant.MerchantMapper;
 import com.ws.bitesmart.mapper.order.OrderItemMapper;
 import com.ws.bitesmart.mapper.order.OrdersMapper;
+import com.ws.bitesmart.mapper.order.OrderStatusLogMapper;
+import com.ws.bitesmart.entity.order.OrderStatusLog;
 import com.ws.bitesmart.mapper.user.SysUserMapper;
 import com.ws.bitesmart.service.order.OrderService;
 import org.junit.jupiter.api.Test;
@@ -15,6 +17,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
@@ -29,17 +32,43 @@ class AdminOrderControllerTest {
     @Mock private OrderItemMapper orderItemMapper;
     @Mock private SysUserMapper sysUserMapper;
     @Mock private MerchantMapper merchantMapper;
+    @Mock private OrderStatusLogMapper orderStatusLogMapper;
 
     @Test
     void listPassesAllAdminFiltersToTheMapper() {
         when(ordersMapper.findAdminList(12L, 34L, 10, 30, 50)).thenReturn(List.of(new Orders()));
         AdminOrderController controller = new AdminOrderController(
-                ordersMapper, deliveryTaskMapper, orderService, orderItemMapper, sysUserMapper, merchantMapper
+                ordersMapper, deliveryTaskMapper, orderService, orderItemMapper, sysUserMapper, merchantMapper,
+                orderStatusLogMapper
         );
 
         PageResultVO<Orders> result = controller.list(1, 10, 50, 12L, 34L, 10, 30);
 
         assertThat(result.getCode()).isEqualTo(200);
         verify(ordersMapper).findAdminList(12L, 34L, 10, 30, 50);
+    }
+
+    @Test
+    void detailReadsPersistedStatusTimeline() {
+        Orders order = new Orders();
+        order.setId(1L);
+        order.setUserId(2L);
+        order.setMerchantId(3L);
+        OrderStatusLog log = new OrderStatusLog();
+        log.setFromStatus(10);
+        log.setToStatus(20);
+        log.setReason("支付成功");
+        when(ordersMapper.findById(1L)).thenReturn(order);
+        when(orderStatusLogMapper.findByOrderId(1L)).thenReturn(List.of(log));
+
+        AdminOrderController controller = new AdminOrderController(
+                ordersMapper, deliveryTaskMapper, orderService, orderItemMapper, sysUserMapper, merchantMapper,
+                orderStatusLogMapper
+        );
+
+        Map<String, Object> data = controller.detail(1L).getData();
+
+        assertThat((List<?>) data.get("statusTimeline")).hasSize(1);
+        verify(orderStatusLogMapper).findByOrderId(1L);
     }
 }

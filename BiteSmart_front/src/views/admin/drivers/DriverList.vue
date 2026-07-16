@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { getDriverList, updateDriverStatus } from '../../../api/admin/drivers'
+import ListState from '../../../components/common/ListState.vue'
 
 const loading = ref(false)
 const tableData = ref<any[]>([])
@@ -9,18 +10,23 @@ const total = ref(0)
 const pageNum = ref(1)
 const pageSize = ref(10)
 const statusFilter = ref<number | undefined>()
+const loadError = ref('')
 const detailVisible = ref(false)
 const detailData = ref<any>(null)
 
 const loadData = async () => {
   loading.value = true
+  loadError.value = ''
   try {
     const res = await getDriverList({ pageNum: pageNum.value, pageSize: pageSize.value, status: statusFilter.value })
     if (res.code === 200) {
       tableData.value = res.data.list || []
       total.value = res.data.total || 0
+    } else {
+      loadError.value = res.message || '配送员列表暂时无法获取'
     }
   } catch (err) {
+    loadError.value = '请检查网络连接后重试'
     console.error('获取配送员列表失败', err)
   } finally {
     loading.value = false
@@ -44,11 +50,18 @@ const handleToggleFreeze = async (row: any) => {
 }
 
 const handleDetail = async (row: any) => {
-  const { getDriverDetail } = await import('../../../api/admin/drivers')
-  const res = await getDriverDetail(row.id)
-  if (res.code === 200) {
-    detailData.value = res.data
-    detailVisible.value = true
+  try {
+    const { getDriverDetail } = await import('../../../api/admin/drivers')
+    const res = await getDriverDetail(row.id)
+    if (res.code === 200) {
+      detailData.value = res.data
+      detailVisible.value = true
+    } else {
+      ElMessage.error(res.message || '获取配送员详情失败')
+    }
+  } catch (err) {
+    ElMessage.error('获取配送员详情失败，请稍后重试')
+    console.error('获取配送员详情失败', err)
   }
 }
 
@@ -73,7 +86,8 @@ onMounted(loadData)
         <h3>配送员管理</h3>
       </div>
       <div style="padding-top: 20px;">
-        <el-table :data="tableData" v-loading="loading" border stripe style="width: 100%">
+        <ListState :loading="loading" :error="loadError" :empty="!tableData.length" empty-text="暂无配送员记录" @retry="loadData">
+        <el-table :data="tableData" border stripe style="width: 100%">
           <el-table-column prop="realName" label="姓名" min-width="120" />
           <el-table-column prop="phone" label="手机号" width="140" />
           <el-table-column label="交通工具" width="140"><template #default="{ row }">{{ ({ 10: '电动车', 20: '自行车', 30: '汽车' } as Record<number, string>)[row.vehicleType] || row.vehicleType || '-' }}</template></el-table-column>
@@ -100,6 +114,7 @@ onMounted(loadData)
             </template>
           </el-table-column>
         </el-table>
+        </ListState>
         <div style="display:flex;justify-content:flex-end;padding-top:16px;">
           <el-pagination
             v-model:current-page="pageNum"

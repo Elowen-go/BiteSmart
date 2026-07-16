@@ -52,8 +52,8 @@ const loadData = async () => {
   }
 }
 
-const orderStatusMap: Record<number, string> = { 10: '待付款', 20: '已付款', 30: '待接单', 40: '配送中', 50: '已完成', 60: '已取消' }
-const orderStatusTypeMap: Record<number, 'success' | 'warning' | 'primary' | 'info' | ''> = { 10: 'warning', 20: 'success', 30: 'primary', 40: '', 50: 'success', 60: 'info' }
+const orderStatusMap: Record<number, string> = { 10: '待支付', 20: '待接单', 30: '备餐中', 40: '配送中', 50: '已完成', 60: '已取消', 70: '退款中', 80: '已退款' }
+const orderStatusTypeMap: Record<number, 'success' | 'warning' | 'primary' | 'info' | 'danger' | ''> = { 10: 'warning', 20: 'primary', 30: 'primary', 40: '', 50: 'success', 60: 'info', 70: 'danger', 80: 'info' }
 
 const handleDetail = async (row: any) => {
   try {
@@ -63,6 +63,7 @@ const handleDetail = async (row: any) => {
       detailDialogVisible.value = true
     }
   } catch (err) {
+    ElMessage.error('获取订单详情失败，请稍后重试')
     console.error('获取订单详情失败', err)
   }
 }
@@ -121,7 +122,6 @@ onMounted(loadData)
             <el-option label="已取餐" :value="20" />
             <el-option label="配送中" :value="30" />
             <el-option label="已送达" :value="40" />
-            <el-option label="配送异常" :value="60" />
           </el-select>
           <el-select v-model="orderStatus" clearable placeholder="订单状态" size="small" class="filter-select" @change="handleFilterChange">
             <el-option label="待支付" :value="10" />
@@ -193,14 +193,23 @@ onMounted(loadData)
           <el-descriptions-item label="订单号">{{ currentOrder.orderNo }}</el-descriptions-item>
           <el-descriptions-item label="订单状态"><el-tag :type="orderStatusTypeMap[currentOrder.orderStatus] || 'info'" size="small">{{ orderStatusMap[currentOrder.orderStatus] || '未知' }}</el-tag></el-descriptions-item>
           <el-descriptions-item label="订单金额">¥{{ formatAmount(currentOrder.totalAmount) }}</el-descriptions-item>
+          <el-descriptions-item label="优惠金额">¥{{ formatAmount(currentOrder.discountAmount) }}</el-descriptions-item>
           <el-descriptions-item label="实付金额">¥{{ formatAmount(currentOrder.payAmount) }}</el-descriptions-item>
+          <el-descriptions-item label="优惠券抵扣">¥{{ formatAmount(currentOrder.couponDiscount) }}</el-descriptions-item>
+          <el-descriptions-item label="平台补贴">¥{{ formatAmount(currentOrder.platformSubsidy) }}</el-descriptions-item>
+          <el-descriptions-item label="支付方式">{{ currentOrder.payMethod === 10 ? '支付宝' : currentOrder.payMethod === 20 ? '微信' : '未支付' }}</el-descriptions-item>
+          <el-descriptions-item label="支付时间">{{ currentOrder.payTime || '未支付' }}</el-descriptions-item>
           <el-descriptions-item label="收货人">{{ currentOrder.receiverName || '未填写' }} {{ currentOrder.receiverPhone || '' }}</el-descriptions-item>
           <el-descriptions-item label="配送地址" :span="2">{{ currentOrder.deliveryAddress }}</el-descriptions-item>
           <el-descriptions-item label="备注" :span="2">{{ currentOrder.remark || '无' }}</el-descriptions-item>
+          <el-descriptions-item label="下单渠道">{{ currentOrder.channel || 'PC' }}</el-descriptions-item>
+          <el-descriptions-item label="退款工单">{{ currentOrder.refundId || '无' }}</el-descriptions-item>
+          <el-descriptions-item v-if="currentOrder.cancelReason" label="取消原因" :span="2">{{ currentOrder.cancelReason }}</el-descriptions-item>
+          <el-descriptions-item label="完成时间" :span="2">{{ currentOrder.finishTime || '未完成' }}</el-descriptions-item>
           <el-descriptions-item label="创建时间" :span="2">{{ currentOrder.createTime }}</el-descriptions-item>
         </el-descriptions>
         <div v-if="currentItems.length" class="detail-section"><h4>商品明细</h4><div v-for="item in currentItems" :key="item.id" class="item-row"><div class="item-image"><img v-if="item.snapshotImage" :src="imageUrl(item.snapshotImage)" alt="商品图片" /><span v-else>餐</span></div><div class="item-copy"><strong>{{ item.snapshotName || '订单商品' }}</strong><small>数量 × {{ item.quantity || 1 }} · 单价 ¥{{ formatAmount(item.snapshotPrice) }}</small></div><b>¥{{ formatAmount(item.subTotal) }}</b></div></div>
-        <div class="detail-section"><h4>配送信息</h4><p>配送状态：{{ ({ 0: '未配送', 10: '待取餐', 20: '已取餐', 30: '配送中', 40: '已送达', 60: '异常' } as Record<number, string>)[currentOrder.deliveryTask?.taskStatus] || '未分配' }} · 配送员：{{ currentOrder.deliveryTask?.driverId || '未分配' }}</p><p v-if="currentOrder.deliveryTask?.exceptionReason" class="exception-text">异常原因：{{ currentOrder.deliveryTask.exceptionReason }}</p></div>
+        <div class="detail-section"><h4>配送信息</h4><p>配送状态：{{ ({ 10: '待接单', 20: '待取餐', 30: '已取餐', 40: '配送中', 50: '已送达', 60: '异常', 70: '已取消' } as Record<number, string>)[currentOrder.deliveryTask?.taskStatus] || '未分配' }} · 配送员：{{ currentOrder.deliveryTask?.driverId || '未分配' }}</p><p v-if="currentOrder.deliveryTask?.exceptionReason" class="exception-text">异常原因：{{ currentOrder.deliveryTask.exceptionReason }}</p></div>
         <div v-if="detailData.statusTimeline?.length" class="detail-section"><h4>状态流转记录</h4><el-timeline><el-timeline-item v-for="(event, index) in detailData.statusTimeline" :key="index" :timestamp="event.time" :type="event.label.includes('异常') ? 'danger' : 'primary'">{{ event.label }}<span v-if="event.reason">：{{ event.reason }}</span></el-timeline-item></el-timeline></div>
       </div>
       <template #footer>

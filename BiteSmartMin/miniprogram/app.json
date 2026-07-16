@@ -1,11 +1,34 @@
 {
   "pages": [
+    "pages/login/login",
+    "pages/account-setup/account-setup",
     "pages/index/index",
-    "pages/logs/logs"
+    "pages/logs/logs",
+    "pages/profile/profile",
+    "pages/ai/ai",
+    "pages/chat/chat",
+    "pages/food/food",
+    "pages/food-detail/food-detail",
+    "pages/combo/combo",
+    "pages/combo-detail/combo-detail",
+    "pages/cart/cart",
+    "pages/checkout/checkout",
+    "pages/order/order",
+    "pages/order-detail/order-detail",
+    "pages/delivery/delivery",
+    "pages/health/health",
+    "pages/member/member",
+    "pages/review/review",
+    "pages/address/address",
+    "pages/notice/notice",
+    "pages/settings/settings",
+    "pages/complaint/complaint",
+    "pages/pay-result/pay-result"
   ],
   "window": {
     "navigationBarTextStyle": "black",
-    "navigationStyle": "custom"
+    "navigationStyle": "custom",
+    "backgroundColor": "#F3F0E9"
   },
   "style": "v2",
   "rendererOptions": {

@@ -50,18 +50,19 @@
     <!-- 热销菜品排行：按菜品聚合销量，取前 N 名 -->
     <select id="sumQuantityByMerchant" resultType="java.util.Map">
         SELECT oi.dish_id AS dishId,
-               d.dish_name AS dishName,
-               SUM(oi.quantity) AS totalQuantity
+               COALESCE(d.dish_name, oi.snapshot_name, 'Unknown dish') AS dishName,
+               SUM(oi.quantity) AS soldCount,
+               SUM(oi.sub_total) AS revenue
         FROM order_item oi
         JOIN orders o ON oi.order_id = o.id
         LEFT JOIN dish d ON oi.dish_id = d.id
         WHERE o.merchant_id = #{merchantId}
-          AND o.order_status = 50
+          AND o.order_status IN (20, 30, 40, 50, 70, 80)
           AND oi.dish_id IS NOT NULL
           AND o.deleted = 0
           AND oi.deleted = 0
-        GROUP BY oi.dish_id, d.dish_name
-        ORDER BY totalQuantity DESC
+          GROUP BY oi.dish_id, COALESCE(d.dish_name, oi.snapshot_name, 'Unknown dish')
+          ORDER BY soldCount DESC, revenue DESC
         LIMIT #{limit}
     </select>
 
@@ -75,7 +76,7 @@
         LEFT JOIN dish d ON oi.dish_id = d.id
         LEFT JOIN dish_category dc ON d.category_id = dc.id
         WHERE o.merchant_id = #{merchantId}
-          AND o.order_status = 50
+          AND o.order_status IN (20, 30, 40, 50, 70, 80)
           AND oi.dish_id IS NOT NULL
           AND dc.id IS NOT NULL
           AND o.deleted = 0

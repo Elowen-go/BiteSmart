@@ -67,6 +67,27 @@ public class Orders {
     /** 完成时间 */
     private LocalDateTime finishTime;
 
+    /** 关联退款工单 */
+    private Long refundId;
+
+    /** 使用的用户优惠券 */
+    private Long couponId;
+
+    /** 优惠券抵扣金额 */
+    private BigDecimal couponDiscount;
+
+    /** 平台补贴金额 */
+    private BigDecimal platformSubsidy;
+
+    /** 锁定库存时间 */
+    private LocalDateTime lockStockTime;
+
+    /** 支付超时自动取消时间 */
+    private LocalDateTime autoCancelTime;
+
+    /** 下单渠道：PC/小程序/H5 */
+    private String channel;
+
     /** 订单明细（非数据库字段，批量查询时填充） */
     private transient List<OrderItem> items;
     private transient DeliveryTask deliveryTask;

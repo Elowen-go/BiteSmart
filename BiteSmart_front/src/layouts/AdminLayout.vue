@@ -88,6 +88,11 @@ const menuItems = [
   }
 ]
 
+menuItems.push({
+  label: '资金',
+  items: [{ path: '/admin/finance', icon: DataAnalysis, label: '商家结算' }]
+})
+
 const currentPath = computed(() => route.path)
 
 const isActive = (path: string) => {

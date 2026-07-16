@@ -23,6 +23,7 @@ import { useUserStore } from '../stores/user'
 import { getShopInfo, getShopList } from '../api/merchant/shop'
 import { getProfile } from '../api/merchant/profile'
 import { getNoticeList } from '../api/user/notices'
+import { resolveFileUrl } from '../utils/fileUrl'
 
 // 店铺选择器样式 - 全局样式
 const shopSelectorStyles = `
@@ -164,6 +165,11 @@ const menuItems = [
   }
 ]
 
+menuItems.push({
+  label: '资金',
+  items: [{ path: '/merchant/finance', icon: PieChart, label: '资金中心' }]
+})
+
 const currentPath = computed(() => route.path)
 
 const isActive = (path: string) => {
@@ -180,9 +186,7 @@ const fetchLogo = async () => {
     const res = await getShopInfo()
     if (res.code === 200) {
       if (res.data.shopLogo) {
-        logoUrl.value = res.data.shopLogo.startsWith('http') 
-          ? res.data.shopLogo 
-          : `/api/files/download${res.data.shopLogo}`
+        logoUrl.value = resolveFileUrl(res.data.shopLogo)
       }
       shopName.value = res.data.shopName || ''
     }
@@ -324,7 +328,7 @@ onMounted(() => {
             <HelpFilled />
           </button>
           <div class="user-info">
-            <img v-if="userStore.userInfo?.avatar" :src="userStore.userInfo.avatar.startsWith('http') ? userStore.userInfo.avatar : `/api/files/download${userStore.userInfo.avatar}`" class="avatar" alt="用户头像" />
+            <img v-if="userStore.userInfo?.avatar" :src="resolveFileUrl(userStore.userInfo.avatar)" class="avatar" alt="用户头像" />
             <div v-else class="avatar">{{ (userStore.userInfo?.nickname || userStore.userInfo?.username || '商')[0] }}</div>
             <span v-if="!collapsed">{{ userStore.userInfo?.nickname || userStore.userInfo?.username || '商家' }}</span>
             <button class="logout-btn" @click="handleLogout">退出</button>

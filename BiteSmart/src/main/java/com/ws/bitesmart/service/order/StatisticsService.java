@@ -3,6 +3,7 @@ package com.ws.bitesmart.service.order;
 import com.ws.bitesmart.mapper.order.OrderItemMapper;
 import com.ws.bitesmart.mapper.order.OrdersMapper;
 import com.ws.bitesmart.mapper.review.ReviewMapper;
+import com.ws.bitesmart.mapper.dish.DishMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -31,6 +32,7 @@ public class StatisticsService {
     private final OrdersMapper ordersMapper;
     private final OrderItemMapper orderItemMapper;
     private final ReviewMapper reviewMapper;
+    private final DishMapper dishMapper;
 
     /**
      * 获取今日统计（订单数、销售额）
@@ -54,10 +56,10 @@ public class StatisticsService {
             avgOrderAmount = revenue.divide(BigDecimal.valueOf(orderCount), 2, RoundingMode.HALF_UP);
         }
 
-        int pendingOrderCount = 0;
-        int stockAlertCount = 0;
+        int pendingOrderCount = ordersMapper.countPendingByMerchantAndTime(merchantId, start, end);
+        int stockAlertCount = Math.toIntExact(dishMapper.countLowStockByMerchantId(merchantId));
         int reviewCount = 0;
-        int newUserCount = 0;
+        int newUserCount = ordersMapper.countDistinctUsersByMerchantAndTime(merchantId, start, end);
 
         try {
             reviewCount = reviewMapper.countByMerchantAndTime(merchantId, start, end);

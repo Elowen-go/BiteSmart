@@ -2,6 +2,7 @@ package com.ws.bitesmart.controller.merchant;
 
 import com.ws.bitesmart.common.ResultVO;
 import com.ws.bitesmart.security.LoginUser;
+import com.ws.bitesmart.service.merchant.MerchantService;
 import com.ws.bitesmart.service.order.StatisticsService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,12 +29,13 @@ import java.util.Map;
 public class MerchantStatisticsController {
 
     private final StatisticsService statisticsService;
+    private final MerchantService merchantService;
 
     /** 今日统计（订单数、销售额） */
     @GetMapping("/today")
     public ResultVO<Map<String, Object>> today(@AuthenticationPrincipal LoginUser loginUser) {
         if (loginUser == null) return ResultVO.error(401, "未登录");
-        return ResultVO.success(statisticsService.getTodayStats(loginUser.getUserId()));
+        return ResultVO.success(statisticsService.getTodayStats(merchantService.getMerchantId(loginUser.getUserId())));
     }
 
     /** 时间段统计 */
@@ -42,7 +44,7 @@ public class MerchantStatisticsController {
                                                  @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate startDate,
                                                  @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate) {
         if (loginUser == null) return ResultVO.error(401, "未登录");
-        return ResultVO.success(statisticsService.getPeriodStats(loginUser.getUserId(), startDate, endDate));
+        return ResultVO.success(statisticsService.getPeriodStats(merchantService.getMerchantId(loginUser.getUserId()), startDate, endDate));
     }
 
     /** 热销菜品排行 */
@@ -50,7 +52,7 @@ public class MerchantStatisticsController {
     public ResultVO<List<Map<String, Object>>> topDishes(@AuthenticationPrincipal LoginUser loginUser,
                                                           @RequestParam(defaultValue = "10") int limit) {
         if (loginUser == null) return ResultVO.error(401, "未登录");
-        return ResultVO.success(statisticsService.getTopDishes(loginUser.getUserId(), limit));
+        return ResultVO.success(statisticsService.getTopDishes(merchantService.getMerchantId(loginUser.getUserId()), limit));
     }
 
     /** 获取时间段内每日统计（用于图表） */
@@ -59,14 +61,14 @@ public class MerchantStatisticsController {
                                                      @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate startDate,
                                                      @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate) {
         if (loginUser == null) return ResultVO.error(401, "未登录");
-        return ResultVO.success(statisticsService.getDailyStats(loginUser.getUserId(), startDate, endDate));
+        return ResultVO.success(statisticsService.getDailyStats(merchantService.getMerchantId(loginUser.getUserId()), startDate, endDate));
     }
 
     /** 获取菜品分类销售统计 */
     @GetMapping("/category-revenue")
     public ResultVO<List<Map<String, Object>>> categoryRevenue(@AuthenticationPrincipal LoginUser loginUser) {
         if (loginUser == null) return ResultVO.error(401, "未登录");
-        return ResultVO.success(statisticsService.getCategoryRevenueStats(loginUser.getUserId()));
+        return ResultVO.success(statisticsService.getCategoryRevenueStats(merchantService.getMerchantId(loginUser.getUserId())));
     }
 
 }

@@ -24,6 +24,12 @@
     </properties>
 
     <dependencies>
+        <!-- Alipay sandbox payment SDK -->
+        <dependency>
+            <groupId>com.alipay.sdk</groupId>
+            <artifactId>alipay-sdk-java</artifactId>
+            <version>4.40.0.ALL</version>
+        </dependency>
         <!-- Spring Boot Web -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

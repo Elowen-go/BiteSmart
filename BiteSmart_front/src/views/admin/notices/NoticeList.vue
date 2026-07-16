@@ -3,12 +3,14 @@ import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { listNotices, addNotice, updateNotice, deleteNotice } from '../../../api/admin/notices'
 import type { Notice } from '../../../api/admin/notices'
+import ListState from '../../../components/common/ListState.vue'
 
 const loading = ref(false)
 const noticeList = ref<Notice[]>([])
 const total = ref(0)
 const pageNum = ref(1)
 const pageSize = ref(10)
+const loadError = ref('')
 const dialogVisible = ref(false)
 const dialogTitle = ref('')
 const editingId = ref<number | null>(null)
@@ -23,13 +25,17 @@ const form = ref({
 
 const fetchList = async () => {
   loading.value = true
+  loadError.value = ''
   try {
     const res = await listNotices(pageNum.value, pageSize.value)
     if (res.code === 200) {
       noticeList.value = res.data.list || []
       total.value = res.data.total || 0
+    } else {
+      loadError.value = res.message || '公告列表暂时无法获取'
     }
   } catch (e) {
+    loadError.value = '请检查网络连接后重试'
     console.error('获取公告列表失败', e)
   } finally {
     loading.value = false
@@ -131,7 +137,8 @@ onMounted(fetchList)
         <button class="btn btn-primary" @click="handleAdd">新增公告</button>
       </div>
       <div style="padding-top: 20px;">
-        <el-table :data="noticeList" border v-loading="loading">
+        <ListState :loading="loading" :error="loadError" :empty="!noticeList.length" empty-text="暂无公告" @retry="fetchList">
+        <el-table :data="noticeList" border>
           <el-table-column prop="title" label="标题" min-width="200" show-overflow-tooltip />
           <el-table-column label="类型" width="100">
             <template #default="{ row }">
@@ -163,6 +170,7 @@ onMounted(fetchList)
             </template>
           </el-table-column>
         </el-table>
+        </ListState>
         <div style="display: flex; justify-content: flex-end; margin-top: 20px;">
           <el-pagination
             v-if="total > 0"

@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getIngredientList, addIngredient, updateIngredient, deleteIngredient, getIngredientCategories } from '../../../api/admin/ingredients'
+import ListState from '../../../components/common/ListState.vue'
 
 // 加载状态
 const loading = ref(false)
@@ -11,6 +12,7 @@ const ingredientList = ref<any[]>([])
 const total = ref(0)
 const page = ref(1)
 const size = ref(10)
+const loadError = ref('')
 
 // 分类列表
 const categoryList = ref<string[]>([])
@@ -35,6 +37,7 @@ const form = ref({
 // 获取食材列表
 const fetchList = async () => {
   loading.value = true
+  loadError.value = ''
   try {
     const res = await getIngredientList({ page: page.value, size: size.value })
     if (res.code === 200) {
@@ -43,10 +46,11 @@ const fetchList = async () => {
       const pageData = pageResultVO?.data || pageResultVO
       ingredientList.value = pageData?.list || []
       total.value = pageData?.total || 0
-      console.log('食材列表数据:', ingredientList.value)
-      console.log('总数:', total.value)
+    } else {
+      loadError.value = res.message || '食材列表暂时无法获取'
     }
   } catch (e) {
+    loadError.value = '请检查网络连接后重试'
     console.error('获取食材列表失败', e)
     ElMessage.error('获取食材列表失败')
   } finally {
@@ -179,7 +183,8 @@ onMounted(() => {
         <button class="btn btn-primary" @click="handleAdd">新增食材</button>
       </div>
       <div style="padding-top: 20px;">
-        <el-table :data="ingredientList" border v-loading="loading">
+        <ListState :loading="loading" :error="loadError" :empty="!ingredientList.length" empty-text="暂无食材记录" @retry="fetchList">
+        <el-table :data="ingredientList" border>
           <el-table-column prop="name" label="食材名称" min-width="120" />
           <el-table-column prop="categoryName" label="分类" width="100" />
           <el-table-column prop="calories" label="热量(大卡/100g)" width="140">
@@ -214,6 +219,7 @@ onMounted(() => {
             </template>
           </el-table-column>
         </el-table>
+        </ListState>
         <div v-if="total > 0" style="display: flex; justify-content: flex-end; margin-top: 20px;">
           <el-pagination
             v-model:current-page="page"

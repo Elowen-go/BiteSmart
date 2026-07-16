@@ -8,6 +8,8 @@ import com.ws.bitesmart.entity.order.Orders;
 import com.ws.bitesmart.security.LoginUser;
 import com.ws.bitesmart.service.order.OrderService;
 import com.ws.bitesmart.service.order.PaymentService;
+import com.ws.bitesmart.mapper.order.OrderStatusLogMapper;
+import com.ws.bitesmart.service.payment.AlipayPaymentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -37,6 +39,8 @@ public class UserOrderController {
 
     private final OrderService orderService;
     private final PaymentService paymentService;
+    private final OrderStatusLogMapper orderStatusLogMapper;
+    private final AlipayPaymentService alipayPaymentService;
 
     /**
      * 创建订单
@@ -84,12 +88,12 @@ public class UserOrderController {
 
     /** 我的订单列表 */
     @GetMapping
-    public ResultVO<?> list(@AuthenticationPrincipal LoginUser loginUser,
+    public Object list(@AuthenticationPrincipal LoginUser loginUser,
                             @RequestParam(required = false) Integer page,
                             @RequestParam(defaultValue = "10") int size) {
         if (loginUser == null) return ResultVO.error(401, "未登录");
         if (page != null) {
-            return ResultVO.success(PageResultVO.success(orderService.getOrdersByUser(loginUser.getUserId(), page, size)));
+            return PageResultVO.success(orderService.getOrdersByUser(loginUser.getUserId(), page, size));
         }
         return ResultVO.success(orderService.getOrdersByUser(loginUser.getUserId()));
     }
@@ -104,6 +108,7 @@ public class UserOrderController {
         Map<String, Object> result = new HashMap<>();
         result.put("order", order);
         result.put("items", items);
+        result.put("statusTimeline", orderStatusLogMapper.findByOrderId(id));
         return ResultVO.success(result);
     }
 
@@ -124,7 +129,7 @@ public class UserOrderController {
      * @param payMethod 支付方式：10-支付宝 20-微信
      */
     @PostMapping("/{id}/pay")
-    public ResultVO<Void> pay(@AuthenticationPrincipal LoginUser loginUser,
+    public ResultVO<Map<String, Object>> pay(@AuthenticationPrincipal LoginUser loginUser,
                                @PathVariable Long id,
                                @RequestParam Integer payMethod) {
         if (loginUser == null) return ResultVO.error(401, "未登录");
@@ -133,7 +138,16 @@ public class UserOrderController {
         if (order == null || !order.getUserId().equals(loginUser.getUserId())) {
             return ResultVO.error(404, "订单不存在");
         }
+        if (payMethod == 10 && alipayPaymentService.isEnabled()) {
+            Map<String, Object> result = new HashMap<>();
+            result.put("paymentMode", "alipay-sandbox");
+            result.put("form", alipayPaymentService.createPagePay(order));
+            return ResultVO.success(result);
+        }
         paymentService.pay(order.getOrderNo(), payMethod);
-        return ResultVO.ok("支付成功");
+        Map<String, Object> result = new HashMap<>();
+        result.put("paymentMode", "mock");
+        result.put("message", "支付成功");
+        return ResultVO.success(result);
     }
 }

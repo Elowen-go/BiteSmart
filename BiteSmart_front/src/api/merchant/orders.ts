@@ -7,13 +7,24 @@ export interface MerchantOrder {
   totalAmount: number
   discountAmount: number
   payAmount: number
+  couponId?: number
+  couponDiscount?: number
+  platformSubsidy?: number
   payMethod: number
+  payTime?: string
   orderStatus: number
   deliveryStatus: number
   deliveryAddress: string
   receiverName: string
   receiverPhone: string
   remark: string
+  refundId?: number
+  lockStockTime?: string
+  autoCancelTime?: string
+  channel?: string
+  cancelTime?: string
+  cancelReason?: string
+  finishTime?: string
   createTime: string
   updateTime: string
 }

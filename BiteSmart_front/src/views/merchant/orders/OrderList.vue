@@ -4,6 +4,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Refresh, View } from '@element-plus/icons-vue'
 import { getOrderList, getOrderDetail, acceptOrder, rejectOrder, prepareOrder, doneOrder } from '../../../api/merchant/orders'
 import type { MerchantOrder } from '../../../api/merchant/orders'
+import { resolveFileUrl } from '../../../utils/fileUrl'
 
 const loading = ref(false)
 const orderList = ref<MerchantOrder[]>([])
@@ -179,7 +180,7 @@ const getStatusClass = (status: number) => {
 const formatAmount = (amount: number | string | undefined) => {
   return Number(amount || 0).toFixed(2)
 }
-const imageUrl = (value: string) => value ? (value.startsWith('http') ? value : `/api/files/download${value}`) : ''
+const imageUrl = (value: string) => resolveFileUrl(value)
 
 onMounted(() => {
   fetchList()
@@ -278,12 +279,19 @@ onMounted(() => {
         <el-descriptions :column="2" border>
           <el-descriptions-item label="订单号">{{ currentOrder.orderNo }}</el-descriptions-item>
           <el-descriptions-item label="订单状态">{{ getStatusLabel(currentOrder.orderStatus) }}</el-descriptions-item>
+          <el-descriptions-item label="订单金额">¥{{ formatAmount(currentOrder.totalAmount) }}</el-descriptions-item>
+          <el-descriptions-item label="优惠金额">¥{{ formatAmount(currentOrder.discountAmount) }}</el-descriptions-item>
           <el-descriptions-item label="支付金额">¥{{ formatAmount(currentOrder.payAmount) }}</el-descriptions-item>
-          <el-descriptions-item label="支付方式">{{ currentOrder.payMethod === 1 ? '在线支付' : '货到付款' }}</el-descriptions-item>
+          <el-descriptions-item label="支付方式">{{ currentOrder.payMethod === 10 ? '支付宝' : currentOrder.payMethod === 20 ? '微信' : '未支付' }}</el-descriptions-item>
+          <el-descriptions-item label="支付时间">{{ currentOrder.payTime || '未支付' }}</el-descriptions-item>
           <el-descriptions-item label="收货人">{{ currentOrder.receiverName || '未填写' }}</el-descriptions-item>
           <el-descriptions-item label="联系电话">{{ currentOrder.receiverPhone || '-' }}</el-descriptions-item>
           <el-descriptions-item label="配送地址" :span="2">{{ currentOrder.deliveryAddress }}</el-descriptions-item>
           <el-descriptions-item label="备注" :span="2">{{ currentOrder.remark || '无' }}</el-descriptions-item>
+          <el-descriptions-item label="下单渠道">{{ currentOrder.channel || 'PC' }}</el-descriptions-item>
+          <el-descriptions-item label="优惠券抵扣">¥{{ formatAmount(currentOrder.couponDiscount) }}</el-descriptions-item>
+          <el-descriptions-item label="平台补贴">¥{{ formatAmount(currentOrder.platformSubsidy) }}</el-descriptions-item>
+          <el-descriptions-item label="完成时间" :span="2">{{ currentOrder.finishTime || '未完成' }}</el-descriptions-item>
           <el-descriptions-item label="下单时间" :span="2">{{ currentOrder.createTime }}</el-descriptions-item>
         </el-descriptions>
 
@@ -299,6 +307,14 @@ onMounted(() => {
               <template #default="{ row }">¥{{ formatAmount(row.subTotal) }}</template>
             </el-table-column>
           </el-table>
+        </div>
+        <div v-if="detailData.statusTimeline?.length" class="detail-section">
+          <h4>状态流转记录</h4>
+          <el-timeline>
+            <el-timeline-item v-for="(event, index) in detailData.statusTimeline" :key="index" :timestamp="event.createTime || event.time">
+              {{ getStatusLabel(event.toStatus) }}<span v-if="event.reason">：{{ event.reason }}</span>
+            </el-timeline-item>
+          </el-timeline>
         </div>
       </template>
       <template #footer>

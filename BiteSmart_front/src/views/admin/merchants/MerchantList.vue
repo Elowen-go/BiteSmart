@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { getMerchantList, auditMerchant, closeMerchant } from '../../../api/admin/merchants'
 import { resolveFileUrl } from '../../../utils/fileUrl'
+import ListState from '../../../components/common/ListState.vue'
 
 const loading = ref(false)
 const tableData = ref<any[]>([])
@@ -10,6 +11,7 @@ const total = ref(0)
 const pageNum = ref(1)
 const pageSize = ref(10)
 const statusFilter = ref<number | undefined>()
+const loadError = ref('')
 
 const auditDialogVisible = ref(false)
 const closeDialogVisible = ref(false)
@@ -41,13 +43,17 @@ const formatDeliveryRange = (value: unknown) => {
 
 const loadData = async () => {
   loading.value = true
+  loadError.value = ''
   try {
     const res = await getMerchantList({ pageNum: pageNum.value, pageSize: pageSize.value, status: statusFilter.value })
     if (res.code === 200) {
       tableData.value = res.data.list || []
       total.value = res.data.total || 0
+    } else {
+      loadError.value = res.message || '商家列表暂时无法获取'
     }
   } catch (err) {
+    loadError.value = '请检查网络连接后重试'
     console.error('获取商家列表失败', err)
   } finally {
     loading.value = false
@@ -121,7 +127,8 @@ onMounted(loadData)
         <h3>商家管理</h3>
       </div>
       <div style="padding-top: 20px;">
-        <el-table :data="tableData" v-loading="loading" border stripe style="width: 100%">
+        <ListState :loading="loading" :error="loadError" :empty="!tableData.length" empty-text="暂无商家记录" @retry="loadData">
+        <el-table :data="tableData" border stripe style="width: 100%">
           <el-table-column label="商家" min-width="210">
             <template #default="{ row }"><div class="merchant-cell"><el-image v-if="row.shopLogo" :src="resolveFileUrl(row.shopLogo)" fit="cover" /><div><strong>{{ row.shopName || '-' }}</strong><small>{{ row.contactName || '联系人未设置' }}</small></div></div></template>
           </el-table-column>
@@ -164,6 +171,7 @@ onMounted(loadData)
             </template>
           </el-table-column>
         </el-table>
+        </ListState>
         <div style="display:flex;justify-content:flex-end;padding-top:16px;">
           <el-pagination
             v-model:current-page="pageNum"

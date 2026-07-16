@@ -6,6 +6,7 @@ import com.ws.bitesmart.mapper.delivery.DeliveryTaskMapper;
 import com.ws.bitesmart.mapper.order.OrderItemMapper;
 import com.ws.bitesmart.mapper.order.OrdersMapper;
 import com.ws.bitesmart.service.health.HealthRecordService;
+import com.ws.bitesmart.service.merchant.MerchantFinanceService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -22,6 +23,7 @@ class DeliveryTaskServiceTest {
     @Mock private OrdersMapper ordersMapper;
     @Mock private OrderItemMapper orderItemMapper;
     @Mock private HealthRecordService healthRecordService;
+    @Mock private MerchantFinanceService merchantFinanceService;
 
     @Test
     void acceptTaskUsesDriverIdAndOptimisticTaskUpdate() {
@@ -33,7 +35,8 @@ class DeliveryTaskServiceTest {
         when(deliveryDriverMapper.findByUserId(8L)).thenReturn(driver);
         when(deliveryTaskMapper.acceptTaskWithLock(7L, 9L)).thenReturn(1);
 
-        new DeliveryTaskService(deliveryTaskMapper, deliveryDriverMapper, ordersMapper, orderItemMapper, healthRecordService).acceptTask(7L, 8L);
+        new DeliveryTaskService(deliveryTaskMapper, deliveryDriverMapper, ordersMapper, orderItemMapper,
+                healthRecordService, merchantFinanceService).acceptTask(7L, 8L);
 
         verify(deliveryTaskMapper).acceptTaskWithLock(7L, 9L);
         verify(deliveryDriverMapper).incrementOrders(9L);

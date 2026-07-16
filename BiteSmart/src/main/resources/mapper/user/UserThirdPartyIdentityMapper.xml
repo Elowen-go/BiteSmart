@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ws.bitesmart.mapper.user.UserThirdPartyIdentityMapper">
+
+    <sql id="BaseColumns">
+        id, user_id, provider, open_id, union_id, create_time, update_time
+    </sql>
+
+    <select id="findByProviderAndOpenId" resultType="com.ws.bitesmart.entity.user.UserThirdPartyIdentity">
+        SELECT <include refid="BaseColumns"/>
+        FROM user_third_party_identity
+        WHERE provider = #{provider}
+          AND open_id = #{openId}
+    </select>
+
+    <insert id="insert" parameterType="com.ws.bitesmart.entity.user.UserThirdPartyIdentity">
+        INSERT INTO user_third_party_identity
+            (id, user_id, provider, open_id, union_id, create_time, update_time)
+        VALUES
+            (#{id}, #{userId}, #{provider}, #{openId}, #{unionId}, NOW(), NOW())
+    </insert>
+
+</mapper>

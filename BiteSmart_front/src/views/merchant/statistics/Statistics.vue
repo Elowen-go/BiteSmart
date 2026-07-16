@@ -40,7 +40,10 @@ const metricCards = computed(() => [
 const getDateStr = (daysAgo: number) => {
   const d = new Date()
   d.setDate(d.getDate() - daysAgo)
-  return d.toISOString().slice(0, 10)
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
 }
 
 const formatAmount = (amount: number | string | undefined) => {
@@ -57,7 +60,7 @@ const fetchData = async () => {
   try {
     const [todayRes, dailyRes, topRes] = await Promise.all([
       getTodayStats(),
-      getDailyStats({ startDate: getDateStr(7), endDate: getDateStr(0) }),
+      getDailyStats({ startDate: getDateStr(6), endDate: getDateStr(0) }),
       getTopDishes({ limit: 10 })
     ])
     if (todayRes.code === 200) {

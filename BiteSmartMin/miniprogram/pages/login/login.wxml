@@ -1,0 +1,8 @@
+<view class="login-page">
+  <view class="login-image"><image src="https://images.unsplash.com/photo-1498837167922-ddd27525d352?w=1200&q=80" mode="aspectFill"/><view class="image-label">EAT WITH INTENTION</view></view>
+  <view class="login-content"><view class="wordmark">Bite<text>Smart</text></view><text class="title">好好吃饭，<br/>也好好照顾自己。</text><text class="subtitle">按角色进入你的专属空间</text>
+    <view class="role-list"><button class="role-button {{roleType === 10 ? 'active' : ''}}" data-role="10" bindtap="selectRole"><text>用户</text><text>选餐 · 订单 · 健康</text></button><button class="role-button {{roleType === 20 ? 'active' : ''}}" data-role="20" bindtap="selectRole"><text>商家</text><text>门店 · 出餐 · 经营</text></button><button class="role-button {{roleType === 30 ? 'active' : ''}}" data-role="30" bindtap="selectRole"><text>配送</text><text>接单 · 路线 · 履约</text></button></view>
+    <block wx:if="{{mode === 'account'}}"><input class="login-input" placeholder="用户名或手机号" value="{{username}}" bindinput="onUsernameInput"/><input class="login-input" password placeholder="登录密码" value="{{password}}" bindinput="onPasswordInput"/></block>
+    <button class="login-button" bindtap="login" loading="{{loading}}" disabled="{{loading}}">{{mode === 'wechat' ? '微信授权登录' : '账号密码登录'}} <text>→</text></button><button class="switch-button" bindtap="switchMode">{{mode === 'wechat' ? '使用账号密码登录' : '返回微信授权登录'}}</button><text wx:if="{{errorMessage}}" class="error-message">{{errorMessage}}</text>
+  </view>
+</view>

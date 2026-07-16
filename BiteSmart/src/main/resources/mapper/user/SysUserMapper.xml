@@ -16,6 +16,22 @@
           AND deleted = 0
     </select>
 
+    <select id="findByUsernameOrPhone" resultType="com.ws.bitesmart.entity.user.SysUser">
+        SELECT <include refid="BaseColumns"/>
+        FROM sys_user
+        WHERE (username = #{account} OR phone = #{account})
+          AND deleted = 0
+        LIMIT 1
+    </select>
+
+    <select id="findByPhone" resultType="com.ws.bitesmart.entity.user.SysUser">
+        SELECT <include refid="BaseColumns"/>
+        FROM sys_user
+        WHERE phone = #{phone}
+          AND deleted = 0
+        LIMIT 1
+    </select>
+
     <!-- 查用户详情用 -->
     <select id="findById" resultType="com.ws.bitesmart.entity.user.SysUser">
         SELECT <include refid="BaseColumns"/>
@@ -43,6 +59,15 @@
             <if test="status != null">status = #{status},</if>
             update_time = NOW()
         </set>
+        WHERE id = #{id} AND deleted = 0
+    </update>
+
+    <update id="updateCredentials">
+        UPDATE sys_user
+        SET username = #{username},
+            phone = #{phone},
+            password = #{password},
+            update_time = NOW()
         WHERE id = #{id} AND deleted = 0
     </update>
 

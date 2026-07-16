@@ -7,6 +7,7 @@ import com.ws.bitesmart.entity.delivery.DeliveryTask;
 import com.ws.bitesmart.entity.order.Orders;
 import com.ws.bitesmart.exception.BusinessException;
 import com.ws.bitesmart.service.health.HealthRecordService;
+import com.ws.bitesmart.service.merchant.MerchantFinanceService;
 import com.ws.bitesmart.mapper.delivery.DeliveryDriverMapper;
 import com.ws.bitesmart.mapper.delivery.DeliveryTaskMapper;
 import com.ws.bitesmart.mapper.order.OrdersMapper;
@@ -35,6 +36,7 @@ public class DeliveryTaskService {
     private final OrdersMapper ordersMapper;
     private final OrderItemMapper orderItemMapper;
     private final HealthRecordService healthRecordService;
+    private final MerchantFinanceService merchantFinanceService;
 
     /**
      * 创建配送任务（商家出餐后调用）
@@ -181,6 +183,10 @@ public class DeliveryTaskService {
         ordersMapper.updateStatusWithLock(
                 task.getOrderId(), 40, 50,
                 null, null, null, null, null, LocalDateTime.now(), 40);
+        Orders completedOrder = ordersMapper.findById(task.getOrderId());
+        if (completedOrder != null) {
+            merchantFinanceService.releasePendingIncome(completedOrder);
+        }
 
         log.info("配送完成: taskId={}, driverId={}, orderId={}", taskId, driverId, task.getOrderId());
     }

@@ -1,0 +1,47 @@
+<view class="cart-page" style="{{topStyle}}">
+  <view class="cart-header">
+    <text class="back" bindtap="back">‹</text>
+    <view>
+      <text class="cart-title">购物车</text>
+      <text class="cart-subtitle">确认你的营养选择</text>
+    </view>
+  </view>
+
+  <text class="eyebrow">READY WHEN YOU ARE</text>
+  <text class="title">选好的，</text>
+  <text class="title title-second-line">都在这里。</text>
+
+  <view class="cart-panel">
+    <view class="cart-item">
+      <checkbox checked color="#7773E8"></checkbox>
+      <view class="item-main">
+        <text class="item-name">青柠香煎鸡胸</text>
+        <text class="item-note">高蛋白 · 426 kcal</text>
+        <view class="quantity">
+          <button>-</button><text>1</text><button>+</button>
+        </view>
+      </view>
+      <text class="item-price">¥29</text>
+    </view>
+
+    <view class="cart-item">
+      <checkbox checked color="#7773E8"></checkbox>
+      <view class="item-main">
+        <text class="item-name">南瓜藜麦暖沙拉</text>
+        <text class="item-note">膳食纤维 · 318 kcal</text>
+        <view class="quantity">
+          <button>-</button><text>1</text><button>+</button>
+        </view>
+      </view>
+      <text class="item-price">¥25</text>
+    </view>
+  </view>
+
+  <view class="checkout-bar">
+    <view class="checkout-total">
+      <text>合计</text>
+      <text class="total-price">¥54</text>
+    </view>
+    <button class="checkout-button" bindtap="checkout">去结算</button>
+  </view>
+</view>

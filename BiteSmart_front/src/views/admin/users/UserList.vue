@@ -59,6 +59,7 @@ const handleDetail = async (row: any) => {
       detailDialogVisible.value = true
     }
   } catch (err) {
+    ElMessage.error('获取用户详情失败，请稍后重试')
     console.error('获取用户详情失败', err)
   }
 }

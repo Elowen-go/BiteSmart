@@ -5,6 +5,7 @@ import { Plus, Delete, Refresh, Search } from '@element-plus/icons-vue'
 import { getComboList, getComboDetail, addCombo, updateCombo, deleteCombo, comboTypeOptions, suitableForOptions, type DishItem, type ComboRequest } from '../../../api/merchant/combos'
 import { getDishList } from '../../../api/merchant/dishes'
 import { uploadFile } from '../../../api/merchant/profile'
+import { resolveFileUrl } from '../../../utils/fileUrl'
 
 const loading = ref(false)
 const comboList = ref<any[]>([])
@@ -325,7 +326,7 @@ const handleEdit = async (row: any) => {
         maxReplaceCount: combo.maxReplaceCount || 0,
         suitableFor: normalizeSuitableFor(combo.suitableFor)
       }
-      comboImagePreview.value = combo.comboImage ? `/api/files/download${combo.comboImage}` : ''
+      comboImagePreview.value = resolveFileUrl(combo.comboImage)
       selectedDishItems.value = dishItems || []
       // 初始化可替换菜品池
       if (combo.replaceableDishPool) {
@@ -449,7 +450,7 @@ const getComboTypeLabel = (type: number) => {
 
 const getImageUrl = (url: string) => {
   if (!url) return ''
-  return url.startsWith('http') ? url : `/api/files/download${url}`
+  return resolveFileUrl(url)
 }
 
 const getDishName = (dishId: number) => {

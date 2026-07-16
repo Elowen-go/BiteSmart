@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ws.bitesmart.mapper.merchant.MerchantFundAccountMapper">
+    <sql id="BaseColumns">
+        id, merchant_id, pending_balance, available_balance, frozen_balance,
+        total_income, total_refund, total_commission, version,
+        create_time, update_time, deleted
+    </sql>
+
+    <select id="findByMerchantId" resultType="com.ws.bitesmart.entity.merchant.MerchantFundAccount">
+        SELECT <include refid="BaseColumns"/>
+        FROM merchant_fund_account
+        WHERE merchant_id = #{merchantId} AND deleted = 0
+    </select>
+
+    <select id="findByMerchantIdForUpdate" resultType="com.ws.bitesmart.entity.merchant.MerchantFundAccount">
+        SELECT <include refid="BaseColumns"/>
+        FROM merchant_fund_account
+        WHERE merchant_id = #{merchantId} AND deleted = 0
+        FOR UPDATE
+    </select>
+
+    <select id="findAll" resultType="com.ws.bitesmart.entity.merchant.MerchantFundAccount">
+        SELECT <include refid="BaseColumns"/>
+        FROM merchant_fund_account
+        WHERE deleted = 0
+        ORDER BY update_time DESC
+    </select>
+
+    <insert id="insert" parameterType="com.ws.bitesmart.entity.merchant.MerchantFundAccount">
+        INSERT INTO merchant_fund_account (
+            id, merchant_id, pending_balance, available_balance, frozen_balance,
+            total_income, total_refund, total_commission, version, create_time, update_time
+        ) VALUES (
+            #{id}, #{merchantId}, #{pendingBalance}, #{availableBalance}, #{frozenBalance},
+            #{totalIncome}, #{totalRefund}, #{totalCommission}, #{version}, NOW(), NOW()
+        )
+    </insert>
+
+    <update id="updateBalances" parameterType="com.ws.bitesmart.entity.merchant.MerchantFundAccount">
+        UPDATE merchant_fund_account
+        SET pending_balance = #{pendingBalance},
+            available_balance = #{availableBalance},
+            frozen_balance = #{frozenBalance},
+            total_income = #{totalIncome},
+            total_refund = #{totalRefund},
+            total_commission = #{totalCommission},
+            version = version + 1,
+            update_time = NOW()
+        WHERE id = #{id} AND version = #{version} AND deleted = 0
+    </update>
+</mapper>

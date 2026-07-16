@@ -8,6 +8,8 @@
         order_status, delivery_status, delivery_address,
         receiver_name, receiver_phone, remark,
         cancel_time, cancel_reason, finish_time,
+        refund_id, coupon_id, coupon_discount, platform_subsidy,
+        lock_stock_time, auto_cancel_time, channel,
         create_time, update_time, deleted
     </sql>
 
@@ -33,12 +35,22 @@
     </select>
 
     <!-- 商家查收到的订单 -->
-    <select id="findByMerchantId" resultType="com.ws.bitesmart.entity.order.Orders">
+      <select id="findByMerchantId" resultType="com.ws.bitesmart.entity.order.Orders">
         SELECT <include refid="BaseColumns"/>
         FROM orders
         WHERE merchant_id = #{merchantId} AND deleted = 0
         ORDER BY create_time DESC
-    </select>
+      </select>
+
+      <select id="findPaidByMerchantId" resultType="com.ws.bitesmart.entity.order.Orders">
+          SELECT <include refid="BaseColumns"/>
+          FROM orders
+          WHERE merchant_id = #{merchantId}
+            AND order_status IN (20, 30, 40, 50)
+            AND pay_time IS NOT NULL
+            AND deleted = 0
+          ORDER BY pay_time ASC
+      </select>
 
     <!-- 新增订单 -->
     <insert id="insert" parameterType="com.ws.bitesmart.entity.order.Orders">
@@ -47,12 +59,16 @@
                             order_status, delivery_status, delivery_address,
                             receiver_name, receiver_phone, remark,
                             cancel_time, cancel_reason, finish_time,
+                            refund_id, coupon_id, coupon_discount, platform_subsidy,
+                            lock_stock_time, auto_cancel_time, channel,
                             create_time, update_time)
         VALUES (#{id}, #{orderNo}, #{userId}, #{merchantId}, #{deliveryDriverId},
                 #{totalAmount}, #{discountAmount}, #{payAmount}, #{payMethod}, #{payTime},
                 #{orderStatus}, #{deliveryStatus}, #{deliveryAddress},
                 #{receiverName}, #{receiverPhone}, #{remark},
                 #{cancelTime}, #{cancelReason}, #{finishTime},
+                #{refundId}, #{couponId}, #{couponDiscount}, #{platformSubsidy},
+                #{lockStockTime}, #{autoCancelTime}, #{channel},
                 NOW(), NOW())
     </insert>
 
@@ -68,6 +84,13 @@
             <if test="finishTime != null">finish_time = #{finishTime},</if>
             <if test="payAmount != null">pay_amount = #{payAmount},</if>
             <if test="deliveryStatus != null">delivery_status = #{deliveryStatus},</if>
+            <if test="refundId != null">refund_id = #{refundId},</if>
+            <if test="couponId != null">coupon_id = #{couponId},</if>
+            <if test="couponDiscount != null">coupon_discount = #{couponDiscount},</if>
+            <if test="platformSubsidy != null">platform_subsidy = #{platformSubsidy},</if>
+            <if test="lockStockTime != null">lock_stock_time = #{lockStockTime},</if>
+            <if test="autoCancelTime != null">auto_cancel_time = #{autoCancelTime},</if>
+            <if test="channel != null">channel = #{channel},</if>
             update_time = NOW()
         </set>
         WHERE id = #{id} AND deleted = 0
@@ -95,8 +118,8 @@
         SELECT COUNT(*)
         FROM orders
         WHERE merchant_id = #{merchantId}
-          AND order_status = 50
-          AND finish_time BETWEEN #{start} AND #{end}
+          AND order_status &lt;&gt; 60
+          AND create_time BETWEEN #{start} AND #{end}
           AND deleted = 0
     </select>
 
@@ -105,8 +128,26 @@
         SELECT COALESCE(SUM(pay_amount), 0)
         FROM orders
         WHERE merchant_id = #{merchantId}
-          AND order_status = 50
-          AND finish_time BETWEEN #{start} AND #{end}
+          AND order_status IN (20, 30, 40, 50, 70, 80)
+          AND create_time BETWEEN #{start} AND #{end}
+          AND deleted = 0
+    </select>
+
+    <select id="countPendingByMerchantAndTime" resultType="int">
+        SELECT COUNT(*)
+        FROM orders
+        WHERE merchant_id = #{merchantId}
+          AND order_status IN (20, 30)
+          AND create_time BETWEEN #{start} AND #{end}
+          AND deleted = 0
+    </select>
+
+    <select id="countDistinctUsersByMerchantAndTime" resultType="int">
+        SELECT COUNT(DISTINCT user_id)
+        FROM orders
+        WHERE merchant_id = #{merchantId}
+          AND order_status &lt;&gt; 60
+          AND create_time BETWEEN #{start} AND #{end}
           AND deleted = 0
     </select>
 
@@ -132,8 +173,8 @@
         WHERE deleted = 0
         <if test="userId != null">AND user_id = #{userId}</if>
         <if test="merchantId != null">AND merchant_id = #{merchantId}</if>
-        <if test="paymentStatus == 10">AND pay_time IS NOT NULL</if>
-        <if test="paymentStatus == 0">AND pay_time IS NULL</if>
+        <if test="paymentStatus == 10">AND (pay_time IS NOT NULL OR order_status IN (20, 30, 40, 50, 70, 80))</if>
+        <if test="paymentStatus == 0">AND pay_time IS NULL AND order_status = 10</if>
         <if test="deliveryStatus != null">AND delivery_status = #{deliveryStatus}</if>
         <if test="orderStatus != null">AND order_status = #{orderStatus}</if>
         ORDER BY create_time DESC

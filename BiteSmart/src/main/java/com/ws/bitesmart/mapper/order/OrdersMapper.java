@@ -28,6 +28,7 @@ public interface OrdersMapper {
 
     /** 商家查收到的订单，按时间倒序 */
     List<Orders> findByMerchantId(@Param("merchantId") Long merchantId);
+    List<Orders> findPaidByMerchantId(@Param("merchantId") Long merchantId);
 
     /** 新增订单 */
     int insert(Orders orders);
@@ -56,6 +57,14 @@ public interface OrdersMapper {
     java.math.BigDecimal sumPayAmountByMerchantAndTime(@Param("merchantId") Long merchantId,
                                                        @Param("start") java.time.LocalDateTime start,
                                                        @Param("end") java.time.LocalDateTime end);
+
+    int countPendingByMerchantAndTime(@Param("merchantId") Long merchantId,
+                                      @Param("start") java.time.LocalDateTime start,
+                                      @Param("end") java.time.LocalDateTime end);
+
+    int countDistinctUsersByMerchantAndTime(@Param("merchantId") Long merchantId,
+                                            @Param("start") java.time.LocalDateTime start,
+                                            @Param("end") java.time.LocalDateTime end);
 
     /** 分页查询所有订单 */
     List<Orders> findAll();

@@ -12,6 +12,9 @@ import com.ws.bitesmart.mapper.refund.RefundApplicationMapper;
 import com.ws.bitesmart.mapper.order.OrdersMapper;
 import com.ws.bitesmart.mapper.user.SysUserMapper;
 import com.ws.bitesmart.mapper.merchant.MerchantMapper;
+import com.ws.bitesmart.mapper.order.PaymentLogMapper;
+import com.ws.bitesmart.service.merchant.MerchantFinanceService;
+import com.ws.bitesmart.service.payment.AlipayPaymentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -33,6 +36,9 @@ public class AdminWorkOrderController {
     private final OrdersMapper ordersMapper;
     private final SysUserMapper sysUserMapper;
     private final MerchantMapper merchantMapper;
+    private final PaymentLogMapper paymentLogMapper;
+    private final AlipayPaymentService alipayPaymentService;
+    private final MerchantFinanceService merchantFinanceService;
 
     @GetMapping("/refunds")
     public PageResultVO<RefundApplication> refunds(@RequestParam(defaultValue = "1") int pageNum,
@@ -63,16 +69,32 @@ public class AdminWorkOrderController {
         if (status != 20 && status != 30 && status != 40) {
             return ResultVO.error(400, "退款处理状态不合法");
         }
+        RefundApplication refund = refundMapper.findById(id);
+        if (refund == null || refund.getAuditStatus() == null || refund.getAuditStatus() != 10) {
+            return ResultVO.error(409, "Refund application does not exist or was already processed");
+        }
+        Orders refundOrder = ordersMapper.findById(refund.getOrderId());
+        if (refundOrder == null) {
+            return ResultVO.error(409, "Related order does not exist");
+        }
+        if (status == 40) {
+            List<com.ws.bitesmart.entity.order.PaymentLog> paymentLogs = paymentLogMapper.findByOrderId(refundOrder.getId());
+            com.ws.bitesmart.entity.order.PaymentLog paymentLog = paymentLogs == null || paymentLogs.isEmpty()
+                    ? null : paymentLogs.get(0);
+            alipayPaymentService.refund(refundOrder, refund, paymentLog);
+        }
+
         int affected = refundMapper.updateAudit(id, status, null, remark);
         if (affected > 0 && (status == 20 || status == 40)) {
-            RefundApplication refund = refundMapper.findById(id);
-            if (refund != null) {
-                Orders order = ordersMapper.findById(refund.getOrderId());
-                if (order != null) {
-                    order.setOrderStatus(status == 40 ? 80 : 70);
-                    ordersMapper.updateStatus(order);
-                }
+            if (status == 40) {
+                List<com.ws.bitesmart.entity.order.PaymentLog> paymentLogs = paymentLogMapper.findByOrderId(refundOrder.getId());
+                com.ws.bitesmart.entity.order.PaymentLog paymentLog = paymentLogs == null || paymentLogs.isEmpty()
+                        ? null : paymentLogs.get(0);
+                merchantFinanceService.recordRefund(refundOrder, refund, paymentLog);
             }
+            refundOrder.setRefundId(refund.getId());
+            refundOrder.setOrderStatus(status == 40 ? 80 : 70);
+            ordersMapper.updateStatus(refundOrder);
         }
         return affected > 0 ? ResultVO.ok("退款工单已处理") : ResultVO.error(409, "退款工单不存在或已处理");
     }

@@ -3,6 +3,7 @@ import { ref, onMounted, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Upload, Delete, Edit } from '@element-plus/icons-vue'
 import { getShopInfo, updateShopInfo, uploadFile } from '../../../api/merchant/shop'
+import { resolveFileUrl } from '../../../utils/fileUrl'
 
 const loading = ref(false)
 const editing = ref(false)
@@ -60,7 +61,7 @@ const fetchShopInfo = async () => {
       form.value.licenseNumber = data.licenseNumber || ''
       form.value.shopNotice = data.shopNotice || ''
       if (form.value.shopLogo) {
-        imageUrl.value = form.value.shopLogo.startsWith('http') ? form.value.shopLogo : `/api/files/download${form.value.shopLogo}`
+        imageUrl.value = resolveFileUrl(form.value.shopLogo)
       }
       parseBusinessHours(data.businessHours)
       parseDeliveryRange(data.deliveryRange)

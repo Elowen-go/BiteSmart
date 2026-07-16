@@ -1,0 +1,16 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.saveWeightRecord = exports.getWeightRecords = exports.addExerciseRecord = exports.getExerciseRecords = exports.addDietRecord = exports.getDietRecords = void 0;
+const request_1 = require("../utils/request");
+const getDietRecords = (date) => (0, request_1.request)({ url: '/health/diet', data: date ? { date } : {} });
+exports.getDietRecords = getDietRecords;
+const addDietRecord = (record) => (0, request_1.request)({ url: '/health/diet', method: 'POST', data: record });
+exports.addDietRecord = addDietRecord;
+const getExerciseRecords = (date) => (0, request_1.request)({ url: '/health/exercise', data: date ? { date } : {} });
+exports.getExerciseRecords = getExerciseRecords;
+const addExerciseRecord = (record) => (0, request_1.request)({ url: '/health/exercise', method: 'POST', data: record });
+exports.addExerciseRecord = addExerciseRecord;
+const getWeightRecords = () => (0, request_1.request)({ url: '/health/weight' });
+exports.getWeightRecords = getWeightRecords;
+const saveWeightRecord = (record) => (0, request_1.request)({ url: '/health/weight', method: 'POST', data: record });
+exports.saveWeightRecord = saveWeightRecord;

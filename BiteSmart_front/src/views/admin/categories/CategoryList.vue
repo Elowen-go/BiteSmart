@@ -3,9 +3,11 @@ import { computed, ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { listCategories, addCategory, updateCategory, deleteCategory } from '../../../api/admin/categories'
 import type { DishCategory } from '../../../api/admin/categories'
+import ListState from '../../../components/common/ListState.vue'
 
 const loading = ref(false)
 const categoryList = ref<DishCategory[]>([])
+const loadError = ref('')
 const dialogVisible = ref(false)
 const dialogTitle = ref('')
 const editingId = ref<number | null>(null)
@@ -24,12 +26,16 @@ const form = ref({
 
 const fetchList = async () => {
   loading.value = true
+  loadError.value = ''
   try {
     const res = await listCategories()
     if (res.code === 200) {
       categoryList.value = res.data || []
+    } else {
+      loadError.value = res.message || '分类列表暂时无法获取'
     }
   } catch (e) {
+    loadError.value = '请检查网络连接后重试'
     console.error('获取分类列表失败', e)
   } finally {
     loading.value = false
@@ -118,7 +124,8 @@ onMounted(fetchList)
         </div>
       </div>
       <div style="padding-top: 20px;">
-        <el-table :data="filteredCategories" border stripe v-loading="loading" empty-text="暂无分类数据">
+        <ListState :loading="loading" :error="loadError" :empty="!filteredCategories.length" empty-text="暂无分类数据" @retry="fetchList">
+        <el-table :data="filteredCategories" border stripe>
           <el-table-column prop="categoryName" label="分类名称" min-width="160" />
           <el-table-column prop="sortOrder" label="排序" width="80" align="center" />
           <el-table-column label="父分类" width="140">
@@ -138,6 +145,7 @@ onMounted(fetchList)
             </template>
           </el-table-column>
         </el-table>
+        </ListState>
       </div>
     </div>
 

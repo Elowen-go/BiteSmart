@@ -7,6 +7,7 @@ import com.ws.bitesmart.mapper.order.OrderItemMapper;
 import com.ws.bitesmart.mapper.order.OrdersMapper;
 import com.ws.bitesmart.mapper.order.PaymentLogMapper;
 import com.ws.bitesmart.service.system.OperateLogService;
+import com.ws.bitesmart.service.merchant.MerchantFinanceService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -29,6 +30,7 @@ class PaymentServiceTest {
     @Mock private OrderItemMapper orderItemMapper;
     @Mock private ComboDishRelMapper comboDishRelMapper;
     @Mock private OperateLogService operateLogService;
+    @Mock private MerchantFinanceService merchantFinanceService;
 
     @Test
     void payMovesPendingOrderToAcceptedAndWritesPaymentLog() {
@@ -42,7 +44,7 @@ class PaymentServiceTest {
         when(ordersMapper.updateStatusWithLock(org.mockito.ArgumentMatchers.eq(1L), org.mockito.ArgumentMatchers.eq(10), org.mockito.ArgumentMatchers.eq(20), org.mockito.ArgumentMatchers.eq(10), org.mockito.ArgumentMatchers.eq(BigDecimal.TEN), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.isNull(), org.mockito.ArgumentMatchers.isNull(), org.mockito.ArgumentMatchers.isNull(), org.mockito.ArgumentMatchers.isNull())).thenReturn(1);
         when(orderItemMapper.findByOrderId(1L)).thenReturn(List.of());
 
-        new PaymentService(ordersMapper, paymentLogMapper, dishMapper, orderItemMapper, comboDishRelMapper, operateLogService).pay("ORD-1", 10);
+        new PaymentService(ordersMapper, paymentLogMapper, dishMapper, orderItemMapper, comboDishRelMapper, operateLogService, merchantFinanceService).pay("ORD-1", 10);
 
         ArgumentCaptor<com.ws.bitesmart.entity.order.PaymentLog> captor = ArgumentCaptor.forClass(com.ws.bitesmart.entity.order.PaymentLog.class);
         verify(paymentLogMapper).insert(captor.capture());

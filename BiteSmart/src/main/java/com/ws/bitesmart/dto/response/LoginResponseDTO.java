@@ -29,6 +29,10 @@ public class LoginResponseDTO {
     /** 用户基本信息 */
     private UserInfo user;
 
+    /** 微信首次登录创建的临时账号是否需要先完善登录凭据。 */
+    @Builder.Default
+    private boolean accountSetupRequired = false;
+
     /**
      * 返回给前端的用户信息（不含密码敏感字段）
      */

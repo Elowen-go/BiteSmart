@@ -1,0 +1,14 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.deleteCartItem = exports.selectCartItem = exports.updateCartQuantity = exports.addToCart = exports.getCart = void 0;
+const request_1 = require("../utils/request");
+const getCart = () => (0, request_1.request)({ url: '/cart' });
+exports.getCart = getCart;
+const addToCart = (itemType, id, quantity = 1) => (0, request_1.request)({ url: '/cart', method: 'POST', data: { itemType, ...(itemType === 10 ? { dishId: id } : { comboId: id }), quantity }, contentType: 'form' });
+exports.addToCart = addToCart;
+const updateCartQuantity = (id, quantity) => (0, request_1.request)({ url: `/cart/${id}`, method: 'PUT', data: { quantity }, contentType: 'form' });
+exports.updateCartQuantity = updateCartQuantity;
+const selectCartItem = (id, selected) => (0, request_1.request)({ url: `/cart/${id}/select`, method: 'PUT', data: { selected }, contentType: 'form' });
+exports.selectCartItem = selectCartItem;
+const deleteCartItem = (id) => (0, request_1.request)({ url: `/cart/${id}`, method: 'DELETE' });
+exports.deleteCartItem = deleteCartItem;

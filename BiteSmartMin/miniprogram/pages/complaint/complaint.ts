@@ -1,0 +1,3 @@
+import { createComplaint } from '../../api/feedback'
+import { requireUser } from '../../utils/user-route'
+Page({ data: { orderId: 1 }, onLoad(options: Record<string, string>) { requireUser(); if (options?.orderId) this.setData({ orderId: Number(options.orderId) }) }, back() { wx.navigateBack() }, submit() { createComplaint({ orderId: this.data.orderId, targetType: 10, targetId: this.data.orderId, complaintReason: '订单服务反馈', complaintDesc: '用户提交的订单问题反馈' }).then(() => wx.showToast({ title: '反馈已提交', icon: 'none' })).catch((error: Error) => wx.showToast({ title: error.message || '提交失败', icon: 'none' })) } })

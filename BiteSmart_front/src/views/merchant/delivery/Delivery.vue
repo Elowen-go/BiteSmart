@@ -10,19 +10,23 @@ const activeStatus = ref<number | 'all'>('all')
 
 const statusOptions = [
   { label: '全部', value: 'all' as const },
-  { label: '待分配', value: 0 },
-  { label: '待取餐', value: 1 },
-  { label: '配送中', value: 2 },
-  { label: '已送达', value: 3 },
-  { label: '异常', value: 4 }
+  { label: '待接单', value: 10 },
+  { label: '待取餐', value: 20 },
+  { label: '已取餐', value: 30 },
+  { label: '配送中', value: 40 },
+  { label: '已送达', value: 50 },
+  { label: '异常', value: 60 },
+  { label: '已取消', value: 70 }
 ]
 
 const statusConfig: Record<number, { label: string; tag: 'success' | 'warning' | 'primary' | 'info' | 'danger'; className: string }> = {
-  0: { label: '待分配', tag: 'info', className: 'muted' },
-  1: { label: '待取餐', tag: 'primary', className: 'pickup' },
-  2: { label: '配送中', tag: 'warning', className: 'delivery' },
-  3: { label: '已送达', tag: 'success', className: 'done' },
-  4: { label: '异常', tag: 'danger', className: 'danger' }
+  10: { label: '待接单', tag: 'info', className: 'muted' },
+  20: { label: '待取餐', tag: 'primary', className: 'pickup' },
+  30: { label: '已取餐', tag: 'primary', className: 'pickup' },
+  40: { label: '配送中', tag: 'warning', className: 'delivery' },
+  50: { label: '已送达', tag: 'success', className: 'done' },
+  60: { label: '异常', tag: 'danger', className: 'danger' },
+  70: { label: '已取消', tag: 'info', className: 'muted' }
 }
 
 const filteredTaskList = computed(() => {
@@ -33,10 +37,10 @@ const filteredTaskList = computed(() => {
 const taskStats = computed(() => {
   const countByStatus = (status: number) => taskList.value.filter((item) => item.taskStatus === status).length
   return [
-    { label: '待取餐', value: countByStatus(1), status: 1, hint: '出餐后等待骑手' },
-    { label: '配送中', value: countByStatus(2), status: 2, hint: '关注送达进度' },
-    { label: '异常', value: countByStatus(4), status: 4, hint: '需要及时处理' },
-    { label: '已送达', value: countByStatus(3), status: 3, hint: '今日完成配送' }
+    { label: '待取餐', value: countByStatus(20), status: 20, hint: '出餐后等待骑手' },
+    { label: '配送中', value: countByStatus(40), status: 40, hint: '关注送达进度' },
+    { label: '异常', value: countByStatus(60), status: 60, hint: '需要及时处理' },
+    { label: '已送达', value: countByStatus(50), status: 50, hint: '今日完成配送' }
   ]
 })
 

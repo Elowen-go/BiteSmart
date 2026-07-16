@@ -35,6 +35,14 @@
           AND status = 10 AND stock &lt;= min_stock_warning
     </select>
 
+    <select id="countLowStockByMerchantId" resultType="long">
+        SELECT COUNT(*) FROM dish
+        WHERE merchant_id = #{merchantId}
+          AND (deleted = 0 OR deleted IS NULL)
+          AND status = 10
+          AND stock &lt;= min_stock_warning
+    </select>
+
     <!-- 查上架且在售的菜品（status=10 且 stock > 0） -->
     <select id="findAvailable" resultType="com.ws.bitesmart.entity.dish.Dish">
         SELECT <include refid="BaseColumns"/>

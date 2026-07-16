@@ -3,12 +3,14 @@ import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { getReviewList, updateReviewStatus } from '../../../api/admin/reviews'
 import { resolveFileUrl } from '../../../utils/fileUrl'
+import ListState from '../../../components/common/ListState.vue'
 
 const loading = ref(false)
 const tableData = ref<any[]>([])
 const total = ref(0)
 const pageNum = ref(1)
 const pageSize = ref(10)
+const loadError = ref('')
 const detailVisible = ref(false)
 const detailData = ref<any>(null)
 
@@ -24,13 +26,17 @@ const openDetail = (row: any) => { detailData.value = row; detailVisible.value =
 
 const loadData = async () => {
   loading.value = true
+  loadError.value = ''
   try {
     const res = await getReviewList({ pageNum: pageNum.value, pageSize: pageSize.value })
     if (res.code === 200) {
       tableData.value = res.data.list || []
       total.value = res.data.total || 0
+    } else {
+      loadError.value = res.message || '评价列表暂时无法获取'
     }
   } catch (err) {
+    loadError.value = '请检查网络连接后重试'
     console.error('获取评价列表失败', err)
   } finally {
     loading.value = false
@@ -63,7 +69,8 @@ onMounted(loadData)
         <h3>评论管理</h3>
       </div>
       <div style="padding-top: 20px;">
-        <el-table :data="tableData" v-loading="loading" border stripe style="width: 100%">
+        <ListState :loading="loading" :error="loadError" :empty="!tableData.length" empty-text="暂无评价记录" @retry="loadData">
+        <el-table :data="tableData" border stripe style="width: 100%">
           <el-table-column label="评分" width="190">
             <template #default="{ row }">
               <div class="rating-cell">
@@ -108,6 +115,7 @@ onMounted(loadData)
             </template>
           </el-table-column>
         </el-table>
+        </ListState>
         <div style="display:flex;justify-content:flex-end;padding-top:16px;">
           <el-pagination
             v-model:current-page="pageNum"

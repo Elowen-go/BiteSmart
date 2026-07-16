@@ -9,12 +9,23 @@ export interface Order {
   totalAmount: number
   discountAmount: number
   payAmount: number
+  couponId?: number
+  couponDiscount?: number
+  platformSubsidy?: number
   payMethod: number
+  payTime?: string
   orderStatus: number
   deliveryStatus: number
+  refundId?: number
+  lockStockTime?: string
+  autoCancelTime?: string
+  channel?: string
   deliveryAddress: string
   createTime: string
   updateTime: string
+  cancelTime?: string
+  cancelReason?: string
+  finishTime?: string
 }
 
 export const getOrderList = (params?: {

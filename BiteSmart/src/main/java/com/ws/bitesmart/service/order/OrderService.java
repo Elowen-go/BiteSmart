@@ -241,6 +241,9 @@ public class OrderService {
         order.setPayAmount(totalAmount);
         order.setOrderStatus(10); // 待支付
         order.setDeliveryStatus(0);
+        order.setChannel("PC");
+        order.setLockStockTime(LocalDateTime.now());
+        order.setAutoCancelTime(LocalDateTime.now().plusMinutes(30));
         order.setDeliveryAddress(address);
         order.setReceiverName(receiverName);
         order.setReceiverPhone(receiverPhone);
@@ -453,6 +456,7 @@ public class OrderService {
     public PageInfo<Orders> getOrdersByUser(Long userId, int pageNum, int pageSize) {
         PageHelper.startPage(pageNum, pageSize);
         List<Orders> list = ordersMapper.findByUserId(userId);
+        batchLoadOrderItems(list);
         return new PageInfo<>(list);
     }
 

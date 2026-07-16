@@ -1,0 +1,12 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.getCombo = exports.getCombos = exports.getDish = exports.getDishes = void 0;
+const request_1 = require("../utils/request");
+const getDishes = (params = {}) => (0, request_1.request)({ url: '/dishes', data: params, needAuth: false });
+exports.getDishes = getDishes;
+const getDish = (id) => (0, request_1.request)({ url: `/dishes/${id}`, needAuth: false });
+exports.getDish = getDish;
+const getCombos = (params = {}) => (0, request_1.request)({ url: '/combos', data: params, needAuth: false });
+exports.getCombos = getCombos;
+const getCombo = (id) => (0, request_1.request)({ url: `/combos/${id}`, needAuth: false });
+exports.getCombo = getCombo;

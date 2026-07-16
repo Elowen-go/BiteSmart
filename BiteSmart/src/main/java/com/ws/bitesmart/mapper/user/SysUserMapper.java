@@ -21,6 +21,12 @@ public interface SysUserMapper {
      */
     SysUser findByUsername(@Param("username") String username);
 
+    /** 按用户名或手机号查询登录账号。 */
+    SysUser findByUsernameOrPhone(@Param("account") String account);
+
+    /** 按手机号查询账号，用于完善账号时的唯一性校验。 */
+    SysUser findByPhone(@Param("phone") String phone);
+
     /**
      * 根据ID查用户
      */
@@ -37,6 +43,12 @@ public interface SysUserMapper {
      * 只更新不为空的字段（动态SQL）
      */
     int updateById(SysUser user);
+
+    /** 更新微信临时账号的用户名、手机号和密码。 */
+    int updateCredentials(@Param("id") Long id,
+                          @Param("username") String username,
+                          @Param("phone") String phone,
+                          @Param("password") String password);
 
     /**
      * 更新最后登录时间

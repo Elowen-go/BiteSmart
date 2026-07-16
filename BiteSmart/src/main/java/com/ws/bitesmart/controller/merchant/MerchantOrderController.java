@@ -8,6 +8,7 @@ import com.ws.bitesmart.security.LoginUser;
 import com.ws.bitesmart.service.order.OrderService;
 import com.ws.bitesmart.mapper.merchant.MerchantMapper;
 import com.ws.bitesmart.mapper.user.SysUserMapper;
+import com.ws.bitesmart.mapper.order.OrderStatusLogMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -37,6 +38,7 @@ public class MerchantOrderController {
     private final OrderService orderService;
     private final SysUserMapper sysUserMapper;
     private final MerchantMapper merchantMapper;
+    private final OrderStatusLogMapper orderStatusLogMapper;
 
     /** 商家收到的订单列表 */
     @GetMapping
@@ -62,6 +64,7 @@ public class MerchantOrderController {
         result.put("items", items);
         result.put("buyer", sysUserMapper.findById(order.getUserId()));
         result.put("merchant", merchantMapper.findById(order.getMerchantId()));
+        result.put("statusTimeline", orderStatusLogMapper.findByOrderId(id));
         return ResultVO.success(result);
     }
 

@@ -5,6 +5,7 @@ import { Upload, Delete } from '@element-plus/icons-vue'
 import { getProfile, updateProfile, uploadFile } from '../../../api/merchant/profile'
 import { useUserStore } from '../../../stores/user'
 import { setUserInfo } from '../../../utils/auth'
+import { resolveFileUrl } from '../../../utils/fileUrl'
 
 const loading = ref(false)
 const form = ref({
@@ -28,7 +29,7 @@ const fetchProfile = async () => {
       form.value.phone = data.phone || ''
       form.value.email = data.email || ''
       if (form.value.avatar) {
-        imageUrl.value = form.value.avatar.startsWith('http') ? form.value.avatar : `/api/files/download${form.value.avatar}`
+        imageUrl.value = resolveFileUrl(form.value.avatar)
       }
     }
   } catch (e) {

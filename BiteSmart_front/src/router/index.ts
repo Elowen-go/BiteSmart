@@ -30,12 +30,18 @@ const router = createRouter({
         },
         {
           path: 'statistics',
-          name: 'AdminStatistics',
-          component: () => import('../views/admin/Statistics.vue'),
+            name: 'AdminStatistics',
+            component: () => import('../views/admin/Statistics.vue'),
           meta: { title: '数据统计', subtitle: '平台经营数据' }
         },
-        {
-          path: 'orders',
+          {
+            path: 'finance',
+            name: 'AdminFinance',
+            component: () => import('../views/admin/finance/Finance.vue'),
+            meta: { title: '商家结算', subtitle: '资金账户与结算' }
+          },
+          {
+            path: 'orders',
           name: 'AdminOrders',
           component: () => import('../views/admin/orders/OrderList.vue'),
           meta: { title: '订单管理', subtitle: '订单列表' }
@@ -206,10 +212,16 @@ const router = createRouter({
         },
         {
           path: 'profile',
-          name: 'MerchantProfile',
-          component: () => import('../views/merchant/profile/Profile.vue'),
+            name: 'MerchantProfile',
+            component: () => import('../views/merchant/profile/Profile.vue'),
           meta: { title: '个人中心', subtitle: '我的信息' }
-        }
+          },
+          {
+            path: 'finance',
+            name: 'MerchantFinance',
+            component: () => import('../views/merchant/finance/Finance.vue'),
+            meta: { title: '资金中心', subtitle: '收入与结算' }
+          }
       ]
     },
     {

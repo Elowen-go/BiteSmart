@@ -8,6 +8,7 @@ import { getMerchantIngredientList, getMerchantIngredientCategories } from '../.
 import { getCategoryList } from '../../../api/merchant/categories'
 import type { Dish } from '../../../api/merchant/dishes'
 import type { DishCategory } from '../../../api/merchant/categories'
+import { resolveFileUrl } from '../../../utils/fileUrl'
 
 const loading = ref(false)
 const dishList = ref<Dish[]>([])
@@ -140,9 +141,7 @@ const handleEdit = async (row: any) => {
         carbs: detail.carbs || 0
       }
       if (form.value.dishImage) {
-        imagePreview.value = form.value.dishImage.startsWith('http') 
-          ? form.value.dishImage 
-          : `/api/files/download${form.value.dishImage}`
+        imagePreview.value = resolveFileUrl(form.value.dishImage)
       } else {
         imagePreview.value = ''
       }
@@ -234,7 +233,7 @@ const handleSubmit = async () => {
       const uploadRes = await uploadFile(selectedImageFile.value, 'dish_image')
       if (uploadRes.code === 200) {
         form.value.dishImage = uploadRes.data.url
-        imagePreview.value = `/api/files/download${uploadRes.data.url}`
+        imagePreview.value = resolveFileUrl(uploadRes.data.url)
         selectedImageFile.value = null
       } else {
         ElMessage.error(uploadRes.message || '图片上传失败')
@@ -324,7 +323,7 @@ const formatAmount = (amount: number | string | undefined) => {
 
 const previewImage = (imageUrl: string) => {
   if (!imageUrl) return
-  const fullUrl = imageUrl.startsWith('http') ? imageUrl : `/api/files/download${imageUrl}`
+  const fullUrl = resolveFileUrl(imageUrl)
   showImagePreview.value = true
   previewImageUrl.value = fullUrl
 }
@@ -469,7 +468,7 @@ onMounted(() => {
               <div class="table-dish-image">
                 <img 
                   v-if="row.dishImage" 
-                  :src="row.dishImage.startsWith('http') ? row.dishImage : `/api/files/download${row.dishImage}`" 
+                  :src="resolveFileUrl(row.dishImage)"
                   alt="菜品图片"
                   @click="previewImage(row.dishImage)"
                 />
@@ -690,7 +689,7 @@ onMounted(() => {
           <div class="view-image-container">
             <img 
               v-if="viewForm.dishImage" 
-              :src="viewForm.dishImage.startsWith('http') ? viewForm.dishImage : `/api/files/download${viewForm.dishImage}`" 
+              :src="resolveFileUrl(viewForm.dishImage)"
               alt="菜品图片"
               class="view-image"
             />

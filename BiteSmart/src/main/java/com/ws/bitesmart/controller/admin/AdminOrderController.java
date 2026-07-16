@@ -9,6 +9,7 @@ import com.ws.bitesmart.mapper.delivery.DeliveryTaskMapper;
 import com.ws.bitesmart.mapper.merchant.MerchantMapper;
 import com.ws.bitesmart.mapper.order.OrderItemMapper;
 import com.ws.bitesmart.mapper.order.OrdersMapper;
+import com.ws.bitesmart.mapper.order.OrderStatusLogMapper;
 import com.ws.bitesmart.mapper.user.SysUserMapper;
 import com.ws.bitesmart.service.order.OrderService;
 import lombok.RequiredArgsConstructor;
@@ -42,6 +43,7 @@ public class AdminOrderController {
     private final OrderItemMapper orderItemMapper;
     private final SysUserMapper sysUserMapper;
     private final MerchantMapper merchantMapper;
+    private final OrderStatusLogMapper orderStatusLogMapper;
 
     /**
      * 所有用户订单（分页）
@@ -77,8 +79,19 @@ public class AdminOrderController {
         result.put("buyer", sysUserMapper.findById(order.getUserId()));
         result.put("merchant", merchantMapper.findById(order.getMerchantId()));
         List<Map<String, Object>> timeline = new ArrayList<>();
-        addTimeline(timeline, "订单创建", order.getCreateTime());
-        addTimeline(timeline, "完成支付", order.getPayTime());
+        orderStatusLogMapper.findByOrderId(id).forEach(log -> {
+            Map<String, Object> item = new HashMap<>();
+            item.put("label", statusLabel(log.getToStatus()));
+            item.put("fromStatus", log.getFromStatus());
+            item.put("toStatus", log.getToStatus());
+            item.put("time", log.getCreateTime());
+            item.put("reason", log.getReason());
+            item.put("operatorType", log.getOperatorType());
+            timeline.add(item);
+        });
+        if (timeline.isEmpty()) {
+            addTimeline(timeline, "订单创建", order.getCreateTime());
+        }
         if (order.getDeliveryTask() != null) {
             addTimeline(timeline, "配送员取餐", order.getDeliveryTask().getPickupTime());
             addTimeline(timeline, "配送送达", order.getDeliveryTask().getDeliverTime());
@@ -98,6 +111,21 @@ public class AdminOrderController {
         if (time == null) return;
         Map<String, Object> item = new HashMap<>();
         item.put("label", label); item.put("time", time); timeline.add(item);
+    }
+
+    private String statusLabel(Integer status) {
+        if (status == null) return "状态变更";
+        return switch (status) {
+            case 10 -> "待支付";
+            case 20 -> "待接单";
+            case 30 -> "备餐中";
+            case 40 -> "配送中";
+            case 50 -> "已完成";
+            case 60 -> "已取消";
+            case 70 -> "退款中";
+            case 80 -> "已退款";
+            default -> "状态变更";
+        };
     }
 
     @PutMapping("/{id}/cancel")

@@ -3,9 +3,11 @@ import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getConfigList, addConfig, updateConfig, deleteConfig } from '../../../api/admin/system'
 import type { SysConfig } from '../../../api/admin/system'
+import ListState from '../../../components/common/ListState.vue'
 
 const loading = ref(false)
 const tableData = ref<any[]>([])
+const loadError = ref('')
 
 const dialogVisible = ref(false)
 const dialogTitle = ref('')
@@ -20,12 +22,16 @@ const isEdit = ref(false)
 
 const loadData = async () => {
   loading.value = true
+  loadError.value = ''
   try {
     const res = await getConfigList()
     if (res.code === 200) {
       tableData.value = res.data.list || res.data || []
+    } else {
+      loadError.value = res.message || '系统配置暂时无法获取'
     }
   } catch (err) {
+    loadError.value = '请检查网络连接后重试'
     console.error('获取配置列表失败', err)
   } finally {
     loading.value = false
@@ -102,7 +108,8 @@ onMounted(loadData)
         <el-button type="primary" @click="handleAdd">新增配置</el-button>
       </div>
       <div style="padding-top: 20px;">
-        <el-table :data="tableData" v-loading="loading" border stripe style="width: 100%">
+        <ListState :loading="loading" :error="loadError" :empty="!tableData.length" empty-text="暂无系统配置" @retry="loadData">
+        <el-table :data="tableData" border stripe style="width: 100%">
           <el-table-column prop="configKey" label="配置键" min-width="160" />
           <el-table-column prop="configValue" label="配置值" min-width="200" show-overflow-tooltip />
           <el-table-column prop="description" label="描述" min-width="160" show-overflow-tooltip />
@@ -126,6 +133,7 @@ onMounted(loadData)
             </template>
           </el-table-column>
         </el-table>
+        </ListState>
       </div>
     </div>
 

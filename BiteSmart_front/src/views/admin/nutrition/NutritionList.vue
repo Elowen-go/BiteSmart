@@ -3,9 +3,11 @@ import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { listNutrition, addNutrition, updateNutrition, deleteNutrition } from '../../../api/admin/nutrition'
 import type { NutritionStandard } from '../../../api/admin/nutrition'
+import ListState from '../../../components/common/ListState.vue'
 
 const loading = ref(false)
 const nutritionList = ref<NutritionStandard[]>([])
+const loadError = ref('')
 const dialogVisible = ref(false)
 const dialogTitle = ref('')
 const editingId = ref<number | null>(null)
@@ -22,12 +24,16 @@ const form = ref({
 
 const fetchList = async () => {
   loading.value = true
+  loadError.value = ''
   try {
     const res = await listNutrition()
     if (res.code === 200) {
       nutritionList.value = res.data || []
+    } else {
+      loadError.value = res.message || '营养标准列表暂时无法获取'
     }
   } catch (e) {
+    loadError.value = '请检查网络连接后重试'
     console.error('获取营养标准列表失败', e)
   } finally {
     loading.value = false
@@ -113,7 +119,8 @@ onMounted(fetchList)
         <button class="btn btn-primary" @click="handleAdd">新增标准</button>
       </div>
       <div style="padding-top: 20px;">
-        <el-table :data="nutritionList" border v-loading="loading">
+        <ListState :loading="loading" :error="loadError" :empty="!nutritionList.length" empty-text="暂无营养标准" @retry="fetchList">
+        <el-table :data="nutritionList" border>
           <el-table-column prop="standardName" label="标准名称" min-width="160" />
           <el-table-column prop="description" label="描述" min-width="200" show-overflow-tooltip />
           <el-table-column label="类型" width="120">
@@ -135,6 +142,7 @@ onMounted(fetchList)
             </template>
           </el-table-column>
         </el-table>
+        </ListState>
       </div>
     </div>
 

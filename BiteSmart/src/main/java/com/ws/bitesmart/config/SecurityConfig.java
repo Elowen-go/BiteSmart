@@ -70,6 +70,7 @@ public class SecurityConfig {
      */
     private static final String[] WHITE_LIST = {
             "/api/auth/**",         // 登录、注册、刷新Token
+            "/api/payment/alipay/notify", // 支付宝异步通知
             "/api/merchant/auth/**", // 商家入驻申请（普通用户也可访问）
             "/api/files/**",        // 文件访问（上传/下载/预览）
             "/uploads/**",          // 静态资源文件（图片等）

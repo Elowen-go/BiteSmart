@@ -3,9 +3,11 @@ import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { listAiRules, addAiRule, updateAiRule, deleteAiRule } from '../../../api/admin/ai-rule'
 import type { AiRecommendRule } from '../../../api/admin/ai-rule'
+import ListState from '../../../components/common/ListState.vue'
 
 const loading = ref(false)
 const ruleList = ref<AiRecommendRule[]>([])
+const loadError = ref('')
 const dialogVisible = ref(false)
 const dialogTitle = ref('')
 const editingId = ref<number | null>(null)
@@ -21,12 +23,16 @@ const form = ref({
 
 const fetchList = async () => {
   loading.value = true
+  loadError.value = ''
   try {
     const res = await listAiRules()
     if (res.code === 200) {
       ruleList.value = res.data || []
+    } else {
+      loadError.value = res.message || 'AI规则列表暂时无法获取'
     }
   } catch (e) {
+    loadError.value = '请检查网络连接后重试'
     console.error('获取AI规则列表失败', e)
   } finally {
     loading.value = false
@@ -123,7 +129,8 @@ onMounted(fetchList)
         <button class="btn btn-primary" @click="handleAdd">新增规则</button>
       </div>
       <div style="padding-top: 20px;">
-        <el-table :data="ruleList" border v-loading="loading">
+        <ListState :loading="loading" :error="loadError" :empty="!ruleList.length" empty-text="暂无AI规则" @retry="fetchList">
+        <el-table :data="ruleList" border>
           <el-table-column prop="ruleName" label="规则名称" min-width="160" />
           <el-table-column prop="description" label="描述" min-width="200" show-overflow-tooltip />
           <el-table-column label="规则类型" width="120">
@@ -149,6 +156,7 @@ onMounted(fetchList)
             </template>
           </el-table-column>
         </el-table>
+        </ListState>
       </div>
     </div>
 

@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { getOrderList, getOrderDetail, cancelOrder } from '../../../api/user/orders'
+import { getOrderList, getOrderDetail, cancelOrder, payOrder } from '../../../api/user/orders'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { ArrowRight, Close, Location, Van, View } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
+import { resolveFileUrl } from '../../../utils/fileUrl'
 
 const router = useRouter()
 const loading = ref(false)
@@ -19,7 +20,18 @@ const formatDate = (value: any) => value ? String(value).replace('T', ' ').slice
 const orderStatus = (order: any) => statuses[Number(order.orderStatus)] || '状态未知'
 const statusTone = (order: any) => statusClass[Number(order.orderStatus)] || 'muted'
 const itemCount = (order: any) => Number(order.itemCount || order.totalQuantity || order.quantity || 0)
-const itemSummary = (order: any) => order.itemSummary || order.summary || (itemCount(order) ? `${itemCount(order)} 件商品` : '订单商品')
+const itemSummary = (order: any) => {
+  if (order.itemSummary || order.summary) return order.itemSummary || order.summary
+  const items = order.items || order.orderItems || []
+  const names = items
+    .map((item: any) => item.snapshotName || item.name || item.dishName || item.comboName)
+    .filter(Boolean)
+  if (names.length) {
+    const visibleNames = names.slice(0, 2).join('、')
+    return names.length > 2 ? `${visibleNames} 等${names.length}项` : visibleNames
+  }
+  return itemCount(order) ? `${itemCount(order)} 件商品` : '订单商品'
+}
 const detailItems = computed(() => detail.value?.items || detail.value?.orderItems || [])
 
 const fetchOrders = async () => {
@@ -47,6 +59,28 @@ const cancel = async (row: any) => {
   } catch {}
 }
 const openDelivery = (row: any) => router.push(`/user/delivery/${row.id}`)
+const pay = async (row: any) => {
+  const paymentWindow = window.open('', '_blank')
+  try {
+    const res = await payOrder(row.id, 10)
+    const payload = res.data || {}
+    if (payload.paymentMode === 'alipay-sandbox' && payload.form) {
+      if (!paymentWindow) {
+        ElMessage.warning('请允许浏览器打开支付页面')
+        return
+      }
+      paymentWindow.document.write(payload.form)
+      paymentWindow.document.close()
+    } else {
+      paymentWindow?.close()
+      ElMessage.success(payload.message || '支付成功')
+      await fetchOrders()
+    }
+  } catch {
+    paymentWindow?.close()
+    ElMessage.error('发起支付失败，请稍后重试')
+  }
+}
 onMounted(fetchOrders)
 </script>
 
@@ -54,17 +88,17 @@ onMounted(fetchOrders)
   <div class="orders-page">
     <header class="orders-intro"><div><span class="eyebrow">订单记录</span><h1>我的订单</h1><p>查看每一份餐食的状态，安心等待美味送达。</p></div><div class="order-count"><strong>{{ total }}</strong><span>笔订单</span></div></header>
     <div v-loading="loading" class="order-list">
-      <article v-for="order in orders" :key="order.id" class="order-card">
+        <article v-for="order in orders" :key="order.id" class="order-card">
         <div class="order-card-head"><div class="order-meta"><span class="status-dot" :class="statusTone(order)"></span><strong>{{ orderStatus(order) }}</strong><span>{{ formatDate(order.createTime) }}</span></div><span class="order-number">订单号 {{ order.orderNo }}</span></div>
         <div class="order-card-body"><div class="order-summary"><div class="summary-mark"><Location /></div><div><strong>{{ itemSummary(order) }}</strong><p>{{ order.receiverName || '收货人未设置' }} · {{ order.deliveryAddress || '收货地址未设置' }}</p></div></div><div class="order-amount"><span>实付金额</span><strong>¥{{ order.payAmount || order.totalAmount || 0 }}</strong></div></div>
-        <div class="order-card-foot"><span class="order-hint">{{ Number(order.orderStatus) === 50 ? '感谢你的每一次选择' : '订单状态会随配送进度更新' }}</span><div class="order-actions"><el-button text @click="showDetail(order)"><View />查看详情</el-button><el-button v-if="Number(order.orderStatus) === 40" text type="primary" @click="openDelivery(order)"><Van />配送跟踪</el-button><el-button v-if="Number(order.orderStatus) === 10 || Number(order.orderStatus) === 20" text type="danger" @click="cancel(order)"><Close />取消订单</el-button></div></div>
+        <div class="order-card-foot"><span class="order-hint">{{ Number(order.orderStatus) === 50 ? '感谢你的每一次选择' : '订单状态会随配送进度更新' }}</span><div class="order-actions"><el-button v-if="Number(order.orderStatus) === 10" text type="primary" @click="pay(order)">去支付</el-button><el-button text @click="showDetail(order)"><View />查看详情</el-button><el-button v-if="Number(order.orderStatus) === 40" text type="primary" @click="openDelivery(order)"><Van />配送跟踪</el-button><el-button v-if="Number(order.orderStatus) === 10 || Number(order.orderStatus) === 20" text type="danger" @click="cancel(order)"><Close />取消订单</el-button></div></div>
       </article>
       <div v-if="!loading && !orders.length" class="order-empty"><div class="empty-mark"><Van /></div><h2>还没有订单</h2><p>去挑选一份喜欢的餐食，开启第一笔订单。</p><el-button type="primary" @click="router.push('/user/dishes')">去逛逛菜品 <ArrowRight /></el-button></div>
     </div>
     <div v-if="total" class="pager"><el-pagination v-model:current-page="currentPage" v-model:page-size="pageSize" :total="total" :page-sizes="[10, 20, 50]" layout="total, sizes, prev, pager, next" @current-change="fetchOrders" @size-change="fetchOrders" /></div>
     <el-dialog v-model="detailVisible" class="order-detail-dialog" width="700px" :show-close="true">
       <template #header><div class="detail-dialog-head"><div><span class="eyebrow">订单详情</span><h2>{{ detail?.orderNo }}</h2></div><span class="detail-status" :class="statusTone(detail || {})">{{ detail ? orderStatus(detail) : '' }}</span></div></template>
-      <template v-if="detail"><div class="detail-section"><div class="detail-section-title"><span>订单商品</span><small>{{ detailItems.length }} 项</small></div><div v-if="detailItems.length" class="detail-items"><div v-for="item in detailItems" :key="item.id" class="detail-item"><div class="item-image"><img v-if="item.snapshotImage || item.dishImage || item.comboImage" :src="item.snapshotImage || item.dishImage || item.comboImage" alt="" /><span v-else>餐</span></div><div class="item-copy"><strong>{{ item.snapshotName || item.name || item.dishName || item.comboName || '订单商品' }}</strong><span>数量 × {{ item.quantity || 1 }}</span></div><strong class="item-price">¥{{ item.snapshotPrice || item.price || 0 }}</strong></div></div><p v-else class="detail-empty">商品明细暂未返回</p></div><div class="detail-section"><div class="detail-section-title"><span>配送信息</span></div><div class="delivery-info"><div><Location /><span>{{ detail.receiverName || '收货人未设置' }} {{ detail.receiverPhone || '' }}</span></div><p>{{ detail.deliveryAddress || '收货地址未设置' }}</p></div></div><div class="detail-total"><span>实付金额</span><strong>¥{{ detail.payAmount || detail.totalAmount || 0 }}</strong></div><div class="detail-note"><span>下单时间</span><strong>{{ formatDate(detail.createTime) }}</strong><span>备注</span><strong>{{ detail.remark || '无备注' }}</strong></div></template>
+      <template v-if="detail"><div class="detail-section"><div class="detail-section-title"><span>订单商品</span><small>{{ detailItems.length }} 项</small></div><div v-if="detailItems.length" class="detail-items"><div v-for="item in detailItems" :key="item.id" class="detail-item"><div class="item-image"><img v-if="item.snapshotImage || item.dishImage || item.comboImage" :src="resolveFileUrl(item.snapshotImage || item.dishImage || item.comboImage)" alt="" /><span v-else>餐</span></div><div class="item-copy"><strong>{{ item.snapshotName || item.name || item.dishName || item.comboName || '订单商品' }}</strong><span>数量 × {{ item.quantity || 1 }}</span></div><strong class="item-price">¥{{ item.snapshotPrice || item.price || 0 }}</strong></div></div><p v-else class="detail-empty">商品明细暂未返回</p></div><div class="detail-section"><div class="detail-section-title"><span>配送信息</span></div><div class="delivery-info"><div><Location /><span>{{ detail.receiverName || '收货人未设置' }} {{ detail.receiverPhone || '' }}</span></div><p>{{ detail.deliveryAddress || '收货地址未设置' }}</p></div></div><div class="detail-total"><span>实付金额</span><strong>¥{{ detail.payAmount || detail.totalAmount || 0 }}</strong></div><div class="detail-note"><span>下单时间</span><strong>{{ formatDate(detail.createTime) }}</strong><span>备注</span><strong>{{ detail.remark || '无备注' }}</strong></div><div v-if="detail.statusTimeline?.length" class="detail-section"><div class="detail-section-title"><span>状态流转记录</span></div><el-timeline><el-timeline-item v-for="(event, index) in detail.statusTimeline" :key="index" :timestamp="formatDate(event.createTime || event.time)">{{ statuses[event.toStatus] || "状态变更" }}<span v-if="event.reason">：{{ event.reason }}</span></el-timeline-item></el-timeline></div><div class="detail-note"><span>订单金额</span><strong>¥{{ detail.totalAmount || 0 }}</strong><span>优惠金额</span><strong>¥{{ detail.discountAmount || 0 }}</strong><span>支付时间</span><strong>{{ formatDate(detail.payTime) }}</strong><span>支付方式</span><strong>{{ detail.payMethod === 10 ? "支付宝" : detail.payMethod === 20 ? "微信" : "未支付" }}</strong><span>下单渠道</span><strong>{{ detail.channel || "PC" }}</strong><span>完成时间</span><strong>{{ formatDate(detail.finishTime) }}</strong></div></template>
     </el-dialog>
   </div>
 </template>
