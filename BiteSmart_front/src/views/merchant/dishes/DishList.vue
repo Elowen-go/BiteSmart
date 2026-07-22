@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Upload, Delete, Plus, Minus, Refresh, Search } from '@element-plus/icons-vue'
+import { Upload, Delete, Plus, Minus, Refresh, Search, ArrowDown } from '@element-plus/icons-vue'
 import { getDishList, addDish, updateDish, deleteDish, getDishDetail } from '../../../api/merchant/dishes'
 import { uploadFile } from '../../../api/merchant/shop'
 import { getMerchantIngredientList, getMerchantIngredientCategories } from '../../../api/merchant/ingredients'
@@ -9,6 +9,7 @@ import { getCategoryList } from '../../../api/merchant/categories'
 import type { Dish } from '../../../api/merchant/dishes'
 import type { DishCategory } from '../../../api/merchant/categories'
 import { resolveFileUrl } from '../../../utils/fileUrl'
+import { LOW_STOCK_THRESHOLD } from '../../../constants/merchant'
 
 const loading = ref(false)
 const dishList = ref<Dish[]>([])
@@ -17,10 +18,10 @@ const page = ref(1)
 const size = ref(10)
 const dialogVisible = ref(false)
 const dialogTitle = ref('')
+const dialogMode = ref<'edit' | 'view'>('edit')
 const formRef = ref()
 const editingId = ref<number | null>(null)
-const viewDialogVisible = ref(false)
-const viewForm = ref<any>({})
+const formCreateTime = ref('')
 const searchKeyword = ref('')
 const statusFilter = ref<number | 'all'>('all')
 const categoryList = ref<DishCategory[]>([])
@@ -64,17 +65,19 @@ const filteredDishList = computed(() => {
   })
 })
 
+// TODO(P0-统计口径): 以下统计基于当前页数据，后端暂无菜品聚合接口；
+// 已用"本页"字样弱化误导，后续应换后端聚合统计
 const dishStats = computed(() => {
   const onSale = dishList.value.filter((item) => item.status === 10).length
   const offSale = dishList.value.filter((item) => item.status !== 10).length
-  const lowStock = dishList.value.filter((item) => Number(item.stock || 0) <= 5).length
+  const lowStock = dishList.value.filter((item) => Number(item.stock || 0) <= LOW_STOCK_THRESHOLD).length
   const noNutrition = dishList.value.filter((item) => !item.calories && !item.protein && !item.fat && !item.carbs).length
 
   return [
-    { label: '上架菜品', value: onSale, hint: '当前可售', className: 'success' },
-    { label: '下架菜品', value: offSale, hint: '暂不售卖', className: 'muted' },
-    { label: '低库存', value: lowStock, hint: '库存不高于 5', className: 'warning' },
-    { label: '待补营养', value: noNutrition, hint: '缺少营养数据', className: 'danger' }
+    { label: '本页上架菜品', value: onSale, hint: '当前可售', className: 'success' },
+    { label: '本页下架菜品', value: offSale, hint: '暂不售卖', className: 'muted' },
+    { label: '本页低库存', value: lowStock, hint: `库存不高于 ${LOW_STOCK_THRESHOLD}`, className: 'warning' },
+    { label: '本页待补营养', value: noNutrition, hint: '缺少营养数据', className: 'danger' }
   ]
 })
 
@@ -110,7 +113,9 @@ const fetchCategories = async () => {
 const handleAdd = () => {
   editingId.value = null
   dialogTitle.value = '新增菜品'
+  dialogMode.value = 'edit'
   form.value = { dishName: '', price: 0, stock: 0, status: 10, description: '', categoryId: 0, dishImage: '', calories: 0, protein: 0, fat: 0, carbs: 0 }
+  formCreateTime.value = ''
   imagePreview.value = ''
   selectedImageFile.value = null
   selectedIngredients.value = []
@@ -118,13 +123,10 @@ const handleAdd = () => {
   fetchIngredients()
 }
 
-const handleEdit = async (row: any) => {
-  editingId.value = row.id
-  dialogTitle.value = '编辑菜品'
-  
-  // 获取菜品详情（包含关联的食材）
+// 拉取菜品详情并灌入表单（编辑 / 查看共用）
+const loadDishDetail = async (id: number) => {
   try {
-    const res = await getDishDetail(row.id)
+    const res = await getDishDetail(id)
     if (res.code === 200) {
       const detail = res.data
       form.value = {
@@ -140,12 +142,13 @@ const handleEdit = async (row: any) => {
         fat: detail.fat || 0,
         carbs: detail.carbs || 0
       }
+      formCreateTime.value = detail.createTime || ''
       if (form.value.dishImage) {
         imagePreview.value = resolveFileUrl(form.value.dishImage)
       } else {
         imagePreview.value = ''
       }
-      
+
       // 加载菜品关联的食材
       if (detail.ingredients && detail.ingredients.length > 0) {
         selectedIngredients.value = detail.ingredients.map((item: any) => ({
@@ -156,30 +159,40 @@ const handleEdit = async (row: any) => {
       } else {
         selectedIngredients.value = []
       }
+      return true
     }
   } catch (e) {
     console.error('获取菜品详情失败', e)
     ElMessage.error('获取菜品详情失败')
-    return
   }
-  
+  return false
+}
+
+const handleEdit = async (row: any) => {
+  editingId.value = row.id
+  dialogTitle.value = '编辑菜品'
+  dialogMode.value = 'edit'
+  const ok = await loadDishDetail(row.id)
+  if (!ok) return
   selectedImageFile.value = null
   dialogVisible.value = true
   fetchIngredients()
 }
 
 const handleView = async (row: any) => {
-  // 获取菜品详情（包含关联的食材）
-  try {
-    const res = await getDishDetail(row.id)
-    if (res.code === 200) {
-      viewForm.value = res.data
-      viewDialogVisible.value = true
-    }
-  } catch (e) {
-    console.error('获取菜品详情失败', e)
-    ElMessage.error('获取菜品详情失败')
-  }
+  editingId.value = null
+  dialogMode.value = 'view'
+  const ok = await loadDishDetail(row.id)
+  if (!ok) return
+  dialogVisible.value = true
+  fetchIngredients()
+}
+
+// 操作列"更多"下拉：查看 / 上下架 / 删除
+const handleRowCommand = (command: string, row: any) => {
+  if (command === 'view') handleView(row)
+  else if (command === 'toggle') handleToggleStatus(row)
+  else if (command === 'delete') handleDelete(row)
 }
 
 const handleDelete = (row: any) => {
@@ -313,23 +326,13 @@ const getCategoryName = (categoryId: number) => {
 
 const getStockTag = (stock: number) => {
   if (Number(stock || 0) <= 0) return { label: '售罄', type: 'danger' as const }
-  if (Number(stock || 0) <= 5) return { label: '低库存', type: 'warning' as const }
+  if (Number(stock || 0) <= LOW_STOCK_THRESHOLD) return { label: '低库存', type: 'warning' as const }
   return { label: '充足', type: 'success' as const }
 }
 
 const formatAmount = (amount: number | string | undefined) => {
   return Number(amount || 0).toFixed(2)
 }
-
-const previewImage = (imageUrl: string) => {
-  if (!imageUrl) return
-  const fullUrl = resolveFileUrl(imageUrl)
-  showImagePreview.value = true
-  previewImageUrl.value = fullUrl
-}
-
-const showImagePreview = ref(false)
-const previewImageUrl = ref('')
 
 const formatDateTime = (dateTime: string) => {
   if (!dateTime) return '-'
@@ -341,25 +344,6 @@ const formatDateTime = (dateTime: string) => {
   const minutes = String(date.getMinutes()).padStart(2, '0')
   return `${year}-${month}-${day} ${hours}:${minutes}`
 }
-
-// 计算查看详情的营养成分
-const calculateViewNutrition = computed(() => {
-  let calories = 0, protein = 0, fat = 0, carbs = 0
-  if (!viewForm.value.ingredients) return { calories, protein, fat, carbs }
-  
-  viewForm.value.ingredients.forEach((item: any) => {
-    // 从ingredientList查找食材信息
-    const ingredient = ingredientList.value.find((ing: any) => ing.id === item.ingredientId)
-    if (ingredient) {
-      const ratio = (item.weight || 0) / 100
-      calories += (ingredient.calories || 0) * ratio
-      protein += (ingredient.protein || 0) * ratio
-      fat += (ingredient.fat || 0) * ratio
-      carbs += (ingredient.carbs || 0) * ratio
-    }
-  })
-  return { calories, protein, fat, carbs }
-})
 
 // 获取食材列表和分类
 const fetchIngredients = async () => {
@@ -425,6 +409,7 @@ onMounted(() => {
     <div class="dish-page">
       <div class="page-head">
         <div>
+          <div class="en">DISHES</div>
           <h2>菜品管理</h2>
           <p>维护菜品图片、价格、库存、分类和营养信息</p>
         </div>
@@ -466,11 +451,13 @@ onMounted(() => {
           <el-table-column label="菜品图片" width="100">
             <template #default="{ row }">
               <div class="table-dish-image">
-                <img 
-                  v-if="row.dishImage" 
+                <el-image
+                  v-if="row.dishImage"
                   :src="resolveFileUrl(row.dishImage)"
-                  alt="菜品图片"
-                  @click="previewImage(row.dishImage)"
+                  fit="cover"
+                  class="table-dish-img"
+                  :preview-src-list="[resolveFileUrl(row.dishImage)]"
+                  preview-teleported
                 />
                 <div v-else class="image-placeholder">{{ (row.dishName || '菜')[0] }}</div>
               </div>
@@ -511,14 +498,23 @@ onMounted(() => {
               {{ formatDateTime(row.createTime) }}
             </template>
           </el-table-column>
-          <el-table-column label="操作" width="260" fixed="right" align="right">
+          <el-table-column label="操作" width="200" fixed="right" align="right">
             <template #default="{ row }">
-              <el-button size="small" @click="handleView(row)">查看</el-button>
-              <el-button size="small" @click="handleEdit(row)">编辑</el-button>
-              <el-button size="small" @click="handleToggleStatus(row)">
-                {{ row.status === 10 ? '下架' : '上架' }}
-              </el-button>
-              <el-button size="small" type="danger" @click="handleDelete(row)">删除</el-button>
+              <el-button size="small" type="primary" @click="handleEdit(row)">编辑</el-button>
+              <el-dropdown trigger="click" @command="(cmd: string) => handleRowCommand(cmd, row)">
+                <el-button size="small" text>
+                  更多<el-icon class="el-icon--right"><ArrowDown /></el-icon>
+                </el-button>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item command="view">查看详情</el-dropdown-item>
+                    <el-dropdown-item command="toggle">{{ row.status === 10 ? '下架' : '上架' }}</el-dropdown-item>
+                    <el-dropdown-item command="delete" divided>
+                      <span class="dropdown-danger">删除</span>
+                    </el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
             </template>
           </el-table-column>
         </el-table>
@@ -537,15 +533,8 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- 图片预览弹窗 -->
-    <div class="image-preview-modal" v-if="showImagePreview" @click="showImagePreview = false">
-      <div class="preview-content" @click.stop>
-        <img :src="previewImageUrl" alt="菜品图片预览" />
-      </div>
-    </div>
-
-    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="760px">
-      <el-form :model="form" label-width="100px">
+    <el-dialog v-model="dialogVisible" :title="dialogMode === 'view' ? '菜品详情' : dialogTitle" width="760px">
+      <el-form :model="form" label-width="100px" :disabled="dialogMode === 'view'">
         <el-form-item label="菜品名称">
           <el-input v-model="form.dishName" placeholder="请输入菜品名称" />
         </el-form-item>
@@ -566,29 +555,41 @@ onMounted(() => {
           <el-input-number v-model="form.stock" :min="0" style="width: 100%;" />
         </el-form-item>
         <el-form-item label="状态">
-          <el-radio-group v-model="form.status">
+          <el-tag v-if="dialogMode === 'view'" :type="getStatusTag(form.status)" effect="plain">{{ getStatusLabel(form.status) }}</el-tag>
+          <el-radio-group v-else v-model="form.status">
             <el-radio :value="10">上架</el-radio>
             <el-radio :value="20">下架</el-radio>
           </el-radio-group>
+        </el-form-item>
+        <el-form-item v-if="dialogMode === 'view' && formCreateTime" label="创建时间">
+          <span class="view-plain-text">{{ formatDateTime(formCreateTime) }}</span>
         </el-form-item>
         <el-form-item label="菜品描述">
           <el-input v-model="form.description" type="textarea" :rows="3" placeholder="请输入菜品描述" />
         </el-form-item>
         <el-form-item label="菜品图片">
-          <div class="image-preview" @click="triggerImageUpload">
-            <img v-if="imagePreview" :src="imagePreview" alt="菜品图片" class="image" />
+          <div class="image-preview" :class="{ readonly: dialogMode === 'view' }" @click="dialogMode === 'view' ? undefined : triggerImageUpload()">
+            <el-image
+              v-if="imagePreview"
+              :src="imagePreview"
+              fit="cover"
+              class="image"
+              :preview-src-list="[imagePreview]"
+              preview-teleported
+            />
             <div v-else class="image-placeholder">
               {{ (form.dishName || '菜')[0] }}
             </div>
-            <button class="remove-btn" @click.stop="handleRemoveImage" v-if="imagePreview">
+            <button class="remove-btn" @click.stop="handleRemoveImage" v-if="dialogMode !== 'view' && imagePreview">
               <Delete style="width: 16px; height: 16px;" />
             </button>
-            <div class="upload-hint" v-if="!imagePreview">
+            <div class="upload-hint" v-if="dialogMode !== 'view' && !imagePreview">
               <Upload style="width: 20px; height: 20px;" />
               <span>点击上传图片</span>
             </div>
           </div>
           <input
+            v-if="dialogMode !== 'view'"
             ref="uploadInput"
             type="file"
             accept="image/jpeg,image/png,image/gif"
@@ -596,7 +597,7 @@ onMounted(() => {
             @change="handleImageSelect"
           />
         </el-form-item>
-        
+
         <!-- 食材选择区域 -->
         <el-form-item label="关联食材">
           <div class="ingredient-section">
@@ -604,38 +605,43 @@ onMounted(() => {
             <div v-if="selectedIngredients.length > 0" class="selected-ingredients">
               <div v-for="(item, index) in selectedIngredients" :key="item.ingredientId" class="ingredient-item">
                 <span class="ingredient-name">{{ item.ingredientName }}</span>
-                <el-input-number 
-                  v-model="item.weight" 
-                  :min="1" 
-                  :max="1000" 
-                  size="small"
-                  style="width: 100px;"
-                />
-                <span class="unit">g</span>
-                <el-button type="danger" size="small" circle @click="removeIngredient(index)">
-                  <Minus style="width: 12px; height: 12px;" />
-                </el-button>
+                <template v-if="dialogMode === 'view'">
+                  <span class="unit">{{ item.weight }}g</span>
+                </template>
+                <template v-else>
+                  <el-input-number
+                    v-model="item.weight"
+                    :min="1"
+                    :max="1000"
+                    size="small"
+                    style="width: 100px;"
+                  />
+                  <span class="unit">g</span>
+                  <el-button type="danger" size="small" circle @click="removeIngredient(index)">
+                    <Minus style="width: 12px; height: 12px;" />
+                  </el-button>
+                </template>
               </div>
             </div>
             <div v-else class="no-ingredients">暂无关联食材</div>
-            
+
             <!-- 添加食材按钮 -->
-            <el-button type="primary" size="small" @click="showIngredientSelector = true" style="margin-top: 10px;">
+            <el-button v-if="dialogMode !== 'view'" type="primary" size="small" @click="showIngredientSelector = true" style="margin-top: 10px;">
               <Plus style="width: 14px; height: 14px;" />
               添加食材
             </el-button>
-            
+
             <!-- 营养成分计算 -->
             <div v-if="selectedIngredients.length > 0" class="nutrition-info">
               <div class="nutrition-title">营养成分（估算）</div>
               <div class="nutrition-items">
-                <span>热量: {{ calculatedNutrition.calories.toFixed(1) }} 大卡</span>
-                <span>蛋白质: {{ calculatedNutrition.protein.toFixed(1) }} g</span>
-                <span>脂肪: {{ calculatedNutrition.fat.toFixed(1) }} g</span>
-                <span>碳水: {{ calculatedNutrition.carbs.toFixed(1) }} g</span>
+                <span>热量：{{ calculatedNutrition.calories.toFixed(1) }} 大卡</span>
+                <span>蛋白质：{{ calculatedNutrition.protein.toFixed(1) }} g</span>
+                <span>脂肪：{{ calculatedNutrition.fat.toFixed(1) }} g</span>
+                <span>碳水：{{ calculatedNutrition.carbs.toFixed(1) }} g</span>
               </div>
             </div>
-            <div v-else class="manual-nutrition">
+            <div v-else-if="dialogMode !== 'view'" class="manual-nutrition">
               <div class="nutrition-title">手动营养信息</div>
               <div class="manual-grid">
                 <el-input-number v-model="form.calories" :min="0" :precision="0" placeholder="热量" />
@@ -644,12 +650,26 @@ onMounted(() => {
                 <el-input-number v-model="form.carbs" :min="0" :precision="1" placeholder="碳水" />
               </div>
             </div>
+            <div v-else class="nutrition-info">
+              <div class="nutrition-title">基础营养</div>
+              <div class="nutrition-items">
+                <span>热量：{{ form.calories || 0 }} 大卡</span>
+                <span>蛋白质：{{ form.protein || 0 }} g</span>
+                <span>脂肪：{{ form.fat || 0 }} g</span>
+                <span>碳水：{{ form.carbs || 0 }} g</span>
+              </div>
+            </div>
           </div>
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleSubmit" :loading="loading">确定</el-button>
+        <template v-if="dialogMode === 'view'">
+          <el-button type="primary" @click="dialogVisible = false">关闭</el-button>
+        </template>
+        <template v-else>
+          <el-button @click="dialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="handleSubmit" :loading="loading">确定</el-button>
+        </template>
       </template>
     </el-dialog>
     
@@ -682,82 +702,6 @@ onMounted(() => {
       </div>
     </el-dialog>
 
-    <!-- 查看菜品详情弹窗 -->
-    <el-dialog v-model="viewDialogVisible" title="菜品详情" width="500px">
-      <el-form :model="viewForm" label-width="100px" class="view-form">
-        <el-form-item label="菜品图片">
-          <div class="view-image-container">
-            <img 
-              v-if="viewForm.dishImage" 
-              :src="resolveFileUrl(viewForm.dishImage)"
-              alt="菜品图片"
-              class="view-image"
-            />
-            <div v-else class="view-image-placeholder">{{ (viewForm.dishName || '菜')[0] }}</div>
-          </div>
-        </el-form-item>
-        <el-form-item label="菜品名称">
-          <span class="view-text">{{ viewForm.dishName }}</span>
-        </el-form-item>
-        <el-form-item label="菜品分类">
-          <span class="view-text">{{ getCategoryName(viewForm.categoryId) }}</span>
-        </el-form-item>
-        <el-form-item label="价格">
-          <span class="view-text">¥{{ viewForm.price }}</span>
-        </el-form-item>
-        <el-form-item label="库存">
-          <span class="view-text">{{ viewForm.stock }}</span>
-        </el-form-item>
-        <el-form-item label="状态">
-          <el-tag :type="getStatusTag(viewForm.status)">{{ getStatusLabel(viewForm.status) }}</el-tag>
-        </el-form-item>
-        <el-form-item label="创建时间">
-          <span class="view-text">{{ formatDateTime(viewForm.createTime) }}</span>
-        </el-form-item>
-        <el-form-item label="菜品描述" v-if="viewForm.description">
-          <span class="view-text">{{ viewForm.description }}</span>
-        </el-form-item>
-        <el-form-item label="基础营养">
-          <div class="view-nutrition">
-            <div class="nutrition-row">
-              <span>热量: {{ viewForm.calories || 0 }} 大卡</span>
-              <span>蛋白质: {{ viewForm.protein || 0 }} g</span>
-            </div>
-            <div class="nutrition-row">
-              <span>脂肪: {{ viewForm.fat || 0 }} g</span>
-              <span>碳水: {{ viewForm.carbs || 0 }} g</span>
-            </div>
-          </div>
-        </el-form-item>
-        
-        <!-- 查看关联食材 -->
-        <el-form-item label="关联食材" v-if="viewForm.ingredients && viewForm.ingredients.length > 0">
-          <div class="view-ingredients">
-            <div v-for="item in viewForm.ingredients" :key="item.ingredientId" class="view-ingredient-item">
-              <span class="name">{{ item.ingredientName || '未知食材' }}</span>
-              <span class="weight">{{ item.weight }}g</span>
-            </div>
-          </div>
-        </el-form-item>
-        
-        <!-- 查看营养成分 -->
-        <el-form-item label="营养成分" v-if="viewForm.ingredients && viewForm.ingredients.length > 0">
-          <div class="view-nutrition">
-            <div class="nutrition-row">
-              <span>热量: {{ calculateViewNutrition.calories.toFixed(1) }} 大卡</span>
-              <span>蛋白质: {{ calculateViewNutrition.protein.toFixed(1) }} g</span>
-            </div>
-            <div class="nutrition-row">
-              <span>脂肪: {{ calculateViewNutrition.fat.toFixed(1) }} g</span>
-              <span>碳水: {{ calculateViewNutrition.carbs.toFixed(1) }} g</span>
-            </div>
-          </div>
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="viewDialogVisible = false">关闭</el-button>
-      </template>
-    </el-dialog>
   </div>
 </template>
 
@@ -789,6 +733,13 @@ onMounted(() => {
   color: var(--bs-text-title);
   font-size: 20px;
   font-weight: 650;
+}
+
+.page-head .en {
+  color: var(--faint);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
 }
 
 .page-head p {
@@ -834,11 +785,11 @@ onMounted(() => {
 }
 
 .summary-item.success {
-  border-left: 3px solid #1b6b4a;
+  border-left: 3px solid var(--bs-status-success);
 }
 
 .summary-item.warning {
-  border-left: 3px solid #b76e2a;
+  border-left: 3px solid var(--bs-status-warning);
 }
 
 .summary-item.danger {
@@ -846,7 +797,7 @@ onMounted(() => {
 }
 
 .summary-item.muted {
-  border-left: 3px solid #8a9299;
+  border-left: 3px solid var(--bs-status-secondary);
 }
 
 .card-panel {
@@ -854,19 +805,6 @@ onMounted(() => {
   border-radius: var(--bs-radius-md);
   box-shadow: var(--bs-card-shadow);
   padding: var(--bs-spacing-lg);
-}
-
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: var(--bs-spacing-lg);
-}
-
-.card-header h3 {
-  font-size: var(--bs-font-size-lg);
-  font-weight: 600;
-  color: var(--bs-text-title);
 }
 
 .dish-panel {
@@ -920,28 +858,6 @@ onMounted(() => {
   margin-top: 20px;
 }
 
-.btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: var(--bs-spacing-sm) 20px;
-  border-radius: var(--bs-radius-md);
-  font-size: var(--bs-font-size-base);
-  font-weight: 500;
-  border: 1px solid transparent;
-  cursor: pointer;
-  transition: 0.15s;
-}
-
-.btn-primary {
-  background: var(--bs-primary);
-  color: #FFFFFF;
-}
-
-.btn-primary:hover {
-  background: var(--bs-primary-hover);
-}
-
 .image-preview {
   position: relative;
   width: 120px;
@@ -954,21 +870,21 @@ onMounted(() => {
   height: 100%;
   object-fit: cover;
   border-radius: 8px;
-  border: 2px solid var(--bs-border-color);
+  border: 1px solid var(--bs-border-light);
 }
 
 .image-placeholder {
   width: 100%;
   height: 100%;
   border-radius: 8px;
-  background: #1B3A2F;
-  color: #FFFFFF;
+  background: var(--green-soft);
+  color: var(--green-deep);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 48px;
-  font-weight: 600;
-  border: 2px solid var(--bs-border-color);
+  font-size: 40px;
+  font-weight: 700;
+  border: 1px solid var(--bs-border-light);
 }
 
 .remove-btn {
@@ -977,7 +893,7 @@ onMounted(() => {
   right: -8px;
   width: 24px;
   height: 24px;
-  background: #D9534F;
+  background: var(--bs-status-danger);
   color: #FFFFFF;
   border: none;
   border-radius: 50%;
@@ -990,7 +906,7 @@ onMounted(() => {
 }
 
 .remove-btn:hover {
-  background: #c9302c;
+  background: var(--danger-brand);
 }
 
 .upload-hint {
@@ -1028,107 +944,46 @@ onMounted(() => {
   height: 60px;
   border-radius: 8px;
   overflow: hidden;
-  cursor: pointer;
 }
 
-.table-dish-image img {
+.table-dish-img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  display: block;
   transition: transform 0.2s;
 }
 
-.table-dish-image img:hover {
+.table-dish-img:hover {
   transform: scale(1.05);
 }
 
 .table-dish-image .image-placeholder {
   width: 100%;
   height: 100%;
-  background: #1B3A2F;
-  color: #FFFFFF;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 24px;
-  font-weight: 600;
+  font-size: 22px;
+  border: none;
+  border-radius: 0;
 }
 
-.image-preview-modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 9999;
-  animation: fadeIn 0.2s ease;
+.image-preview.readonly {
+  cursor: default;
 }
 
-.preview-content {
-  max-width: 90%;
-  max-height: 90%;
-  background: #FFFFFF;
-  padding: 20px;
-  border-radius: 12px;
-  animation: scaleIn 0.2s ease;
-}
-
-.preview-content img {
-  max-width: 100%;
-  max-height: 80vh;
-  object-fit: contain;
-  border-radius: 8px;
-}
-
-@keyframes scaleIn {
-  from { transform: scale(0.9); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
-}
-
-.view-form .el-form-item {
-  margin-bottom: 16px;
-}
-
-.view-image-container {
-  width: 120px;
-  height: 120px;
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.view-image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.view-image-placeholder {
-  width: 100%;
-  height: 100%;
-  background: #1B3A2F;
-  color: #FFFFFF;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 48px;
-  font-weight: 600;
-}
-
-.view-text {
-  color: var(--bs-text-primary);
+.view-plain-text {
+  color: var(--bs-text-title);
   font-size: var(--bs-font-size-base);
+}
+
+.dropdown-danger {
+  color: var(--bs-status-danger);
 }
 
 /* 食材选择区域样式 */
 .ingredient-section {
-  border: 1px solid var(--bs-border-color);
+  border: 1px solid var(--bs-border-light);
   border-radius: 8px;
   padding: 12px;
-  background: var(--bs-bg-secondary);
+  background: var(--bs-bg-hover);
 }
 
 .selected-ingredients {
@@ -1144,22 +999,22 @@ onMounted(() => {
   padding: 8px;
   background: #fff;
   border-radius: 6px;
-  border: 1px solid var(--bs-border-color);
+  border: 1px solid var(--bs-border-light);
 }
 
 .ingredient-name {
   flex: 1;
   font-weight: 500;
-  color: var(--bs-text-primary);
+  color: var(--bs-text-title);
 }
 
 .unit {
-  color: var(--bs-text-secondary);
+  color: var(--bs-text-muted);
   font-size: 12px;
 }
 
 .no-ingredients {
-  color: var(--bs-text-secondary);
+  color: var(--bs-text-muted);
   font-size: 14px;
   text-align: center;
   padding: 16px;
@@ -1168,7 +1023,7 @@ onMounted(() => {
 .nutrition-info {
   margin-top: 12px;
   padding-top: 12px;
-  border-top: 1px dashed var(--bs-border-color);
+  border-top: 1px dashed var(--bs-border-light);
 }
 
 .nutrition-title {
@@ -1183,7 +1038,7 @@ onMounted(() => {
   flex-wrap: wrap;
   gap: 12px;
   font-size: 13px;
-  color: var(--bs-text-secondary);
+  color: var(--bs-text-muted);
 }
 
 .manual-nutrition {
@@ -1211,7 +1066,7 @@ onMounted(() => {
 .category-filter {
   margin-bottom: 16px;
   padding-bottom: 12px;
-  border-bottom: 1px solid var(--bs-border-color);
+  border-bottom: 1px solid var(--bs-border-light);
 }
 
 .ingredient-grid {
@@ -1222,7 +1077,7 @@ onMounted(() => {
 
 .ingredient-card {
   padding: 12px;
-  border: 1px solid var(--bs-border-color);
+  border: 1px solid var(--bs-border-light);
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s;
@@ -1236,13 +1091,13 @@ onMounted(() => {
 
 .ingredient-card .ingredient-name {
   font-weight: 600;
-  color: var(--bs-text-primary);
+  color: var(--bs-text-title);
   margin-bottom: 4px;
 }
 
 .ingredient-card .ingredient-category {
   font-size: 12px;
-  color: var(--bs-text-secondary);
+  color: var(--bs-text-muted);
   margin-bottom: 4px;
 }
 
@@ -1262,18 +1117,18 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   padding: 8px 12px;
-  background: var(--bs-bg-secondary);
+  background: var(--bs-bg-hover);
   border-radius: 6px;
-  border: 1px solid var(--bs-border-color);
+  border: 1px solid var(--bs-border-light);
 }
 
 .view-ingredient-item .name {
   font-weight: 500;
-  color: var(--bs-text-primary);
+  color: var(--bs-text-title);
 }
 
 .view-ingredient-item .weight {
-  color: var(--bs-text-secondary);
+  color: var(--bs-text-muted);
   font-size: 14px;
 }
 
@@ -1291,7 +1146,7 @@ onMounted(() => {
 
 .view-nutrition span {
   font-size: 14px;
-  color: var(--bs-text-secondary);
+  color: var(--bs-text-muted);
 }
 
 @media (max-width: 1100px) {

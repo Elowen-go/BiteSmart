@@ -1,0 +1,39 @@
+.pg { display: flex; flex-direction: column; height: 100vh; background: var(--bg); }
+
+/* ---------- 自定义导航 ---------- */
+.nav { display: flex; align-items: center; padding: 0 32rpx; flex: none; }
+.nav-t { font-size: 32rpx; font-weight: 800; }
+.nav-right { margin-left: auto; font-size: 22rpx; color: var(--sub); }
+
+.body { flex: 1; padding: 8rpx 32rpx 0; box-sizing: border-box; }
+
+/* ---------- 菜品行（复刻原型 dish-row） ---------- */
+.dish-card { padding: 0 32rpx; margin-top: 16rpx; }
+.dish-row { display: flex; gap: 24rpx; align-items: center; padding: 28rpx 0; border-top: 1rpx solid var(--hair); }
+.dish-row:first-child { border-top: none; }
+.dish-row .ph { width: 112rpx; height: 112rpx; border-radius: 16rpx; flex: none; background: #DCE5DD; }
+.dish-main { flex: 1; }
+.dish-main .nm { font-size: 26rpx; font-weight: 700; }
+.dish-main .nm .pill { margin-left: 12rpx; vertical-align: 4rpx; }
+.dish-main .sub { font-size: 20rpx; color: var(--sub); margin-top: 8rpx; }
+.stock-edit { display: flex; align-items: center; gap: 12rpx; font-size: 22rpx; color: var(--sub); margin-top: 12rpx; }
+.stock-edit input {
+  width: 96rpx;
+  border: 1rpx solid var(--hair);
+  border-radius: 8rpx;
+  padding: 6rpx 10rpx;
+  font-size: 22rpx;
+  text-align: center;
+  background: #fff;
+  min-height: 0;
+}
+/* 库存预警：stock ≤ LOW_STOCK_THRESHOLD（见 utils/merchant-vm）时数字变橙 */
+.stock-edit input.low { color: var(--orange); border-color: var(--orange); font-weight: 700; }
+.edit-link { margin-top: 10rpx; font-size: 22rpx; color: var(--green-deep); font-weight: 700; }
+.dish-side { text-align: center; }
+.dish-side .side-lab { font-size: 18rpx; color: var(--faint); margin-top: 10rpx; }
+
+/* ---------- 空态 ---------- */
+.empty { display: flex; flex-direction: column; align-items: center; padding: 120rpx 0 80rpx; }
+.empty .t { font-size: 28rpx; font-weight: 700; color: var(--ink); }
+.empty .s { font-size: 22rpx; color: var(--sub); margin-top: 12rpx; }

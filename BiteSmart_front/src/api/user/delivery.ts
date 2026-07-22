@@ -13,10 +13,11 @@ export interface DeliveryTracking {
     phone: string
     currentLat: number
     currentLng: number
-    vehicleType: string
+    /** 车辆类型：10-电动车 20-自行车 30-汽车 */
+    vehicleType: number
   }
 }
 
-export const getDeliveryTracking = (orderId: number): Promise<any> => {
+export const getDeliveryTracking = (orderId: number | string): Promise<any> => {
   return request.get(`/delivery/tracking/${orderId}`)
 }

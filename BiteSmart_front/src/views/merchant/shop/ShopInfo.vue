@@ -2,11 +2,16 @@
 import { ref, onMounted, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Upload, Delete, Edit } from '@element-plus/icons-vue'
-import { getShopInfo, updateShopInfo, uploadFile } from '../../../api/merchant/shop'
+import { getShopInfo, updateShopInfo, updateShopOpenStatus, uploadFile } from '../../../api/merchant/shop'
 import { resolveFileUrl } from '../../../utils/fileUrl'
+import { useUserStore } from '../../../stores/user'
 
+const userStore = useUserStore()
 const loading = ref(false)
 const editing = ref(false)
+/** 营业状态：10-营业中 20-打烊（缺省按营业中处理） */
+const openStatus = ref(10)
+const openStatusSaving = ref(false)
 const form = ref({
   shopName: '',
   shopLogo: '',
@@ -36,7 +41,10 @@ const deliveryRangeForm = ref({
 const imageUrl = ref('')
 const uploadInput = ref<HTMLInputElement | null>(null)
 const selectedFile = ref<File | null>(null)
-const showPreview = ref(false)
+/** 营业执照图片 */
+const licenseUrl = ref('')
+const licenseInput = ref<HTMLInputElement | null>(null)
+const selectedLicenseFile = ref<File | null>(null)
 
 const weekdayTime = computed(() => {
   return `${businessHoursForm.value.weekdayStart}-${businessHoursForm.value.weekdayEnd}`
@@ -60,9 +68,12 @@ const fetchShopInfo = async () => {
       form.value.businessLicense = data.businessLicense || ''
       form.value.licenseNumber = data.licenseNumber || ''
       form.value.shopNotice = data.shopNotice || ''
+      openStatus.value = data.openStatus === 20 ? 20 : 10
+      userStore.setShopOpenStatus(openStatus.value)
       if (form.value.shopLogo) {
         imageUrl.value = resolveFileUrl(form.value.shopLogo)
       }
+      licenseUrl.value = form.value.businessLicense ? resolveFileUrl(form.value.businessLicense) : ''
       parseBusinessHours(data.businessHours)
       parseDeliveryRange(data.deliveryRange)
     }
@@ -147,6 +158,33 @@ const handleRemoveLogo = () => {
   selectedFile.value = null
 }
 
+const handleLicenseSelect = (event: Event) => {
+  if (!editing.value) return
+  const target = event.target as HTMLInputElement
+  const file = target.files?.[0]
+  if (!file) return
+
+  selectedLicenseFile.value = file
+  const reader = new FileReader()
+  reader.onload = (e) => {
+    licenseUrl.value = e.target?.result as string
+  }
+  reader.readAsDataURL(file)
+  target.value = ''
+}
+
+const handleRemoveLicense = () => {
+  if (!editing.value) return
+  form.value.businessLicense = ''
+  licenseUrl.value = ''
+  selectedLicenseFile.value = null
+}
+
+const triggerLicenseUpload = () => {
+  if (!editing.value) return
+  licenseInput.value?.click()
+}
+
 const handleEdit = () => {
   editing.value = true
 }
@@ -154,10 +192,33 @@ const handleEdit = () => {
 const handleCancel = () => {
   editing.value = false
   selectedFile.value = null
+  selectedLicenseFile.value = null
   fetchShopInfo()
 }
 
+// 保存前的基础校验：电话格式、营业时间先后顺序
+const validateForm = () => {
+  if (form.value.contactPhone && !/^(1[3-9]\d{9}|0\d{2,3}-?\d{7,8})$/.test(form.value.contactPhone)) {
+    ElMessage.warning('联系电话格式不正确')
+    return false
+  }
+  if (businessHoursForm.value.weekdayStart >= businessHoursForm.value.weekdayEnd) {
+    ElMessage.warning('工作日营业时间：开始时间需早于结束时间')
+    return false
+  }
+  if (businessHoursForm.value.weekendStart >= businessHoursForm.value.weekendEnd) {
+    ElMessage.warning('周末营业时间：开始时间需早于结束时间')
+    return false
+  }
+  if (deliveryRangeForm.value.minDistance >= deliveryRangeForm.value.maxDistance) {
+    ElMessage.warning('配送范围：最小距离需小于最大距离')
+    return false
+  }
+  return true
+}
+
 const handleSave = async () => {
+  if (!validateForm()) return
   loading.value = true
   try {
     if (selectedFile.value) {
@@ -168,6 +229,18 @@ const handleSave = async () => {
         selectedFile.value = null
       } else {
         ElMessage.error(uploadRes.message || '图片上传失败')
+        loading.value = false
+        return
+      }
+    }
+
+    if (selectedLicenseFile.value) {
+      const licenseRes = await uploadFile(selectedLicenseFile.value, 'shop_license')
+      if (licenseRes.code === 200) {
+        form.value.businessLicense = licenseRes.data.url
+        selectedLicenseFile.value = null
+      } else {
+        ElMessage.error(licenseRes.message || '营业执照上传失败')
         loading.value = false
         return
       }
@@ -196,17 +269,29 @@ const handleSave = async () => {
   }
 }
 
+const handleOpenStatusChange = async (value: string | number | boolean) => {
+  const next = value ? 10 : 20
+  openStatusSaving.value = true
+  try {
+    const res = await updateShopOpenStatus(next)
+    if (res.code === 200) {
+      openStatus.value = next
+      userStore.setShopOpenStatus(next)
+      ElMessage.success(next === 10 ? '已恢复营业' : '店铺已打烊，用户将无法下单')
+    } else {
+      ElMessage.error(res.message || '营业状态更新失败')
+    }
+  } catch (e) {
+    console.error('更新营业状态失败', e)
+    ElMessage.error('营业状态更新失败')
+  } finally {
+    openStatusSaving.value = false
+  }
+}
+
 const triggerUpload = () => {
   if (!editing.value) return
   uploadInput.value?.click()
-}
-
-const handleLogoClick = () => {
-  if (editing.value) {
-    triggerUpload()
-  } else if (imageUrl.value) {
-    showPreview.value = true
-  }
 }
 
 onMounted(() => {
@@ -216,33 +301,41 @@ onMounted(() => {
 
 <template>
   <div class="page-container">
-    <div class="card-panel">
-      <div class="card-header">
-        <h3>店铺信息</h3>
-        <div class="btn-group">
-          <template v-if="!editing">
-            <button class="btn btn-edit" @click="handleEdit">
-              <Edit style="width: 16px; height: 16px;" />
-              修改
-            </button>
-          </template>
+    <div class="shop-page">
+      <div class="page-head">
+        <div>
+          <div class="en">SHOP</div>
+          <h2>店铺管理</h2>
+          <p>维护店铺资料、营业状态与配送范围</p>
+        </div>
+        <div class="page-head-actions">
+          <el-button v-if="!editing" :icon="Edit" @click="handleEdit">修改资料</el-button>
           <template v-else>
-            <button class="btn btn-cancel" @click="handleCancel">取消</button>
-            <button class="btn btn-primary" @click="handleSave">保存修改</button>
+            <el-button @click="handleCancel">取消</el-button>
+            <el-button type="primary" :loading="loading" @click="handleSave">保存修改</el-button>
           </template>
         </div>
       </div>
-      <div style="padding-top: 20px;">
-        <el-form :model="form" label-width="120px" v-loading="loading">
-          <el-form-item label="店铺名称">
-            <el-input v-model="form.shopName" placeholder="请输入店铺名称" :disabled="!editing" />
-          </el-form-item>
-          <el-form-item label="联系人">
-            <el-input v-model="form.contactName" placeholder="请输入联系人姓名" :disabled="!editing" />
-          </el-form-item>
+
+      <el-form :model="form" label-width="100px" v-loading="loading" class="shop-form">
+        <!-- 基本信息 -->
+        <div class="card-panel form-card">
+          <div class="section-head">
+            <div>
+              <div class="en">BASIC</div>
+              <h3>基本信息</h3>
+            </div>
+          </div>
           <el-form-item label="店铺Logo">
-            <div class="logo-preview" @click="handleLogoClick">
-              <img v-if="imageUrl" :src="imageUrl" alt="店铺Logo" class="logo-image" />
+            <div class="logo-preview" @click="editing ? triggerUpload() : undefined">
+              <el-image
+                v-if="imageUrl"
+                :src="imageUrl"
+                fit="cover"
+                class="logo-image"
+                :preview-src-list="editing ? [] : [imageUrl]"
+                preview-teleported
+              />
               <div v-else class="logo-placeholder">
                 {{ (form.shopName || '店')[0] }}
               </div>
@@ -253,9 +346,6 @@ onMounted(() => {
                 <Upload style="width: 20px; height: 20px;" />
                 <span>点击上传Logo</span>
               </div>
-              <div class="view-hint" v-if="imageUrl && !editing">
-                <span>点击查看大图</span>
-              </div>
             </div>
             <input
               ref="uploadInput"
@@ -265,27 +355,159 @@ onMounted(() => {
               @change="handleLogoSelect"
             />
           </el-form-item>
+          <el-form-item label="店铺名称">
+            <el-input v-if="editing" v-model="form.shopName" placeholder="请输入店铺名称" />
+            <span v-else class="field-text" :class="{ empty: !form.shopName }">{{ form.shopName || '未填写' }}</span>
+          </el-form-item>
+          <el-form-item label="联系人">
+            <el-input v-if="editing" v-model="form.contactName" placeholder="请输入联系人姓名" />
+            <span v-else class="field-text" :class="{ empty: !form.contactName }">{{ form.contactName || '未填写' }}</span>
+          </el-form-item>
           <el-form-item label="联系电话">
-            <el-input v-model="form.contactPhone" placeholder="请输入联系电话" :disabled="!editing" />
-          </el-form-item>
-          <el-form-item label="执照编号">
-            <el-input v-model="form.licenseNumber" placeholder="请输入统一社会信用代码" :disabled="!editing" />
-          </el-form-item>
-          <el-form-item label="营业执照">
-            <el-input v-model="form.businessLicense" placeholder="营业执照图片地址" :disabled="!editing" />
+            <el-input v-if="editing" v-model="form.contactPhone" placeholder="请输入联系电话" />
+            <span v-else class="field-text" :class="{ empty: !form.contactPhone }">{{ form.contactPhone || '未填写' }}</span>
           </el-form-item>
           <el-form-item label="店铺地址">
-            <el-input v-model="form.shopAddress" placeholder="请输入店铺地址" :disabled="!editing" />
+            <el-input v-if="editing" v-model="form.shopAddress" placeholder="请输入店铺地址" />
+            <span v-else class="field-text" :class="{ empty: !form.shopAddress }">{{ form.shopAddress || '未填写' }}</span>
           </el-form-item>
+          <el-form-item label="执照编号">
+            <el-input v-if="editing" v-model="form.licenseNumber" placeholder="请输入统一社会信用代码" />
+            <span v-else class="field-text" :class="{ empty: !form.licenseNumber }">{{ form.licenseNumber || '未填写' }}</span>
+          </el-form-item>
+          <el-form-item label="营业执照">
+            <div class="logo-preview" @click="editing ? triggerLicenseUpload() : undefined">
+              <el-image
+                v-if="licenseUrl"
+                :src="licenseUrl"
+                fit="cover"
+                class="logo-image"
+                :preview-src-list="editing ? [] : [licenseUrl]"
+                preview-teleported
+              />
+              <div v-else class="license-empty">{{ editing ? '点击上传营业执照' : '未上传' }}</div>
+              <button class="remove-btn" @click.stop="handleRemoveLicense" v-if="licenseUrl && editing">
+                <Delete style="width: 16px; height: 16px;" />
+              </button>
+            </div>
+            <input
+              ref="licenseInput"
+              type="file"
+              accept="image/jpeg,image/png,image/gif"
+              class="hidden-input"
+              @change="handleLicenseSelect"
+            />
+          </el-form-item>
+          <el-form-item label="店铺公告">
+            <el-input v-if="editing" v-model="form.shopNotice" type="textarea" :rows="3" placeholder="请输入店铺公告" />
+            <span v-else class="field-text" :class="{ empty: !form.shopNotice }">{{ form.shopNotice || '未填写' }}</span>
+          </el-form-item>
+        </div>
+
+        <!-- 营业信息 -->
+        <div class="card-panel form-card">
+          <div class="section-head">
+            <div>
+              <div class="en">BUSINESS</div>
+              <h3>营业信息</h3>
+            </div>
+          </div>
+          <el-form-item label="营业状态">
+            <div class="open-status-row">
+              <el-switch
+                :model-value="openStatus !== 20"
+                :loading="openStatusSaving"
+                active-text="营业中"
+                inactive-text="打烊中"
+                inline-prompt
+                @change="handleOpenStatusChange"
+              />
+              <el-tag :type="openStatus === 20 ? 'warning' : 'success'" effect="plain" size="small">
+                {{ openStatus === 20 ? '打烊中' : '营业中' }}
+              </el-tag>
+              <span class="open-status-hint">打烊后用户将无法下单，可随时切换</span>
+            </div>
+          </el-form-item>
+          <el-form-item label="营业时间">
+            <div class="business-hours-container">
+              <div class="hours-row">
+                <span class="hours-label">工作日（周一至周五）</span>
+                <template v-if="editing">
+                  <el-time-picker
+                    v-model="businessHoursForm.weekdayStart"
+                    format="HH:mm"
+                    value-format="HH:mm"
+                    placeholder="开始时间"
+                    class="time-picker"
+                    :picker-options="{
+                      selectableRange: '00:00 - 23:59',
+                      step: '00:30'
+                    }"
+                  />
+                  <span class="time-separator">-</span>
+                  <el-time-picker
+                    v-model="businessHoursForm.weekdayEnd"
+                    format="HH:mm"
+                    value-format="HH:mm"
+                    placeholder="结束时间"
+                    class="time-picker"
+                    :picker-options="{
+                      selectableRange: '00:00 - 23:59',
+                      step: '00:30'
+                    }"
+                  />
+                </template>
+                <span v-else class="field-text">{{ weekdayTime }}</span>
+              </div>
+              <div class="hours-row">
+                <span class="hours-label">周末（周六至周日）</span>
+                <template v-if="editing">
+                  <el-time-picker
+                    v-model="businessHoursForm.weekendStart"
+                    format="HH:mm"
+                    value-format="HH:mm"
+                    placeholder="开始时间"
+                    class="time-picker"
+                    :picker-options="{
+                      selectableRange: '00:00 - 23:59',
+                      step: '00:30'
+                    }"
+                  />
+                  <span class="time-separator">-</span>
+                  <el-time-picker
+                    v-model="businessHoursForm.weekendEnd"
+                    format="HH:mm"
+                    value-format="HH:mm"
+                    placeholder="结束时间"
+                    class="time-picker"
+                    :picker-options="{
+                      selectableRange: '00:00 - 23:59',
+                      step: '00:30'
+                    }"
+                  />
+                </template>
+                <span v-else class="field-text">{{ weekendTime }}</span>
+              </div>
+            </div>
+          </el-form-item>
+        </div>
+
+        <!-- 配送信息 -->
+        <div class="card-panel form-card">
+          <div class="section-head">
+            <div>
+              <div class="en">DELIVERY</div>
+              <h3>配送信息</h3>
+            </div>
+          </div>
           <el-form-item label="配送范围">
-            <div class="delivery-range-container">
+            <div v-if="editing" class="delivery-range-container">
               <el-input-number
                 v-model="deliveryRangeForm.minDistance"
                 :min="0"
                 :max="50"
                 class="range-input"
                 placeholder="最小距离"
-                :disabled="!editing"
               />
               <span class="range-separator">-</span>
               <el-input-number
@@ -294,82 +516,13 @@ onMounted(() => {
                 :max="50"
                 class="range-input"
                 placeholder="最大距离"
-                :disabled="!editing"
               />
               <span class="range-unit">{{ deliveryRangeForm.unit }}</span>
             </div>
+            <span v-else class="field-text">{{ deliveryRangeForm.minDistance }} - {{ deliveryRangeForm.maxDistance }} {{ deliveryRangeForm.unit }}</span>
           </el-form-item>
-          <el-form-item label="营业时间">
-            <div class="business-hours-container">
-              <div class="hours-row">
-                <span class="hours-label">工作日（周一至周五）</span>
-                <el-time-picker
-                  v-model="businessHoursForm.weekdayStart"
-                  format="HH:mm"
-                  value-format="HH:mm"
-                  placeholder="开始时间"
-                  class="time-picker"
-                  :disabled="!editing"
-                  :picker-options="{
-                    selectableRange: '00:00 - 23:59',
-                    step: '00:30'
-                  }"
-                />
-                <span class="time-separator">-</span>
-                <el-time-picker
-                  v-model="businessHoursForm.weekdayEnd"
-                  format="HH:mm"
-                  value-format="HH:mm"
-                  placeholder="结束时间"
-                  class="time-picker"
-                  :disabled="!editing"
-                  :picker-options="{
-                    selectableRange: '00:00 - 23:59',
-                    step: '00:30'
-                  }"
-                />
-              </div>
-              <div class="hours-row">
-                <span class="hours-label">周末（周六至周日）</span>
-                <el-time-picker
-                  v-model="businessHoursForm.weekendStart"
-                  format="HH:mm"
-                  value-format="HH:mm"
-                  placeholder="开始时间"
-                  class="time-picker"
-                  :disabled="!editing"
-                  :picker-options="{
-                    selectableRange: '00:00 - 23:59',
-                    step: '00:30'
-                  }"
-                />
-                <span class="time-separator">-</span>
-                <el-time-picker
-                  v-model="businessHoursForm.weekendEnd"
-                  format="HH:mm"
-                  value-format="HH:mm"
-                  placeholder="结束时间"
-                  class="time-picker"
-                  :disabled="!editing"
-                  :picker-options="{
-                    selectableRange: '00:00 - 23:59',
-                    step: '00:30'
-                  }"
-                />
-              </div>
-            </div>
-          </el-form-item>
-          <el-form-item label="店铺公告">
-            <el-input v-model="form.shopNotice" type="textarea" :rows="3" placeholder="请输入店铺公告" :disabled="!editing" />
-          </el-form-item>
-        </el-form>
-      </div>
-    </div>
-  </div>
-  
-  <div class="image-preview-modal" v-if="showPreview" @click="showPreview = false">
-    <div class="preview-content" @click.stop>
-      <img :src="imageUrl" alt="店铺Logo预览" />
+        </div>
+      </el-form>
     </div>
   </div>
 </template>
@@ -384,6 +537,50 @@ onMounted(() => {
   to { opacity: 1; transform: translateY(0); }
 }
 
+.shop-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.page-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.page-head h2 {
+  margin: 0;
+  color: var(--bs-text-title);
+  font-size: 20px;
+  font-weight: 650;
+}
+
+.page-head .en {
+  color: var(--faint);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
+}
+
+.page-head p {
+  margin-top: 4px;
+  color: var(--bs-text-muted);
+  font-size: 13px;
+}
+
+.page-head-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.shop-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
 .card-panel {
   background: var(--bs-card-bg);
   border-radius: var(--bs-radius-md);
@@ -391,64 +588,24 @@ onMounted(() => {
   padding: var(--bs-spacing-lg);
 }
 
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: var(--bs-spacing-lg);
+.section-head {
+  margin-bottom: 18px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--bs-border-light);
 }
 
-.card-header h3 {
+.section-head h3 {
+  margin: 0;
   font-size: var(--bs-font-size-lg);
   font-weight: 600;
   color: var(--bs-text-title);
 }
 
-.btn-group {
-  display: flex;
-  gap: 10px;
-}
-
-.btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: var(--bs-spacing-sm) 20px;
-  border-radius: var(--bs-radius-md);
-  font-size: var(--bs-font-size-base);
-  font-weight: 500;
-  border: 1px solid transparent;
-  cursor: pointer;
-  transition: 0.15s;
-}
-
-.btn-primary {
-  background: var(--bs-primary);
-  color: #FFFFFF;
-}
-
-.btn-primary:hover {
-  background: var(--bs-primary-hover);
-}
-
-.btn-edit {
-  background: transparent;
-  color: var(--bs-primary);
-  border-color: var(--bs-primary);
-}
-
-.btn-edit:hover {
-  background: rgba(27, 58, 47, 0.1);
-}
-
-.btn-cancel {
-  background: transparent;
-  color: var(--bs-text-secondary);
-  border-color: var(--bs-border-color);
-}
-
-.btn-cancel:hover {
-  background: var(--bs-bg-secondary);
+.section-head .en {
+  color: var(--faint);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
 }
 
 .logo-preview {
@@ -461,23 +618,38 @@ onMounted(() => {
 .logo-image {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  display: block;
   border-radius: 8px;
-  border: 2px solid var(--bs-border-color);
+  border: 1px solid var(--bs-border-light);
 }
 
 .logo-placeholder {
   width: 100%;
   height: 100%;
   border-radius: 8px;
-  background: #1B3A2F;
-  color: #FFFFFF;
+  background: var(--green-soft);
+  color: var(--green-deep);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 48px;
-  font-weight: 600;
-  border: 2px solid var(--bs-border-color);
+  font-size: 40px;
+  font-weight: 700;
+  border: 1px solid var(--bs-border-light);
+}
+
+.license-empty {
+  width: 100%;
+  height: 100%;
+  border-radius: 8px;
+  border: 1px dashed var(--bs-border-light);
+  color: var(--bs-text-muted);
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 8px;
+  box-sizing: border-box;
 }
 
 .remove-btn {
@@ -486,7 +658,7 @@ onMounted(() => {
   right: -8px;
   width: 24px;
   height: 24px;
-  background: #D9534F;
+  background: var(--bs-status-danger);
   color: #FFFFFF;
   border: none;
   border-radius: 50%;
@@ -499,7 +671,7 @@ onMounted(() => {
 }
 
 .remove-btn:hover {
-  background: #c9302c;
+  background: var(--danger-brand);
 }
 
 .upload-hint {
@@ -547,7 +719,7 @@ onMounted(() => {
 .hours-label {
   width: 160px;
   font-size: var(--bs-font-size-base);
-  color: var(--bs-text-secondary);
+  color: var(--bs-text-muted);
 }
 
 .time-picker {
@@ -555,7 +727,7 @@ onMounted(() => {
 }
 
 .time-separator {
-  color: var(--bs-text-secondary);
+  color: var(--bs-text-muted);
   font-weight: 500;
 }
 
@@ -570,72 +742,49 @@ onMounted(() => {
 }
 
 .range-separator {
-  color: var(--bs-text-secondary);
+  color: var(--bs-text-muted);
   font-weight: 500;
 }
 
 .range-unit {
-  color: var(--bs-text-secondary);
+  color: var(--bs-text-muted);
   font-size: var(--bs-font-size-base);
 }
 
-.view-hint {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  border-radius: 8px;
-  background: rgba(0, 0, 0, 0);
+.open-status-row {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  color: transparent;
-  transition: all 0.2s;
+  gap: 12px;
 }
 
-.logo-preview:hover .view-hint {
-  background: rgba(0, 0, 0, 0.3);
-  color: #FFFFFF;
-}
-
-.view-hint span {
+.open-status-hint {
+  color: var(--bs-text-muted);
   font-size: var(--bs-font-size-sm);
 }
 
-.image-preview-modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 9999;
-  animation: fadeIn 0.2s ease;
+.field-text {
+  color: var(--bs-text-title);
+  font-size: var(--bs-font-size-base);
+  line-height: 32px;
+  white-space: pre-wrap;
 }
 
-.preview-content {
-  max-width: 90%;
-  max-height: 90%;
-  background: #FFFFFF;
-  padding: 20px;
-  border-radius: 12px;
-  animation: scaleIn 0.2s ease;
+.field-text.empty {
+  color: var(--bs-text-muted);
 }
 
-.preview-content img {
-  max-width: 100%;
-  max-height: 80vh;
-  object-fit: contain;
-  border-radius: 8px;
-}
+@media (max-width: 720px) {
+  .page-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
 
-@keyframes scaleIn {
-  from { transform: scale(0.9); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
+  .hours-row {
+    flex-wrap: wrap;
+  }
+
+  .hours-label {
+    width: 100%;
+  }
 }
 </style>

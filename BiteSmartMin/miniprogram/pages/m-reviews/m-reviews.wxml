@@ -1,0 +1,42 @@
+<view class="pg">
+  <!-- 自定义导航 -->
+  <view class="nav" style="margin-top: {{menuTop}}px; height: {{menuH}}px;">
+    <view class="nav-back" bindtap="goBack" hover-class="tap"><text class="chev">‹</text></view>
+    <view class="nav-t">评价管理</view>
+  </view>
+
+  <scroll-view class="body" scroll-y enhanced show-scrollbar="{{false}}">
+    <block wx:if="{{list.length}}">
+      <view class="card r-card" wx:for="{{list}}" wx:key="id">
+        <view class="r-head">
+          <text class="b">{{item.name}}</text>
+          <text class="t">{{item.time}}</text>
+        </view>
+        <view class="r-rating">{{item.ratingText}}</view>
+        <view class="r-content">{{item.content}}</view>
+        <view class="r-reply" wx:if="{{item.reply}}">
+          <text class="lab">商家回复</text>
+          <text>{{item.reply}}</text>
+        </view>
+        <!-- 未回复：回复入口 / 展开输入框 -->
+        <block wx:else>
+          <view wx:if="{{!item.replying}}" class="reply-btn" catchtap="openReply" data-id="{{item.id}}" hover-class="tap">回复</view>
+          <view wx:else class="reply-box">
+            <textarea class="reply-input" placeholder="输入回复内容（200 字以内）" placeholder-class="ph-txt" value="{{item.draft}}" maxlength="{{replyMax}}" data-id="{{item.id}}" bindinput="onReplyInput" auto-height />
+            <view class="reply-ops">
+              <text class="cnt">{{item.draft.length}} / {{replyMax}}</text>
+              <text class="op-cancel" catchtap="cancelReply" data-id="{{item.id}}">取消</text>
+              <view class="op-submit {{item.submitting ? 'disabled' : ''}}" catchtap="submitReply" data-id="{{item.id}}">{{item.submitting ? '提交中…' : '提交回复'}}</view>
+            </view>
+          </view>
+        </block>
+      </view>
+    </block>
+    <view wx:else class="wip">
+      <view class="star-outline"></view>
+      <view class="t">暂无用户评价</view>
+      <view class="s">用户端完成订单并评价后，{'\n'}评价会实时出现在这里</view>
+    </view>
+    <view style="height: 32rpx;"></view>
+  </scroll-view>
+</view>

@@ -1,1 +1,42 @@
-<view class="user-page"><view class="back-row"><text class="back" bindtap="back">‹</text><text>AI 食谱推荐</text><text></text></view><text class="eyebrow">MADE FOR YOUR DAY</text><text class="title">今天吃什么，<br/>交给你的健康搭子。</text><view class="panel recommendation"><text class="panel-title">根据你的目标推荐</text><text class="panel-note">少油、高蛋白，适合今天的运动量</text><image src="{{image}}" mode="aspectFill"/><view class="row"><view class="row-main"><text>青柠香煎鸡胸</text><text>426 kcal · 蛋白质 32g</text></view><button class="small-button" data-label="加入购物车" bindtap="action">+ 加入</button></view></view><view class="panel"><text class="panel-title">你也可以这样问</text><view class="suggestions"><text class="tag" data-label="减脂午餐" bindtap="action">减脂午餐</text><text class="tag" data-label="高蛋白晚餐" bindtap="action">高蛋白晚餐</text><text class="tag" data-label="低糖食谱" bindtap="action">低糖食谱</text></view><button class="primary" data-label="打开 AI 对话" bindtap="openChat">打开 AI 对话</button></view></view>
+<view class="pg">
+  <scroll-view class="body" scroll-y enhanced show-scrollbar="{{false}}" style="padding-top: {{padTop}}px;">
+    <!-- AI 面板 -->
+    <view class="ai-panel">
+      <view class="en">AI NUTRITIONIST</view>
+      <view class="h2">你的专属 AI 营养师</view>
+      <view class="p">基于健康档案与今日摄入，随时为你解答吃什么、怎么吃</view>
+      <view class="ask-entry" bindtap="openChat" hover-class="tap">
+        <text class="ask-ph">输入你的问题…</text>
+        <view class="ask-go">提问</view>
+      </view>
+    </view>
+
+    <!-- AI 今日推荐 -->
+    <view class="sec"><text class="en">FOR YOU</text><text class="cn">AI 今日推荐</text><view class="line"></view></view>
+    <view class="card rec-card">
+      <image class="rec-img" src="{{recommendation.image || image}}" mode="aspectFill" lazy-load="true" bindtap="openRecommendation" />
+      <view class="rec-bd">
+        <view class="rec-nm" bindtap="openRecommendation">{{recommendation.name}}</view>
+        <view class="rec-sub">{{recommendation.calories}} kcal · 蛋白质 {{recommendation.protein}}g</view>
+        <view class="rec-ft">
+          <view class="price"><text class="cur">¥</text>{{recommendation.price}}</view>
+          <view class="addbtn" bindtap="addRecommendation" hover-class="tap"></view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 快捷提问 -->
+    <view class="sec"><text class="en">ASK AI</text><text class="cn">快捷提问</text><view class="line"></view></view>
+    <scroll-view class="q-row" scroll-x enhanced show-scrollbar="{{false}}">
+      <text class="q" wx:for="{{questions}}" wx:key="*this" bindtap="openChat" data-question="{{item}}" hover-class="tap">{{item}}</text>
+    </scroll-view>
+
+    <!-- 定制入口 -->
+    <view class="c-note" bindtap="goAssessment" hover-class="tap">
+      <text>想要更系统的安排？让 AI 为你定制 <b>7 天专属食谱</b></text>
+      <text class="go">去定制 ›</text>
+    </view>
+
+    <view class="foot-space"></view>
+  </scroll-view>
+</view>

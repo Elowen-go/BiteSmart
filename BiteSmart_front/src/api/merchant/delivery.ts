@@ -1,12 +1,13 @@
 import request from '../../utils/request'
 
 export interface DeliveryTask {
-  id: number
-  orderId: number
+  id: number | string
+  orderId: number | string
   orderNo: string
-  driverId: number
-  driverName: string
-  driverPhone: string
+  driverId: number | string
+  /** 后端联表 delivery_driver 带出，可能为空，视图需兜底显示 */
+  driverName?: string
+  driverPhone?: string
   taskStatus: number
   pickupCode: string
   estimatedDeliveryTime: string
@@ -22,6 +23,6 @@ export const getDeliveryTasks = (): Promise<any> => {
   return request.get('/merchant/delivery/tasks')
 }
 
-export const getDeliveryTaskByOrderId = (orderId: number): Promise<any> => {
+export const getDeliveryTaskByOrderId = (orderId: number | string): Promise<any> => {
   return request.get(`/merchant/delivery/tasks/${orderId}`)
 }

@@ -1,1 +1,49 @@
-<view class="user-page chat-page"><view class="back-row"><text class="back" bindtap="back">‹</text><text>小卡 · AI 健康助手</text><text class="accent">在线</text></view><view class="chat-date">今天</view><view class="bubble assistant">你好，今天想从饮食、运动还是作息开始？</view><view class="bubble assistant">我会结合你的健康档案，给出更适合你的建议。</view><view class="chat-suggestions"><text class="tag" data-label="推荐晚餐" bindtap="action">推荐晚餐</text><text class="tag" data-label="查看营养分析" bindtap="action">营养分析</text></view><view class="chat-input"><input value="{{question}}" placeholder="输入你想问的问题" bindinput="onInput"/><button bindtap="send" loading="{{loading}}">发送</button></view></view>
+<view class="pg">
+  <!-- 自定义导航 -->
+  <view class="nav" style="margin-top: {{menuTop}}px; height: {{menuH}}px;">
+    <view class="nav-back" bindtap="back" hover-class="tap"><text class="chev">‹</text></view>
+    <view class="nav-t">AI 营养师</view>
+    <view class="nav-r"><view class="online"></view></view>
+  </view>
+
+  <!-- 消息区 -->
+  <scroll-view class="msgs" scroll-y enhanced show-scrollbar="{{false}}" scroll-into-view="{{toView}}" scroll-with-animation="true">
+    <view class="day-tag">今天</view>
+
+    <!-- 欢迎语 -->
+    <view class="b-row">
+      <view class="avt">AI</view>
+      <view class="bub ai">你好，我是你的 AI 营养师。可以问我今天怎么吃、蛋白质够不够，或者让我帮你配一周餐单。</view>
+    </view>
+
+    <!-- 历史与对话 -->
+    <view wx:for="{{messages}}" wx:key="index" id="m{{index}}">
+      <view class="b-row me-row" wx:if="{{item.question}}">
+        <view class="bub me">{{item.question}}</view>
+      </view>
+      <view class="b-row" wx:if="{{item.answer}}">
+        <view class="avt">AI</view>
+        <view class="bub ai">{{item.answer}}</view>
+      </view>
+    </view>
+
+    <!-- typing -->
+    <view class="b-row" wx:if="{{loading}}">
+      <view class="avt">AI</view>
+      <view class="bub ai typing"><text class="dot"></text><text class="dot"></text><text class="dot"></text></view>
+    </view>
+
+    <!-- 快捷问题 -->
+    <view class="sugs" wx:if="{{messages.length <= 1}}">
+      <text class="q" wx:for="{{suggestions}}" wx:key="*this" bindtap="useSuggestion" data-question="{{item}}" hover-class="tap">{{item}}</text>
+    </view>
+
+    <view class="foot-space"></view>
+  </scroll-view>
+
+  <!-- 输入条 -->
+  <view class="chat-input">
+    <input class="in" value="{{question}}" placeholder="输入你的问题…" placeholder-class="ph-txt" bindinput="onInput" confirm-type="send" bindconfirm="send" adjust-position="{{true}}" cursor-spacing="16" />
+    <view class="send {{loading ? 'disabled' : ''}}" bindtap="send" hover-class="tap"><view class="ic-send"></view></view>
+  </view>
+</view>

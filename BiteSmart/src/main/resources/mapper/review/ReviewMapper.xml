@@ -34,11 +34,18 @@
         ORDER BY create_time DESC
     </select>
 
+    <!-- 骑手视角：联查评价用户昵称/头像（匿名评价由前端按 is_anonymous 显示"匿名用户"） -->
     <select id="findByDriverId" resultType="com.ws.bitesmart.entity.review.Review">
-        SELECT <include refid="BaseColumns"/>
-        FROM review
-        WHERE driver_id = #{driverId} AND deleted = 0
-        ORDER BY create_time DESC
+        SELECT r.id, r.order_id, r.user_id, r.merchant_id, r.driver_id, r.dish_id,
+               r.rating_food, r.rating_delivery, r.rating_service, r.overall_rating,
+               r.content, r.images, r.is_anonymous,
+               r.merchant_reply, r.merchant_reply_time,
+               r.status, r.create_time, r.update_time, r.deleted,
+               u.username AS username, u.nickname AS user_nickname, u.avatar AS user_avatar
+        FROM review r
+        LEFT JOIN sys_user u ON u.id = r.user_id
+        WHERE r.driver_id = #{driverId} AND r.deleted = 0
+        ORDER BY r.create_time DESC
     </select>
 
     <insert id="insert" parameterType="com.ws.bitesmart.entity.review.Review">

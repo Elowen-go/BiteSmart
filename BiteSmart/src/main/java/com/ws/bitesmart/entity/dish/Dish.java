@@ -46,6 +46,18 @@ public class Dish {
     /** 适宜人群 JSON */
     private String suitableFor;
 
+    /** 菜品标签 JSON 数组，如 ["高蛋白","减脂"] */
+    private String tags;
+
+    /** AI 点评文案 */
+    private String aiComment;
+
+    /** 适用场景 JSON 数组，如 ["减脂期","健身增肌"] */
+    private String fitScenes;
+
+    /** 忌口/注意事项 JSON 数组，如 ["坚果过敏慎选"] */
+    private String cautions;
+
     /** 热量（大卡） */
     private Integer calories;
 

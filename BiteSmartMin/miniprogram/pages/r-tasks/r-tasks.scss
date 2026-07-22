@@ -1,0 +1,8 @@
+.pg { display: flex; flex-direction: column; height: 100vh; background: var(--bg); }
+.body { flex: 1; padding: 0 32rpx; box-sizing: border-box; }
+
+/* ---------- 离线空态 ---------- */
+.empty { display: flex; flex-direction: column; align-items: center; padding: 120rpx 0 80rpx; }
+.empty .t { font-size: 28rpx; font-weight: 700; color: var(--ink); }
+.empty .s { font-size: 22rpx; color: var(--sub); margin-top: 12rpx; }
+.empty-btn { margin-top: 40rpx; padding: 0 64rpx; height: 88rpx; }

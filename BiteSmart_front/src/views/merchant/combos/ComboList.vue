@@ -99,10 +99,10 @@ const comboStats = computed(() => {
   const noNutrition = comboList.value.filter((item) => !item.totalCalories && !item.totalProtein && !item.totalFat && !item.totalCarbs).length
 
   return [
-    { label: '上架套餐', value: onSale, hint: '用户可购买', className: 'success' },
-    { label: '下架套餐', value: offSale, hint: '暂不展示', className: 'muted' },
-    { label: '支持换菜', value: replaceable, hint: '可自定义套餐', className: 'warning' },
-    { label: '待补营养', value: noNutrition, hint: '缺少营养汇总', className: 'danger' }
+    { label: '本页上架套餐', value: onSale, hint: '用户可购买', className: 'success' },
+    { label: '本页下架套餐', value: offSale, hint: '暂不展示', className: 'muted' },
+    { label: '本页支持换菜', value: replaceable, hint: '可自定义套餐', className: 'warning' },
+    { label: '本页待补营养', value: noNutrition, hint: '缺少营养汇总', className: 'danger' }
   ]
 })
 
@@ -510,6 +510,7 @@ onMounted(() => {
     <div class="combo-page">
       <div class="page-head">
         <div>
+          <div class="en">COMBOS</div>
           <h2>套餐管理</h2>
           <p>组合菜品，发布减脂、增肌、控糖等健康套餐</p>
         </div>
@@ -552,7 +553,7 @@ onMounted(() => {
             <template #default="{ row }">
               <div class="combo-info">
                 <img v-if="row.comboImage" :src="getImageUrl(row.comboImage)" class="combo-image" alt="套餐图片" />
-                <div v-else class="combo-image-placeholder">无图</div>
+                <div v-else class="combo-image-placeholder">{{ (row.comboName || '餐')[0] }}</div>
                 <div class="combo-name-wrapper">
                   <span class="combo-name">{{ row.comboName }}</span>
                   <el-tag size="small" type="info" class="combo-type-tag">{{ getComboTypeLabel(row.comboType) }}</el-tag>
@@ -592,11 +593,11 @@ onMounted(() => {
           <el-table-column prop="createTime" label="创建时间" width="170">
             <template #default="{ row }">{{ formatDateTime(row.createTime) }}</template>
           </el-table-column>
-          <el-table-column label="操作" width="220" fixed="right" align="right">
+          <el-table-column label="操作" width="180" fixed="right" align="right">
             <template #default="{ row }">
-              <el-button size="small" @click="handleView(row)">查看</el-button>
               <el-button size="small" type="primary" @click="handleEdit(row)">编辑</el-button>
-              <el-button size="small" type="danger" @click="handleDelete(row)">删除</el-button>
+              <el-button size="small" text @click="handleView(row)">查看</el-button>
+              <el-button size="small" text type="danger" @click="handleDelete(row)">删除</el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -617,6 +618,7 @@ onMounted(() => {
 
     <el-dialog v-model="dialogVisible" :title="dialogTitle" width="880px" destroy-on-close>
       <el-form :model="form" label-width="120px">
+        <div class="form-section">基础信息</div>
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="套餐名称" required>
@@ -637,6 +639,7 @@ onMounted(() => {
           </el-col>
         </el-row>
 
+        <div class="form-section">价格与状态</div>
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="价格" required>
@@ -646,9 +649,6 @@ onMounted(() => {
           <el-col :span="12">
             <el-form-item label="原价">
               <el-input-number v-model="form.originalPrice" :min="0" :precision="2" style="width: 100%;" />
-              <span v-if="selectedDishAmount > 0" class="nutrition-hint">
-                已同步菜品原价: ¥{{ formatAmount(selectedDishAmount) }}
-              </span>
             </el-form-item>
           </el-col>
         </el-row>
@@ -656,10 +656,13 @@ onMounted(() => {
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="状态" required>
-              <el-radio-group v-model="form.status">
-                <el-radio :value="10">上架</el-radio>
-                <el-radio :value="20">下架</el-radio>
-              </el-radio-group>
+              <el-switch
+                :model-value="form.status === 10"
+                inline-prompt
+                active-text="上架"
+                inactive-text="下架"
+                @update:model-value="(v: string | number | boolean) => (form.status = v ? 10 : 20)"
+              />
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -672,21 +675,16 @@ onMounted(() => {
           </el-col>
         </el-row>
 
+        <div class="form-section">营养汇总<span class="form-section-tip">随菜品自动同步，可手动调整</span></div>
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="总热量 (kcal)">
               <el-input-number v-model="form.totalCalories" :min="0" :precision="0" style="width: 100%;" />
-              <span v-if="autoCalculatedNutrition.calories > 0" class="nutrition-hint">
-                已同步: {{ Math.round(autoCalculatedNutrition.calories) }} kcal
-              </span>
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="蛋白质 (g)">
               <el-input-number v-model="form.totalProtein" :min="0" :precision="2" style="width: 100%;" />
-              <span v-if="autoCalculatedNutrition.protein > 0" class="nutrition-hint">
-                已同步: {{ autoCalculatedNutrition.protein.toFixed(2) }} g
-              </span>
             </el-form-item>
           </el-col>
         </el-row>
@@ -695,21 +693,16 @@ onMounted(() => {
           <el-col :span="12">
             <el-form-item label="脂肪 (g)">
               <el-input-number v-model="form.totalFat" :min="0" :precision="2" style="width: 100%;" />
-              <span v-if="autoCalculatedNutrition.fat > 0" class="nutrition-hint">
-                已同步: {{ autoCalculatedNutrition.fat.toFixed(2) }} g
-              </span>
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="碳水 (g)">
               <el-input-number v-model="form.totalCarbs" :min="0" :precision="2" style="width: 100%;" />
-              <span v-if="autoCalculatedNutrition.carbs > 0" class="nutrition-hint">
-                已同步: {{ autoCalculatedNutrition.carbs.toFixed(2) }} g
-              </span>
             </el-form-item>
           </el-col>
         </el-row>
 
+        <div class="form-section">展示信息</div>
         <el-form-item label="适宜人群">
           <el-select v-model="form.suitableFor" placeholder="请选择适宜人群" style="width: 100%;" clearable>
             <el-option
@@ -745,7 +738,8 @@ onMounted(() => {
           <el-input v-model="form.description" type="textarea" :rows="3" placeholder="请输入套餐描述" />
         </el-form-item>
 
-        <el-form-item label="关联菜品">
+        <div class="form-section">关联菜品</div>
+        <el-form-item label-width="0">
           <div class="dish-select-area">
             <div class="combo-builder-summary">
               <div>
@@ -919,7 +913,7 @@ onMounted(() => {
               <el-tag size="small" :type="item.isFixed === 1 ? undefined : 'warning'" effect="plain">
                 {{ item.isFixed === 1 ? '固定' : '可替换' }}
               </el-tag>
-              <span class="view-dish-qty">x{{ item.quantity || 1 }}</span>
+              <span class="view-dish-qty">×{{ item.quantity || 1 }}</span>
             </div>
           </div>
           <p v-else class="view-empty">暂无关联菜品</p>
@@ -976,6 +970,13 @@ onMounted(() => {
   font-weight: 650;
 }
 
+.page-head .en {
+  color: var(--faint);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
+}
+
 .page-head p {
   margin-top: 4px;
   color: var(--bs-text-muted);
@@ -1019,11 +1020,11 @@ onMounted(() => {
 }
 
 .summary-item.success {
-  border-left: 3px solid #1b6b4a;
+  border-left: 3px solid var(--bs-status-success);
 }
 
 .summary-item.warning {
-  border-left: 3px solid #b76e2a;
+  border-left: 3px solid var(--bs-status-warning);
 }
 
 .summary-item.danger {
@@ -1031,7 +1032,7 @@ onMounted(() => {
 }
 
 .summary-item.muted {
-  border-left: 3px solid #8a9299;
+  border-left: 3px solid var(--bs-status-secondary);
 }
 
 .card-panel {
@@ -1069,41 +1070,6 @@ onMounted(() => {
   margin-top: 20px;
 }
 
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: var(--bs-spacing-lg);
-}
-
-.card-header h3 {
-  font-size: var(--bs-font-size-lg);
-  font-weight: 600;
-  color: var(--bs-text-title);
-}
-
-.btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: var(--bs-spacing-sm) 20px;
-  border-radius: var(--bs-radius-md);
-  font-size: var(--bs-font-size-base);
-  font-weight: 500;
-  border: 1px solid transparent;
-  cursor: pointer;
-  transition: 0.15s;
-}
-
-.btn-primary {
-  background: var(--bs-primary);
-  color: #FFFFFF;
-}
-
-.btn-primary:hover {
-  background: var(--bs-primary-hover);
-}
-
 .combo-info {
   display: flex;
   align-items: center;
@@ -1121,12 +1087,13 @@ onMounted(() => {
   width: 60px;
   height: 60px;
   border-radius: 8px;
-  background: #f0f0f0;
+  background: var(--green-soft);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #999;
-  font-size: 12px;
+  color: var(--green-deep);
+  font-size: 22px;
+  font-weight: 700;
 }
 
 .combo-name-wrapper {
@@ -1162,13 +1129,40 @@ onMounted(() => {
 
 .original-price {
   font-size: 12px;
-  color: #999;
+  color: var(--faint);
   text-decoration: line-through;
 }
 
 .nutrition-brief {
   color: var(--bs-text-title);
   font-weight: 600;
+}
+
+/* 表单分区标题 */
+.form-section {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 20px 0 14px;
+  color: var(--bs-text-title);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.form-section:first-child {
+  margin-top: 0;
+}
+
+.form-section::after {
+  content: '';
+  flex: 1;
+  border-top: 1px solid var(--bs-border-light);
+}
+
+.form-section-tip {
+  color: var(--bs-text-muted);
+  font-size: 12px;
+  font-weight: 400;
 }
 
 /* 菜品选择区域 */
@@ -1246,7 +1240,7 @@ onMounted(() => {
 
 :global(.dish-option-popper .el-select-dropdown__item.hover),
 :global(.dish-option-popper .el-select-dropdown__item:hover) {
-  background: #f4f7f6;
+  background: var(--bs-bg-hover);
 }
 
 /* 菜品信息较多，给价格和右侧选中状态留出足够空间 */
@@ -1283,8 +1277,8 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #eef3f0;
-  color: var(--bs-primary);
+  background: var(--green-soft);
+  color: var(--green-deep);
   font-weight: 600;
 }
 
@@ -1320,7 +1314,7 @@ onMounted(() => {
 }
 
 .selected-dish-table {
-  border: 1px solid #e4e7ed;
+  border: 1px solid var(--bs-border-light);
   border-radius: 6px;
   overflow: hidden;
 }
@@ -1328,10 +1322,10 @@ onMounted(() => {
 .dish-table-header {
   display: flex;
   align-items: center;
-  background: #f5f7fa;
+  background: var(--bs-bg-hover);
   padding: 8px 12px;
   font-size: 13px;
-  color: #909399;
+  color: var(--bs-text-muted);
   font-weight: 500;
 }
 
@@ -1339,12 +1333,12 @@ onMounted(() => {
   display: flex;
   align-items: center;
   padding: 8px 12px;
-  border-top: 1px solid #f0f0f0;
+  border-top: 1px solid var(--bs-border-light);
   transition: background 0.15s;
 }
 
 .dish-table-row:hover {
-  background: #fafafa;
+  background: var(--bs-bg-hover);
 }
 
 .col-name { flex: 1; min-width: 0; font-weight: 500; }
@@ -1377,8 +1371,8 @@ onMounted(() => {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: #eef3f0;
-  color: var(--bs-primary);
+  background: var(--green-soft);
+  color: var(--green-deep);
   font-weight: 600;
 }
 
@@ -1421,12 +1415,12 @@ onMounted(() => {
 
 .pool-title {
   font-weight: 500;
-  color: #606266;
+  color: var(--bs-text-title);
 }
 
 .pool-hint {
   font-size: 12px;
-  color: #909399;
+  color: var(--bs-text-muted);
   margin: 0 0 8px 0;
 }
 
@@ -1464,8 +1458,8 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #fff4e5;
-  color: #b76e2a;
+  background: var(--orange-soft);
+  color: var(--orange);
   font-weight: 600;
 }
 
@@ -1495,7 +1489,7 @@ onMounted(() => {
 
 /* 查看弹窗 - 菜品列表 */
 .view-dish-table {
-  border: 1px solid #e4e7ed;
+  border: 1px solid var(--bs-border-light);
   border-radius: 6px;
   overflow: hidden;
 }
@@ -1505,7 +1499,7 @@ onMounted(() => {
   align-items: center;
   gap: 12px;
   padding: 8px 12px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--bs-border-light);
 }
 
 .view-dish-row:last-child {
@@ -1514,7 +1508,7 @@ onMounted(() => {
 
 .view-dish-qty {
   margin-left: auto;
-  color: #909399;
+  color: var(--bs-text-muted);
   font-size: 13px;
 }
 
@@ -1529,7 +1523,7 @@ onMounted(() => {
   gap: 16px;
   margin-bottom: 20px;
   padding-bottom: 20px;
-  border-bottom: 1px solid #e4e7ed;
+  border-bottom: 1px solid var(--bs-border-light);
 }
 
 .view-image {
@@ -1543,18 +1537,18 @@ onMounted(() => {
   width: 100px;
   height: 100px;
   border-radius: 8px;
-  background: #f0f0f0;
+  background: var(--green-soft);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #999;
+  color: var(--green-deep);
   font-size: 14px;
 }
 
 .view-basic h3 {
   margin: 0 0 10px 0;
   font-size: 20px;
-  color: #303133;
+  color: var(--bs-text-title);
 }
 
 .view-descriptions {
@@ -1568,22 +1562,22 @@ onMounted(() => {
 .view-section h4 {
   margin: 0 0 10px 0;
   font-size: 16px;
-  color: #606266;
+  color: var(--bs-text-title);
   font-weight: 600;
 }
 
 .view-description {
   margin: 0;
   padding: 12px;
-  background: #f5f7fa;
+  background: var(--bs-bg-hover);
   border-radius: 4px;
-  color: #606266;
+  color: var(--bs-text-body);
   line-height: 1.6;
 }
 
 .view-empty {
   margin: 0;
-  color: #909399;
+  color: var(--bs-text-muted);
   font-style: italic;
 }
 
@@ -1599,7 +1593,7 @@ onMounted(() => {
 
 .nutrition-hint {
   font-size: 12px;
-  color: #67c23a;
+  color: var(--green);
   margin-left: 8px;
 }
 
@@ -1619,7 +1613,7 @@ onMounted(() => {
 .combo-image-uploader {
   width: 100%;
   height: 100%;
-  border: 2px dashed #d9d9d9;
+  border: 2px dashed var(--bs-border-light);
   border-radius: 8px;
   display: flex;
   align-items: center;
@@ -1629,7 +1623,7 @@ onMounted(() => {
 }
 
 .combo-image-uploader:hover {
-  border-color: var(--bs-primary);
+  border-color: var(--green);
 }
 
 .upload-hint {
@@ -1637,7 +1631,7 @@ onMounted(() => {
   flex-direction: column;
   align-items: center;
   gap: 8px;
-  color: #909399;
+  color: var(--bs-text-muted);
   font-size: 14px;
 }
 
@@ -1648,7 +1642,7 @@ onMounted(() => {
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: #f56c6c;
+  background: var(--bs-status-danger);
   color: #fff;
   border: none;
   cursor: pointer;
@@ -1659,7 +1653,7 @@ onMounted(() => {
 }
 
 .remove-image-btn:hover {
-  background: #f78989;
+  background: var(--danger-brand);
 }
 
 @media (max-width: 1100px) {

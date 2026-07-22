@@ -12,7 +12,13 @@ const PROFILE_KEYS = [
   'diseaseHistory',
   'disease_history',
   'healthGoal',
-  'health_goal'
+  'health_goal',
+  'targetWeight',
+  'target_weight',
+  'exerciseFreq',
+  'exercise_freq',
+  'focusParts',
+  'focus_parts'
 ]
 
 const isObject = (value: unknown): value is Record<string, any> => {
@@ -51,6 +57,9 @@ export const extractProfile = (response: any) => {
     dietPreference: source.dietPreference ?? source.diet_preference ?? '',
     allergyInfo: source.allergyInfo ?? source.allergy_info ?? '',
     diseaseHistory: source.diseaseHistory ?? source.disease_history ?? '',
-    healthGoal: source.healthGoal ?? source.health_goal ?? ''
+    healthGoal: source.healthGoal ?? source.health_goal ?? '',
+    targetWeight: numberOrNull(source.targetWeight ?? source.target_weight),
+    exerciseFreq: numberOrNull(source.exerciseFreq ?? source.exercise_freq),
+    focusParts: source.focusParts ?? source.focus_parts ?? ''
   }
 }

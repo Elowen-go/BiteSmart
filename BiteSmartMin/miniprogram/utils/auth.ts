@@ -21,7 +21,8 @@ const normalizeUser = (stored: unknown): MiniUserInfo | null => {
   if (typeof stored !== 'object') return null
   const value = stored as Record<string, unknown>
   const role = value.role as Record<string, unknown> | undefined
-  const roleType = Number(value.roleType ?? role?.roleType ?? role?.type)
+  const roleTypeValue = value.roleType !== undefined && value.roleType !== null ? value.roleType : (role && role.roleType !== undefined && role.roleType !== null ? role.roleType : role && role.type)
+  const roleType = Number(roleTypeValue)
   if (![10, 20, 30].includes(roleType)) return null
   return { ...value, roleType } as MiniUserInfo
 }

@@ -1,1 +1,60 @@
-<view class="user-page"><view class="back-row"><text class="back" bindtap="back">‹</text><text>评价订单</text><text></text></view><text class="eyebrow">TELL US HOW IT FELT</text><text class="title">这一餐，感觉怎么样？</text><view class="panel"><text class="panel-title">禾下厨房</text><text class="panel-note">青柠香煎鸡胸 · 南瓜藜麦暖沙拉</text><view class="stars"><text wx:for="{{stars}}" wx:key="*this" data-index="{{index}}" bindtap="rate" class="{{index < rating ? 'active' : ''}}">★</text></view><textarea placeholder="说说你的感受，帮助我们做得更好" auto-height="true"></textarea><button class="primary" bindtap="submit">提交评价</button></view></view>
+<view class="pg">
+  <!-- 自定义导航 -->
+  <view class="nav" style="margin-top: {{menuTop}}px; height: {{menuH}}px;">
+    <view class="nav-back" bindtap="back" hover-class="tap"><text class="chev">‹</text></view>
+    <view class="nav-t">评价订单</view>
+    <view class="nav-ph"></view>
+  </view>
+
+  <scroll-view class="body" scroll-y enhanced show-scrollbar="{{false}}">
+    <!-- 订单摘要 -->
+    <view class="card order-card">
+      <view class="shop"><view class="shop-dot"></view><text>BiteSmart 健康厨房</text></view>
+      <view class="sub">订单 #{{orderId}} · 吃得还满意吗？</view>
+    </view>
+
+    <!-- 三项评分 -->
+    <view class="card rate-card">
+      <view class="rate-line">
+        <text class="lab">菜品口味</text>
+        <view class="star-row">
+          <text class="star {{ratingFood >= item ? 'on' : ''}}" wx:for="{{stars}}" wx:key="*this" catchtap="rate" data-key="ratingFood" data-index="{{index}}">★</text>
+        </view>
+      </view>
+      <view class="rate-line">
+        <text class="lab">配送服务</text>
+        <view class="star-row">
+          <text class="star {{ratingDelivery >= item ? 'on' : ''}}" wx:for="{{stars}}" wx:key="*this" catchtap="rate" data-key="ratingDelivery" data-index="{{index}}">★</text>
+        </view>
+      </view>
+      <view class="rate-line">
+        <text class="lab">包装服务</text>
+        <view class="star-row">
+          <text class="star {{ratingService >= item ? 'on' : ''}}" wx:for="{{stars}}" wx:key="*this" catchtap="rate" data-key="ratingService" data-index="{{index}}">★</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 文字评价 -->
+    <view class="card txt-card">
+      <textarea class="txt" placeholder="说说菜品口感、分量、配送速度…（选填）" placeholder-class="ph-txt" value="{{content}}" bindinput="onInput" maxlength="200" />
+      <view class="count">{{content.length}}/200</view>
+    </view>
+
+    <!-- 匿名 -->
+    <view class="card anon-card">
+      <view class="anon-main">
+        <view class="anon-t">匿名评价</view>
+        <view class="anon-s">匿名后，商家与骑手将看不到你的昵称</view>
+      </view>
+      <switch checked="{{isAnonymous}}" bindchange="onAnonChange" color="#1E9E62" />
+    </view>
+
+    <view class="foot-space"></view>
+  </scroll-view>
+
+  <!-- 提交 -->
+  <view class="bbar">
+    <view class="btn-ink green submit-btn {{submitting ? 'disabled' : ''}}" bindtap="submit" hover-class="tap">{{submitting ? '提交中…' : '提交评价'}}</view>
+  </view>
+</view>

@@ -1,0 +1,44 @@
+.pg { display: flex; flex-direction: column; height: 100vh; background: var(--bg); }
+
+/* ---------- 自定义导航 ---------- */
+.nav { display: flex; align-items: center; padding: 0 32rpx; flex: none; }
+.nav-back {
+  width: 68rpx;
+  height: 68rpx;
+  border: 1rpx solid var(--hair);
+  border-radius: 20rpx;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.nav-back .chev { font-size: 40rpx; color: var(--ink); line-height: 1; margin-top: -4rpx; }
+.nav-t { font-size: 32rpx; font-weight: 800; margin-left: 24rpx; }
+
+.body { flex: 1; padding: 16rpx 32rpx 0; box-sizing: border-box; }
+
+/* ---------- 评分总览（复刻原型 result-num） ---------- */
+.score-box { text-align: center; padding: 32rpx 0 8rpx; }
+.score-num { font-size: 80rpx; font-weight: 800; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.score-lb { font-size: 20rpx; color: var(--sub); margin-top: 8rpx; }
+
+/* ---------- 评价卡（同 m-reviews，复刻原型 pgRReviews） ---------- */
+.r-card { margin-top: 24rpx; padding: 28rpx 32rpx; }
+.r-head { display: flex; justify-content: space-between; font-size: 24rpx; }
+.r-head .b { font-weight: 800; }
+.r-head .t { color: var(--faint); font-size: 20rpx; }
+.r-rating { font-size: 22rpx; color: var(--orange); margin-top: 12rpx; }
+.r-content { font-size: 24rpx; color: var(--sub); margin-top: 16rpx; line-height: 1.8; }
+
+/* ---------- 空态（复刻原型 wip） ---------- */
+.wip { display: flex; flex-direction: column; align-items: center; padding: 160rpx 0 80rpx; text-align: center; }
+.wip .star-outline {
+  width: 120rpx;
+  height: 120rpx;
+  transform: rotate(45deg);
+  border: 3rpx solid #C7D0C9;
+  border-radius: 16rpx;
+  margin-bottom: 32rpx;
+}
+.wip .t { font-size: 28rpx; font-weight: 700; color: var(--ink); }
+.wip .s { font-size: 22rpx; color: var(--sub); margin-top: 12rpx; }

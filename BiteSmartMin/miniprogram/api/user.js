@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.buyMembership = exports.getMembershipStatus = exports.getMembershipPlans = exports.addAddress = exports.getAddresses = exports.saveProfile = exports.getProfile = void 0;
+exports.buyMembership = exports.getMembershipStatus = exports.getMembershipPlans = exports.deleteAddress = exports.updateAddress = exports.addAddress = exports.getAddresses = exports.saveProfile = exports.getProfile = void 0;
 const request_1 = require("../utils/request");
 const getProfile = () => (0, request_1.request)({ url: '/user/profile' });
 exports.getProfile = getProfile;
@@ -10,6 +10,10 @@ const getAddresses = () => (0, request_1.request)({ url: '/user/addresses' });
 exports.getAddresses = getAddresses;
 const addAddress = (address) => (0, request_1.request)({ url: '/user/addresses', method: 'POST', data: address });
 exports.addAddress = addAddress;
+const updateAddress = (id, address) => (0, request_1.request)({ url: `/user/addresses/${id}`, method: 'PUT', data: address });
+exports.updateAddress = updateAddress;
+const deleteAddress = (id) => (0, request_1.request)({ url: `/user/addresses/${id}`, method: 'DELETE' });
+exports.deleteAddress = deleteAddress;
 const getMembershipPlans = () => (0, request_1.request)({ url: '/user/membership/plans' });
 exports.getMembershipPlans = getMembershipPlans;
 const getMembershipStatus = () => (0, request_1.request)({ url: '/user/membership/status' });

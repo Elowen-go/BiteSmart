@@ -1,2 +1,44 @@
-@import "../../styles/user-page.scss";
-.notice-card { margin-bottom:18rpx; }.notice-date { display:block; color:#7773E8; font-size:18rpx; margin-bottom:18rpx; }
+.pg { display: flex; flex-direction: column; height: 100vh; background: var(--bg); }
+
+/* ---------- 自定义导航 ---------- */
+.nav { display: flex; align-items: center; padding: 0 32rpx; flex: none; }
+.nav-back {
+  width: 68rpx;
+  height: 68rpx;
+  border: 1rpx solid var(--hair);
+  border-radius: 20rpx;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.nav-back .chev { font-size: 40rpx; color: var(--ink); line-height: 1; margin-top: -4rpx; }
+.nav-t { font-size: 32rpx; font-weight: 800; margin-left: 24rpx; }
+.nav-ph { width: 68rpx; margin-left: auto; }
+
+.body { flex: 1; padding: 0 32rpx; box-sizing: border-box; }
+
+/* ---------- 公告列表 ---------- */
+.n-card { padding: 8rpx 28rpx; margin-top: 20rpx; }
+.notice-item { padding: 28rpx 0; border-top: 1rpx solid var(--hair); }
+.notice-item:first-child { border-top: none; }
+.n-top { display: flex; justify-content: space-between; align-items: baseline; gap: 20rpx; }
+.n-top b { font-size: 26rpx; flex: 1; }
+.n-date { font-size: 20rpx; color: var(--faint); flex: none; }
+.n-body {
+  font-size: 22rpx;
+  color: var(--sub);
+  line-height: 1.9;
+  margin-top: 16rpx;
+  padding: 20rpx 24rpx;
+  background: #FBFCFA;
+  border-radius: 12rpx;
+  border: 1rpx dashed var(--hair);
+}
+
+/* ---------- 空态 ---------- */
+.empty { display: flex; flex-direction: column; align-items: center; padding: 120rpx 0 80rpx; }
+.empty .t { font-size: 28rpx; font-weight: 700; color: var(--ink); }
+.empty .s { font-size: 22rpx; color: var(--sub); margin-top: 12rpx; }
+
+.foot-space { height: 40rpx; }

@@ -5,7 +5,7 @@
     <sql id="BaseColumns">
         id, user_id, shop_name, shop_logo, business_license, license_number,
         contact_name, contact_phone, shop_address, delivery_range, business_hours,
-        shop_notice, status, audit_remark, avg_rating,
+        shop_notice, status, open_status, audit_remark, avg_rating,
         create_time, update_time, deleted
     </sql>
 
@@ -51,6 +51,7 @@
             <if test="deliveryRange != null">delivery_range = #{deliveryRange},</if>
             <if test="businessHours != null">business_hours = #{businessHours},</if>
             <if test="shopNotice != null">shop_notice = #{shopNotice},</if>
+            <if test="openStatus != null">open_status = #{openStatus},</if>
             update_time = NOW()
         </set>
         WHERE id = #{id} AND deleted = 0

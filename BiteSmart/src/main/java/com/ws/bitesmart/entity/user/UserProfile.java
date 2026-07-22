@@ -47,6 +47,15 @@ public class UserProfile {
     /** 每日推荐摄入热量（由AI计算） */
     private Integer dailyCalorieTarget;
 
+    /** 目标体重（kg） */
+    private BigDecimal targetWeight;
+
+    /** 每周运动频次（次） */
+    private Integer exerciseFreq;
+
+    /** 重点锻炼部位 JSON 数组，如 ["全身","腰腹"] */
+    private String focusParts;
+
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
     private Integer deleted;

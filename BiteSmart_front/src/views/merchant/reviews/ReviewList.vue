@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿<script setup lang="ts">
+<script setup lang="ts">
 import { computed, ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Refresh } from '@element-plus/icons-vue'
@@ -11,9 +11,15 @@ const total = ref(0)
 const page = ref(1)
 const size = ref(10)
 const replyDialogVisible = ref(false)
+const replyReadonly = ref(false)
 const currentReview = ref<MerchantReview | null>(null)
 const replyContent = ref('')
 const activeFilter = ref<'all' | 'unreplied' | 'low' | 'replied'>('all')
+
+/** 低分评价阈值：3 分及以下 */
+const LOW_RATING_THRESHOLD = 3
+/** 评分星颜色，对齐全局品牌绿 --green */
+const RATE_COLORS = ['#1E9E62', '#1E9E62', '#1E9E62']
 
 const filterOptions = [
   { label: '全部', value: 'all' },
@@ -24,23 +30,25 @@ const filterOptions = [
 
 const filteredReviewList = computed(() => {
   if (activeFilter.value === 'unreplied') return reviewList.value.filter((item) => !item.replyContent)
-  if (activeFilter.value === 'low') return reviewList.value.filter((item) => Number(item.rating || 0) <= 3)
+  if (activeFilter.value === 'low') return reviewList.value.filter((item) => Number(item.rating || 0) <= LOW_RATING_THRESHOLD)
   if (activeFilter.value === 'replied') return reviewList.value.filter((item) => !!item.replyContent)
   return reviewList.value
 })
 
+// TODO(P0-统计口径): 以下统计基于当前页数据，后端暂无评价聚合接口；
+// 已用"本页"字样弱化误导，后续应换后端聚合统计
 const reviewStats = computed(() => {
   const unreplied = reviewList.value.filter((item) => !item.replyContent).length
-  const low = reviewList.value.filter((item) => Number(item.rating || 0) <= 3).length
+  const low = reviewList.value.filter((item) => Number(item.rating || 0) <= LOW_RATING_THRESHOLD).length
   const avg = reviewList.value.length
     ? reviewList.value.reduce((sum, item) => sum + Number(item.rating || 0), 0) / reviewList.value.length
     : 0
 
   return [
-    { label: '平均评分', value: avg.toFixed(1), hint: '当前页评价均分', className: 'score' },
-    { label: '未回复', value: unreplied, hint: '建议优先处理', className: 'warning' },
-    { label: '低分评价', value: low, hint: '3 分及以下', className: 'danger' },
-    { label: '评价总数', value: reviewList.value.length, hint: '当前页记录', className: 'muted' }
+    { label: '本页平均评分', value: avg.toFixed(1), hint: '当前页评价均分', className: 'score' },
+    { label: '本页未回复', value: unreplied, hint: '建议优先处理', className: 'warning' },
+    { label: '本页低分评价', value: low, hint: '3 分及以下', className: 'danger' },
+    { label: '本页评价数', value: reviewList.value.length, hint: '当前页记录', className: 'muted' }
   ]
 })
 
@@ -62,6 +70,7 @@ const fetchList = async () => {
 const handleReply = (row: any) => {
   currentReview.value = row
   replyContent.value = row.replyContent || ''
+  replyReadonly.value = !!row.replyContent
   replyDialogVisible.value = true
 }
 
@@ -137,7 +146,7 @@ onMounted(() => {
           </el-table-column>
           <el-table-column prop="rating" label="评分" width="150">
             <template #default="{ row }">
-              <el-rate :model-value="row.rating" disabled show-score score-template="{value}分" />
+              <el-rate :model-value="row.rating" disabled show-score score-template="{value}分" :colors="RATE_COLORS" />
             </template>
           </el-table-column>
           <el-table-column prop="content" label="评价内容" min-width="240" show-overflow-tooltip />
@@ -151,15 +160,14 @@ onMounted(() => {
           <el-table-column label="状态" width="100">
             <template #default="{ row }">
               <el-tag v-if="row.replyContent" type="success">已回复</el-tag>
-              <el-tag v-else-if="Number(row.rating || 0) <= 3" type="danger">待安抚</el-tag>
+              <el-tag v-else-if="Number(row.rating || 0) <= LOW_RATING_THRESHOLD" type="danger">待安抚</el-tag>
               <el-tag v-else type="warning">待回复</el-tag>
             </template>
           </el-table-column>
           <el-table-column label="操作" width="110" fixed="right" align="right">
             <template #default="{ row }">
-              <el-button size="small" :type="row.replyContent ? 'info' : 'primary'" @click="handleReply(row)" :disabled="!!row.replyContent">
-                {{ row.replyContent ? '已处理' : '回复' }}
-              </el-button>
+              <el-button v-if="row.replyContent" text type="primary" size="small" @click="handleReply(row)">查看回复</el-button>
+              <el-button v-else size="small" type="primary" @click="handleReply(row)">回复</el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -179,7 +187,7 @@ onMounted(() => {
       </div>
     </div>
 
-    <el-dialog v-model="replyDialogVisible" title="回复评价" width="500px">
+    <el-dialog v-model="replyDialogVisible" :title="replyReadonly ? '查看回复' : '回复评价'" width="500px">
       <div v-if="currentReview" class="reply-context">
         <div class="user-name">{{ currentReview.username || '匿名用户' }}</div>
         <div class="sub-text">{{ currentReview.content }}</div>
@@ -188,11 +196,19 @@ onMounted(() => {
         v-model="replyContent"
         type="textarea"
         :rows="4"
-        placeholder="请输入回复内容"
+        maxlength="200"
+        show-word-limit
+        :disabled="replyReadonly"
+        :placeholder="replyReadonly ? '' : '请输入回复内容'"
       />
       <template #footer>
-        <el-button @click="replyDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="submitReply" :loading="loading">确定回复</el-button>
+        <template v-if="replyReadonly">
+          <el-button type="primary" @click="replyDialogVisible = false">关闭</el-button>
+        </template>
+        <template v-else>
+          <el-button @click="replyDialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="submitReply" :loading="loading">确定回复</el-button>
+        </template>
       </template>
     </el-dialog>
   </div>
@@ -266,11 +282,11 @@ onMounted(() => {
 
 .summary-item.score,
 .summary-item.muted {
-  border-left: 3px solid #8a9299;
+  border-left: 3px solid var(--bs-status-secondary);
 }
 
 .summary-item.warning {
-  border-left: 3px solid #b76e2a;
+  border-left: 3px solid var(--bs-status-warning);
 }
 
 .summary-item.danger {

@@ -1,0 +1,104 @@
+.pg { display: flex; flex-direction: column; height: 100vh; background: var(--bg); }
+
+/* ---------- 自定义导航 ---------- */
+.nav { display: flex; align-items: center; padding: 0 32rpx; flex: none; }
+.nav-back {
+  width: 68rpx;
+  height: 68rpx;
+  border: 1rpx solid var(--hair);
+  border-radius: 20rpx;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.nav-back .chev { font-size: 40rpx; color: var(--ink); line-height: 1; margin-top: -4rpx; }
+.nav-t { font-size: 32rpx; font-weight: 800; margin-left: 24rpx; }
+
+.body { flex: 1; padding: 16rpx 32rpx 0; box-sizing: border-box; }
+
+/* ---------- 取餐码 ---------- */
+.code-card { padding: 36rpx 32rpx; text-align: center; }
+.code-card .cd { font-size: 64rpx; font-weight: 800; letter-spacing: 12rpx; font-variant-numeric: tabular-nums; }
+.code-card .lb { font-size: 20rpx; color: var(--sub); margin-top: 12rpx; }
+
+/* ---------- 联系人卡 ---------- */
+.r-card { display: flex; align-items: center; gap: 20rpx; padding: 28rpx 32rpx; margin-top: 24rpx; }
+.avt {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 50%;
+  background: var(--green-soft);
+  color: var(--green-deep);
+  font-size: 28rpx;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+.avt.merchant { background: #FDEEE1; color: #C4571A; }
+.r-main { flex: 1; }
+.r-main .nm { font-size: 26rpx; font-weight: 700; }
+.r-main .sub { font-size: 20rpx; color: var(--sub); margin-top: 6rpx; }
+/* CSS 电话图标（听筒） */
+.ic-phone {
+  width: 26rpx;
+  height: 26rpx;
+  border: 3rpx solid var(--green-deep);
+  border-radius: 8rpx 8rpx 16rpx 8rpx;
+  transform: rotate(-12deg);
+  border-top-left-radius: 16rpx;
+}
+
+/* 联系卡右侧操作组（导航 + 电话） */
+.side-ops { display: flex; gap: 16rpx; flex: none; }
+.op-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6rpx;
+  font-size: 18rpx;
+  color: var(--sub);
+}
+.op-btn .ic-phone { margin: 8rpx 0; }
+/* CSS 导航图标（纸飞机/指针） */
+.ic-nav {
+  width: 28rpx;
+  height: 28rpx;
+  margin: 6rpx 0;
+  border: 3rpx solid var(--ink);
+  border-radius: 4rpx 60% 60% 60%;
+  transform: rotate(45deg);
+  border-top-left-radius: 60%;
+}
+
+/* ---------- 任务信息 ---------- */
+.info-card { margin-top: 24rpx; padding: 12rpx 32rpx; }
+.kv { display: flex; justify-content: space-between; padding: 16rpx 0; font-size: 24rpx; }
+.kv .k { color: var(--sub); }
+.kv .v { font-weight: 700; }
+.kv .v.fee { color: var(--orange); font-weight: 800; }
+.kv .v.remark { max-width: 420rpx; text-align: right; font-weight: 400; color: var(--sub); }
+
+.op-row { display: flex; gap: 20rpx; margin-top: 24rpx; }
+.op-half { flex: 1; height: 80rpx; font-size: 24rpx; }
+
+/* ---------- 底部操作条 ---------- */
+.action-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 20rpx 32rpx calc(20rpx + env(safe-area-inset-bottom));
+  background: #fff;
+  border-top: 1rpx solid var(--hair);
+}
+.big-action { height: 96rpx; }
+.big-action.disabled { background: #EFF1EC; color: var(--sub); }
+
+/* ---------- 空态 ---------- */
+.empty { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 80rpx 32rpx; }
+.empty .t { font-size: 28rpx; font-weight: 700; }
+.empty .s { font-size: 22rpx; color: var(--sub); margin-top: 12rpx; }
+.empty-btn { margin-top: 40rpx; padding: 0 64rpx; height: 88rpx; }

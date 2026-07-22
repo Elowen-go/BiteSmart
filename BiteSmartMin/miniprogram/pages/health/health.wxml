@@ -1,1 +1,186 @@
-<view class="user-page"><view class="back-row"><text class="back" bindtap="back">‹</text><text>健康记录</text><text class="accent">今天</text></view><text class="eyebrow">YOUR DAILY RHYTHM</text><text class="title">记录每一个小变化。</text><view class="health-grid"><view class="health-card purple"><text>饮食</text><text class="health-value">0</text><text>今日 kcal</text><button data-label="添加饮食记录" bindtap="action">+ 添加</button></view><view class="health-card blue"><text>运动</text><text class="health-value">0</text><text>今日 kcal</text><button data-label="添加运动记录" bindtap="action">+ 添加</button></view><view class="health-card green"><text>饮水</text><text class="health-value">1500</text><text>目标 ml</text><button data-label="记录饮水" bindtap="action">+ 添加</button></view><view class="health-card peach"><text>体重</text><text class="health-value">60.0</text><text>kg</text><button data-label="记录体重" bindtap="action">+ 添加</button></view></view><view class="panel"><text class="panel-title">近 7 天体重趋势</text><view wx:if="{{hasWeightHistory}}" class="trend-list"><block wx:for="{{weightRecords}}" wx:key="recordDate"><view><text>{{item.recordDate}}</text><text>{{item.weight}} kg</text></view></block></view><view wx:else class="line-empty" data-label="记录体重" bindtap="action"><text>暂无足够体重记录</text><text>至少记录两次后查看趋势 〉</text></view><text class="panel-note">{{hasWeightHistory ? '以上为近 7 天真实记录。' : '记录几次体重后，这里会显示你的变化趋势。'}}</text></view></view>
+<view class="pg">
+  <!-- 自定义导航（margin-top = 胶囊 top，高度 = 胶囊高度，与胶囊同行对齐） -->
+  <view class="nav" style="margin-top: {{menuTop}}px; height: {{menuH}}px;">
+    <view class="nav-back" bindtap="goBack" hover-class="tap"><text class="chev">‹</text></view>
+    <view class="nav-t">健康记录</view>
+    <view class="nav-ph"></view>
+  </view>
+
+  <scroll-view class="body" scroll-y enhanced show-scrollbar="{{false}}">
+    <!-- 日期导航 -->
+    <view class="date-bar">
+      <view class="d-arrow" bindtap="prevDay" hover-class="tap"><text class="d-chev">‹</text></view>
+      <view class="d-cur">
+        <view class="d-main">{{dateMain}}</view>
+        <view class="d-sub">{{dateSub}}</view>
+      </view>
+      <view class="d-arrow {{dateOffset === 0 ? 'dim' : ''}}" bindtap="nextDay" hover-class="tap"><text class="d-chev">›</text></view>
+    </view>
+
+    <!-- 摄入 / 消耗总览卡 -->
+    <view class="card sum">
+      <view class="sum-head">
+        <text class="lab">摄入 / 消耗 SUMMARY</text>
+        <text class="rest">净摄入 {{net}} kcal</text>
+      </view>
+      <view class="sum-mid">
+        <view class="ring-css" style="background: conic-gradient(#1E9E62 {{ringDeg}}deg, #EFF1EC 0deg);">
+          <view class="ring-css-inner">
+            <text class="num">{{eaten}}</text>
+            <text class="unit">/ {{target}} kcal</text>
+          </view>
+        </view>
+        <view class="macros">
+          <view class="macro">
+            <view class="m-top"><text class="m-lab">运动消耗 BURNED</text><text class="m-val">{{burned}} kcal</text></view>
+            <view class="track"><view class="fill" style="width: {{burnedPct}}%; background: #F07B2D;"></view></view>
+          </view>
+          <view class="macro">
+            <view class="m-top"><text class="m-lab">记录餐数 MEALS</text><text class="m-val">{{mealCount}} 餐</text></view>
+            <view class="track"><view class="fill" style="width: {{mealPct}}%; background: #1E9E62;"></view></view>
+          </view>
+          <view class="macro">
+            <view class="m-top"><text class="m-lab">当前体重 WEIGHT</text><text class="m-val">{{curWeight}} kg</text></view>
+            <view class="track"><view class="fill" style="width: 60%; background: #5BBF8A;"></view></view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 三 tab -->
+    <view class="h-tabs">
+      <view class="h-tab {{tab === 'diet' ? 'on' : ''}}" bindtap="switchTab" data-tab="diet">饮食</view>
+      <view class="h-tab {{tab === 'exercise' ? 'on' : ''}}" bindtap="switchTab" data-tab="exercise">运动</view>
+      <view class="h-tab {{tab === 'weight' ? 'on' : ''}}" bindtap="switchTab" data-tab="weight">体重</view>
+    </view>
+
+    <!-- 饮食 -->
+    <block wx:if="{{tab === 'diet'}}">
+      <block wx:for="{{dietGroups}}" wx:key="meal" wx:for-item="g">
+        <view class="sec sec-sm">
+          <text class="en">{{g.en}}</text>
+          <text class="cn cn-sm">{{g.meal}}</text>
+          <view class="line"></view>
+        </view>
+        <view class="h-record" wx:for="{{g.list}}" wx:key="id" wx:for-item="r">
+          <view class="ic ic-diet"><text class="ic-ch">餐</text></view>
+          <view class="r-name">{{r.name}}</view>
+          <text class="r-v">{{r.kcal}} kcal</text>
+          <text class="r-del" catchtap="delDiet" data-id="{{r.id}}">×</text>
+        </view>
+      </block>
+      <view wx:if="{{!dietGroups.length}}" class="empty">
+        <view class="empty-ring"></view>
+        <view class="empty-t">今日还没有饮食记录</view>
+        <view class="empty-s">点击右下角 + 录入第一餐</view>
+      </view>
+    </block>
+
+    <!-- 运动 -->
+    <block wx:if="{{tab === 'exercise'}}">
+      <view class="card ex-stats">
+        <view class="ex-stat"><view class="b">{{exMins}}<text class="em"> min</text></view><view class="s">今日运动时长</view></view>
+        <view class="ex-stat"><view class="b">{{exDist}}<text class="em"> km</text></view><view class="s">总距离</view></view>
+        <view class="ex-stat"><view class="b orange">{{burned}}<text class="em"> kcal</text></view><view class="s">消耗热量</view></view>
+      </view>
+
+      <view class="card ex-week">
+        <view class="w-head"><text>本周运动消耗（kcal）</text><text class="w-total">合计 {{weekTotal}}</text></view>
+        <view class="ex-bars">
+          <view class="ex-bar {{item.today ? 'today' : ''}}" wx:for="{{weekBars}}" wx:key="label">
+            <text class="v">{{item.v || ''}}</text>
+            <view class="col" style="height: {{item.h}}rpx;"></view>
+            <text class="lab">{{item.label}}</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="sec sec-sm">
+        <text class="en">TODAY</text>
+        <text class="cn cn-sm">今日运动记录</text>
+        <view class="line"></view>
+        <text class="more">{{exList.length}} 条</text>
+      </view>
+      <view class="h-record" wx:for="{{exList}}" wx:key="id">
+        <view class="ic"><text class="ic-ch">{{item.ch}}</text></view>
+        <view class="r-main">
+          <view class="r-name">{{item.name}}</view>
+          <view class="r-meta">{{item.meta}}</view>
+        </view>
+        <text class="r-v">-{{item.kcal}} kcal</text>
+        <text class="r-del" catchtap="delExercise" data-id="{{item.id}}">×</text>
+      </view>
+      <view wx:if="{{!exList.length}}" class="empty">
+        <view class="empty-ring"></view>
+        <view class="empty-t">今日还没有运动记录</view>
+        <view class="empty-s">去运动库选择一项运动开始记录</view>
+      </view>
+
+      <view class="btn-ink green ex-go" bindtap="goExerciseLib" hover-class="tap">去运动库记录</view>
+    </block>
+
+    <!-- 体重 -->
+    <block wx:if="{{tab === 'weight'}}">
+      <view class="card chart-box">
+        <view class="chart-head">
+          <text>体重趋势（近 7 次）</text>
+          <text class="goal">目标 {{goalWeight}} kg</text>
+        </view>
+        <canvas type="2d" id="weightChart" class="weight-canvas" style="width: {{chartW}}px; height: {{chartH}}px;"></canvas>
+      </view>
+      <view class="h-record" wx:for="{{weightList}}" wx:key="d">
+        <view class="ic"><text class="ic-ch">重</text></view>
+        <view class="r-main">
+          <view class="r-name">{{item.w}} kg</view>
+          <view class="r-meta">{{item.d}} 记录</view>
+        </view>
+      </view>
+      <view class="btn-ink green ex-go" bindtap="openWeightForm" hover-class="tap">记录体重</view>
+    </block>
+
+    <view style="height: 160rpx;"></view>
+  </scroll-view>
+
+  <!-- 悬浮添加按钮 -->
+  <view class="fab-add" bindtap="healthAdd" hover-class="tap"></view>
+
+  <!-- 底部弹层：录入饮食 / 体重 -->
+  <view class="mask {{sheetShow ? 'show' : ''}}" bindtap="closeSheet"></view>
+  <view class="sheet {{sheetShow ? 'show' : ''}}">
+    <view class="grab"></view>
+    <view class="s-head">
+      <text class="s-title">{{sheetKind === 'diet' ? '录入饮食' : '录入体重'}}</text>
+      <text class="s-x" bindtap="closeSheet">×</text>
+    </view>
+    <view class="s-body">
+      <block wx:if="{{sheetKind === 'diet'}}">
+        <view class="form-row">
+          <view class="f-lab">餐次 <text class="req">*</text></view>
+          <view class="chip-row">
+            <view class="chip {{formMeal === item ? 'on' : ''}}" wx:for="{{mealOptions}}" wx:key="*this" bindtap="pickMeal" data-meal="{{item}}">{{item}}</view>
+          </view>
+        </view>
+        <view class="form-row">
+          <view class="f-lab">食物名称 <text class="req">*</text></view>
+          <input class="f-input" placeholder="例如：香煎三文鱼时蔬" value="{{formName}}" bindinput="onNameInput" />
+          <view class="f-err" wx:if="{{errName}}">请填写食物名称</view>
+        </view>
+        <view class="form-row">
+          <view class="f-lab">热量 kcal <text class="req">*</text>（1 - 3000）</view>
+          <input class="f-input" type="number" placeholder="例如：285" value="{{formKcal}}" bindinput="onKcalInput" />
+          <view class="f-err" wx:if="{{errKcal}}">请输入 1 - 3000 之间的数值</view>
+        </view>
+      </block>
+      <block wx:else>
+        <view class="form-row">
+          <view class="f-lab">今日体重 kg <text class="req">*</text>（30 - 200）</view>
+          <input class="f-input" type="digit" placeholder="例如：72.4" value="{{formKcal}}" bindinput="onKcalInput" />
+          <view class="f-err" wx:if="{{errKcal}}">请输入 30 - 200 之间的数值</view>
+        </view>
+      </block>
+    </view>
+    <view class="s-foot">
+      <view class="btn-ink green s-save" bindtap="saveForm" hover-class="tap">保存记录</view>
+    </view>
+  </view>
+</view>

@@ -1,8 +1,8 @@
 import request from '../../utils/request'
 
 export interface Combo {
-  id: number
-  merchantId: number
+  id: number | string
+  merchantId: number | string
   comboName: string
   description: string
   price: number
@@ -17,9 +17,9 @@ export interface Combo {
 }
 
 export interface ComboDishRel {
-  id: number
-  comboId: number
-  dishId: number
+  id: number | string
+  comboId: number | string
+  dishId: number | string
   dishName: string
   quantity: number
   isFixed: number
@@ -29,14 +29,14 @@ export const getComboList = (params?: { keyword?: string; comboType?: number; so
   return request.get('/combos', { params })
 }
 
-export const getComboDetail = (id: number): Promise<any> => {
+export const getComboDetail = (id: number | string): Promise<any> => {
   return request.get(`/combos/${id}`)
 }
 
-export const replaceComboDish = (comboId: number, oldDishId: number, newDishId: number): Promise<any> => {
+export const replaceComboDish = (comboId: number | string, oldDishId: number | string, newDishId: number | string): Promise<any> => {
   return request.post(`/combos/${comboId}/replace`, null, { params: { oldDishId, newDishId } })
 }
 
-export const replaceCartComboDish = (cartId: number, oldDishId: number, newDishId: number): Promise<any> => {
+export const replaceCartComboDish = (cartId: number | string, oldDishId: number | string, newDishId: number | string): Promise<any> => {
   return request.put(`/cart/${cartId}/replace`, null, { params: { oldDishId, newDishId } })
 }

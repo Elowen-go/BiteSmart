@@ -1,2 +1,101 @@
-@import "../../styles/user-page.scss";
-.member-hero { padding:30rpx; margin-top:24rpx; color:#fff; background:#37384B; border-radius:24rpx; }.member-level { display:block; font-size:42rpx; font-weight:700; margin-top:24rpx; }.member-copy { display:block; color:#C2C2D0; font-size:20rpx; margin-top:10rpx; }.benefit-grid { display:grid; grid-template-columns:1fr 1fr; gap:20rpx; margin-top:22rpx; }.benefit-grid view { padding:18rpx; background:#F7F7FB; border-radius:14rpx; }.benefit-grid text:first-child { display:block; color:#4D4B59; font-size:21rpx; }.benefit-grid text:last-child { display:block; color:#9A99A8; font-size:17rpx; margin-top:8rpx; }.plans { display:flex; gap:12rpx; margin-top:24rpx; }.plan { flex:1; padding:22rpx 14rpx; background:#fff; border:2rpx solid #E2E1E8; border-radius:18rpx; }.plan.active { border-color:#7773E8; background:#EEEDFF; }.plan text { display:block; }.plan text:first-child { color:#4D4B59; font-size:21rpx; }.plan text:nth-child(2) { color:#3A3846; font-size:30rpx; font-weight:700; margin-top:16rpx; }.plan text:last-child { color:#9A99A8; font-size:17rpx; margin-top:8rpx; }
+.pg { display: flex; flex-direction: column; height: 100vh; background: var(--bg); }
+
+/* ---------- 自定义导航 ---------- */
+.nav { display: flex; align-items: center; padding: 0 32rpx; flex: none; }
+.nav-back {
+  width: 68rpx;
+  height: 68rpx;
+  border: 1rpx solid var(--hair);
+  border-radius: 20rpx;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.nav-back .chev { font-size: 40rpx; color: var(--ink); line-height: 1; margin-top: -4rpx; }
+.nav-t { font-size: 32rpx; font-weight: 800; margin-left: 24rpx; }
+.nav-ph { width: 68rpx; margin-left: auto; }
+
+.body { flex: 1; padding: 0 32rpx; box-sizing: border-box; }
+
+/* ---------- PRO 状态卡 ---------- */
+.vip-hero {
+  background: linear-gradient(135deg, #123B2A 0%, #1E5C40 100%);
+  border-radius: 20rpx;
+  padding: 44rpx 40rpx;
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+  margin-top: 16rpx;
+}
+.vip-hero::after {
+  content: '';
+  position: absolute;
+  right: -80rpx;
+  top: -80rpx;
+  width: 280rpx;
+  height: 280rpx;
+  border-radius: 50%;
+  background: rgba(240, 123, 45, 0.18);
+}
+.vip-hero .lv { font-size: 20rpx; letter-spacing: 6rpx; color: #F0C896; font-weight: 700; }
+.vip-hero .h3 { font-size: 42rpx; font-weight: 800; margin-top: 16rpx; }
+.vip-hero .exp { font-size: 22rpx; color: #A8CDB8; margin-top: 12rpx; }
+
+/* ---------- 权益 ---------- */
+.bn-card { padding: 8rpx 28rpx; }
+.benefit { display: flex; gap: 24rpx; align-items: center; padding: 26rpx 0; border-top: 1rpx solid var(--hair); }
+.benefit:first-child { border-top: none; }
+.bic {
+  width: 68rpx;
+  height: 68rpx;
+  border-radius: 16rpx;
+  background: var(--green-soft);
+  color: var(--green-deep);
+  font-size: 24rpx;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+.bm b { font-size: 26rpx; }
+.bm span { display: block; font-size: 20rpx; color: var(--sub); margin-top: 6rpx; }
+
+/* ---------- 套餐卡 ---------- */
+.vip-plan {
+  border: 1rpx solid var(--hair);
+  border-radius: 20rpx;
+  background: #fff;
+  padding: 32rpx;
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+  position: relative;
+  margin-bottom: 24rpx;
+}
+.vip-plan.best { border-color: var(--orange); box-shadow: 0 8rpx 32rpx rgba(240, 123, 45, 0.12); }
+.best-tag {
+  position: absolute;
+  top: -16rpx;
+  right: 28rpx;
+  background: var(--orange);
+  color: #fff;
+  font-size: 18rpx;
+  font-weight: 800;
+  padding: 6rpx 18rpx;
+  border-radius: 8rpx;
+  letter-spacing: 2rpx;
+}
+.per { font-size: 30rpx; font-weight: 800; }
+.per span { display: block; font-size: 20rpx; color: var(--sub); font-weight: 400; margin-top: 6rpx; }
+.pr { margin-left: auto; text-align: right; }
+.pr b { font-size: 40rpx; color: var(--orange); font-weight: 800; font-variant-numeric: tabular-nums; }
+.pr span { display: block; font-size: 18rpx; color: var(--faint); text-decoration: line-through; margin-top: 4rpx; }
+
+/* ---------- 空态 ---------- */
+.empty { display: flex; flex-direction: column; align-items: center; padding: 80rpx 0 40rpx; }
+.empty .t { font-size: 26rpx; font-weight: 700; color: var(--ink); }
+.empty .s { font-size: 22rpx; color: var(--sub); margin-top: 10rpx; }
+
+.foot-space { height: 48rpx; }

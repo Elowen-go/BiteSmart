@@ -1,0 +1,59 @@
+.pg { display: flex; flex-direction: column; height: 100vh; background: var(--bg); }
+
+/* ---------- 自定义导航 ---------- */
+.nav { display: flex; align-items: center; padding: 0 32rpx; flex: none; }
+.nav-back {
+  width: 68rpx;
+  height: 68rpx;
+  border: 1rpx solid var(--hair);
+  border-radius: 20rpx;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.nav-back .chev { font-size: 40rpx; color: var(--ink); line-height: 1; margin-top: -4rpx; }
+.nav-t { font-size: 32rpx; font-weight: 800; margin-left: 24rpx; }
+
+.body { flex: 1; padding: 0 32rpx; box-sizing: border-box; }
+
+/* ---------- 营业状态卡 ---------- */
+.open-card { display: flex; align-items: center; gap: 20rpx; padding: 28rpx 32rpx; margin-top: 16rpx; }
+.oc-l { flex: 1; min-width: 0; }
+.oc-t { font-size: 28rpx; font-weight: 800; }
+.oc-s { font-size: 20rpx; color: var(--sub); margin-top: 6rpx; }
+.oc-state { font-size: 22rpx; font-weight: 700; color: var(--faint); flex: none; }
+.oc-state.on { color: var(--green-deep); }
+
+/* ---------- 表单 ---------- */
+.form-card { padding: 32rpx; }
+.form-row { margin-bottom: 28rpx; }
+.form-row:last-child { margin-bottom: 0; }
+.f-lab { font-size: 22rpx; color: var(--sub); margin-bottom: 14rpx; font-weight: 600; }
+.f-lab .req { color: var(--orange); }
+.f-input {
+  width: 100%;
+  height: 88rpx;
+  line-height: 88rpx;
+  border: 1rpx solid var(--hair);
+  border-radius: 12rpx;
+  padding: 0 24rpx;
+  font-size: 26rpx;
+  background: #FBFCFA;
+  color: var(--ink);
+  box-sizing: border-box;
+}
+.f-textarea { height: 160rpx; line-height: 1.6; padding: 20rpx 24rpx; }
+.ph-txt { color: var(--faint); }
+
+.form-err { margin-top: 24rpx; font-size: 24rpx; color: var(--red); text-align: center; }
+
+/* ---------- 底部提交 ---------- */
+.bbar {
+  flex: none;
+  background: #fff;
+  border-top: 1rpx solid var(--hair);
+  padding: 20rpx 40rpx calc(20rpx + env(safe-area-inset-bottom));
+}
+.bbar-btn { width: 100%; }
+.bbar-btn.disabled { opacity: 0.6; }

@@ -1,5 +1,6 @@
 package com.ws.bitesmart.entity.user;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import java.time.LocalDateTime;
 
@@ -19,7 +20,8 @@ public class SysUser {
     /** 登录账号，一般是手机号或用户名，唯一 */
     private String username;
 
-    /** 登录密码，BCrypt加密后的密文 */
+    /** 登录密码，BCrypt加密后的密文。绝不序列化到任何接口响应（登录/注册走专用DTO，不受影响） */
+    @JsonIgnore
     private String password;
 
     /** 用户昵称，可以没有 */

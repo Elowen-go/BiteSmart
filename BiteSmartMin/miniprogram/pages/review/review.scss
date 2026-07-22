@@ -1,2 +1,67 @@
-@import "../../styles/user-page.scss";
-.stars { display:flex; gap:18rpx; margin:30rpx 0; }.stars text { color:#D8D7E1; font-size:48rpx; }.stars text.active { color:#7773E8; }textarea { width:100%; min-height:180rpx; padding:20rpx; box-sizing:border-box; background:#F7F7FB; border-radius:14rpx; color:#3A3846; font-size:21rpx; }
+.pg { display: flex; flex-direction: column; height: 100vh; background: var(--bg); }
+
+/* ---------- 自定义导航 ---------- */
+.nav { display: flex; align-items: center; padding: 0 32rpx; flex: none; }
+.nav-back {
+  width: 68rpx;
+  height: 68rpx;
+  border: 1rpx solid var(--hair);
+  border-radius: 20rpx;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.nav-back .chev { font-size: 40rpx; color: var(--ink); line-height: 1; margin-top: -4rpx; }
+.nav-t { font-size: 32rpx; font-weight: 800; margin-left: 24rpx; }
+.nav-ph { width: 68rpx; margin-left: auto; }
+
+.body { flex: 1; padding: 0 32rpx; box-sizing: border-box; }
+
+/* ---------- 订单摘要 ---------- */
+.order-card { padding: 28rpx; margin-top: 20rpx; }
+.shop { display: flex; align-items: center; gap: 12rpx; font-size: 28rpx; font-weight: 800; }
+.shop-dot { width: 16rpx; height: 16rpx; border-radius: 50%; background: var(--green); flex: none; }
+.order-card .sub { font-size: 22rpx; color: var(--sub); margin-top: 10rpx; }
+
+/* ---------- 评分 ---------- */
+.rate-card { padding: 8rpx 28rpx; margin-top: 24rpx; }
+.rate-line { display: flex; justify-content: space-between; align-items: center; padding: 26rpx 0; border-top: 1rpx solid var(--hair); }
+.rate-line:first-child { border-top: none; }
+.rate-line .lab { font-size: 26rpx; font-weight: 600; }
+.star-row { display: flex; gap: 12rpx; }
+.star { font-size: 44rpx; color: #E0E4DE; line-height: 1; }
+.star.on { color: var(--orange); }
+
+/* ---------- 文字评价 ---------- */
+.txt-card { padding: 24rpx 28rpx 20rpx; margin-top: 24rpx; }
+.txt {
+  width: 100%;
+  min-height: 180rpx;
+  border: 1rpx solid var(--hair);
+  border-radius: 12rpx;
+  padding: 20rpx 24rpx;
+  font-size: 24rpx;
+  background: #FBFCFA;
+  color: var(--ink);
+  box-sizing: border-box;
+}
+.ph-txt { color: var(--faint); }
+.count { text-align: right; font-size: 20rpx; color: var(--faint); margin-top: 12rpx; }
+
+/* ---------- 匿名 ---------- */
+.anon-card { display: flex; align-items: center; justify-content: space-between; padding: 26rpx 28rpx; margin-top: 24rpx; }
+.anon-t { font-size: 26rpx; font-weight: 600; }
+.anon-s { font-size: 20rpx; color: var(--sub); margin-top: 6rpx; }
+
+/* ---------- 提交 ---------- */
+.bbar {
+  flex: none;
+  background: #fff;
+  border-top: 1rpx solid var(--hair);
+  padding: 20rpx 40rpx calc(20rpx + env(safe-area-inset-bottom));
+}
+.submit-btn { width: 100%; }
+.submit-btn.disabled { background: #E4E8E3; color: var(--faint); }
+
+.foot-space { height: 40rpx; }

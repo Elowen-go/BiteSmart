@@ -1,0 +1,186 @@
+.pg { display: flex; flex-direction: column; height: 100vh; }
+.pg-gen { background: var(--green-ink); }
+
+.status-pad { width: 100%; flex: none; }
+.tap { opacity: 0.72; }
+
+/* ---------- AI 生成中 ---------- */
+.gen {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 80rpx 60rpx 60rpx;
+  text-align: center;
+  color: #fff;
+}
+.gen-kicker { font-size: 20rpx; letter-spacing: 6rpx; color: #7FC79E; font-weight: 700; }
+/* 纯 CSS 环形进度：conic-gradient 从 12 点顺时针（Skyline / WebView 均支持），替代 canvas */
+.ring-css {
+  width: 380rpx;
+  height: 380rpx;
+  border-radius: 50%;
+  margin-top: 60rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.ring-css-inner {
+  width: 344rpx;
+  height: 344rpx;
+  border-radius: 50%;
+  background: var(--green-ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 76rpx;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.gen-cap { margin-top: 52rpx; font-size: 28rpx; color: #A8CDB8; }
+.gen-phase { margin-top: 16rpx; font-size: 22rpx; color: #7CCB9E; letter-spacing: 2rpx; }
+.gen-proof { margin-top: 68rpx; }
+.gen-proof .n { font-size: 52rpx; font-weight: 800; color: #7CCB9E; font-variant-numeric: tabular-nums; }
+.gen-proof .t { font-size: 22rpx; color: #A8CDB8; margin-top: 12rpx; }
+
+/* ---------- 空状态 ---------- */
+.empty-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 80rpx;
+}
+.empty-ring { width: 96rpx; height: 96rpx; border: 3rpx dashed #C7D0C9; border-radius: 50%; margin-bottom: 32rpx; }
+.empty-t { font-size: 30rpx; font-weight: 800; }
+.empty-s { font-size: 22rpx; color: var(--sub); margin-top: 14rpx; text-align: center; line-height: 1.7; }
+.empty-btn { width: 100%; margin-top: 48rpx; }
+
+/* ---------- hero ---------- */
+.body { flex: 1; }
+.plan-hero {
+  background: linear-gradient(160deg, #E9F5EE, #F7F7F3 70%);
+  padding: 32rpx 40rpx 36rpx;
+  border-bottom: 1rpx solid var(--hair);
+}
+.hero-top { display: flex; justify-content: space-between; align-items: flex-start; }
+.hero-l { flex: 1; min-width: 0; }
+.hi { font-size: 24rpx; color: var(--green-deep); font-weight: 700; letter-spacing: 2rpx; }
+.hero-title { font-size: 40rpx; font-weight: 800; margin-top: 12rpx; }
+.hero-time { font-size: 20rpx; color: var(--sub); margin-top: 16rpx; }
+.x-t { font-size: 36rpx; color: var(--ink); line-height: 1; }
+
+.plan-stats {
+  display: flex;
+  background: #fff;
+  border: 1rpx solid var(--hair);
+  border-radius: 20rpx;
+  margin-top: 32rpx;
+  box-shadow: 0 4rpx 20rpx rgba(23, 37, 31, 0.05);
+}
+.me-num { flex: 1; padding: 28rpx 8rpx; text-align: center; }
+.me-num + .me-num { border-left: 1rpx solid var(--hair); }
+.me-num .b { font-size: 36rpx; font-weight: 800; font-variant-numeric: tabular-nums; }
+.me-num .em { font-style: normal; font-size: 20rpx; color: var(--sub); font-weight: 400; }
+.me-num .s { font-size: 18rpx; color: var(--sub); margin-top: 10rpx; }
+
+.tag-row { display: flex; flex-wrap: wrap; margin-top: 24rpx; }
+.g-tag {
+  font-size: 18rpx;
+  color: var(--sub);
+  border: 1rpx solid var(--hair);
+  border-radius: 8rpx;
+  padding: 4rpx 12rpx;
+  background: #fff;
+  margin: 0 12rpx 12rpx 0;
+}
+
+.progress-row { margin-top: 20rpx; }
+.p-lab { display: flex; justify-content: space-between; font-size: 22rpx; color: var(--sub); margin-bottom: 12rpx; }
+.p-done { color: var(--green-deep); font-weight: 700; }
+
+/* ---------- 7 天 tab ---------- */
+.plan-main { padding: 0 40rpx; }
+.day-tabs { white-space: nowrap; margin: 32rpx 0 8rpx; }
+.day-tab {
+  display: inline-block;
+  width: 108rpx;
+  text-align: center;
+  padding: 16rpx 0;
+  border: 1rpx solid var(--hair);
+  border-radius: 12rpx;
+  background: #fff;
+  font-size: 22rpx;
+  color: var(--sub);
+  margin-right: 16rpx;
+}
+.day-tab.on { background: var(--ink); border-color: var(--ink); color: #fff; font-weight: 700; }
+.cur-dot { width: 8rpx; height: 8rpx; border-radius: 50%; background: var(--green); margin: 6rpx auto 0; }
+
+.sec-sm { margin: 24rpx 0 20rpx; }
+.cn-sm { font-size: 28rpx; }
+
+/* ---------- 三餐卡 ---------- */
+.plan-meal {
+  display: flex;
+  align-items: center;
+  background: #fff;
+  border: 1rpx solid var(--hair);
+  border-radius: 20rpx;
+  padding: 20rpx;
+  margin-bottom: 20rpx;
+  box-shadow: 0 4rpx 20rpx rgba(23, 37, 31, 0.05);
+}
+.plan-meal .ph { width: 112rpx; height: 112rpx; border-radius: 12rpx; flex: none; background: #DCE5DD; }
+.meal-main { flex: 1; min-width: 0; margin-left: 24rpx; }
+.when { font-size: 18rpx; color: var(--green-deep); font-weight: 800; letter-spacing: 2rpx; }
+.nm { font-size: 26rpx; font-weight: 700; margin-top: 4rpx; }
+.kc { font-size: 20rpx; color: var(--sub); margin-top: 6rpx; }
+.meal-side { display: flex; flex-direction: column; align-items: flex-end; margin-left: 16rpx; }
+.swap {
+  font-size: 20rpx;
+  color: var(--sub);
+  border-bottom: 1rpx dashed var(--faint);
+  padding-bottom: 2rpx;
+  margin-bottom: 14rpx;
+}
+.chip-check {
+  border: 2rpx solid var(--hair);
+  border-radius: 12rpx;
+  background: #fff;
+  font-size: 22rpx;
+  padding: 10rpx 22rpx;
+  color: var(--sub);
+}
+.chip-check.on { border-color: var(--green); background: var(--green-soft); color: var(--green-deep); font-weight: 700; }
+.addbtn.sm { width: 52rpx; height: 52rpx; }
+
+/* ---------- 提示条 ---------- */
+.c-note {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border: 1rpx solid var(--hair);
+  border-radius: 20rpx;
+  background: #fff;
+  padding: 22rpx 28rpx;
+  margin-top: 24rpx;
+  font-size: 20rpx;
+  color: var(--sub);
+}
+.c-note .b { color: var(--ink); font-weight: 700; }
+.done-note { border-color: #BFDCCB; }
+.done-note .b { color: var(--green-deep); }
+.c-note-l { flex: 1; min-width: 0; }
+.c-note-r { color: var(--green-deep); font-weight: 700; margin-left: 20rpx; white-space: nowrap; }
+
+/* ---------- CTA ---------- */
+.cta { margin-top: 32rpx; }
+.re-custom {
+  text-align: center;
+  font-size: 22rpx;
+  color: var(--sub);
+  margin-top: 24rpx;
+  padding: 12rpx 0;
+}

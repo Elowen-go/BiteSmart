@@ -1,1 +1,44 @@
-<view class="user-page"><view class="back-row"><text class="back" bindtap="back">‹</text><text>投诉与反馈</text><text></text></view><text class="eyebrow">WE ARE LISTENING</text><text class="title">把遇到的问题告诉我们。</text><view class="panel"><text class="panel-title">反馈类型</text><view class="type-row"><text class="active">订单问题</text><text>菜品问题</text><text>配送问题</text><text>其他</text></view><textarea placeholder="请描述你遇到的问题" auto-height="true"></textarea><button class="primary" bindtap="submit">提交反馈</button></view><view class="section-note">我们会在 1-2 个工作日内处理你的反馈。</view></view>
+<view class="pg">
+  <!-- 自定义导航 -->
+  <view class="nav" style="margin-top: {{menuTop}}px; height: {{menuH}}px;">
+    <view class="nav-back" bindtap="back" hover-class="tap"><text class="chev">‹</text></view>
+    <view class="nav-t">投诉与反馈</view>
+    <view class="nav-ph"></view>
+  </view>
+
+  <scroll-view class="body" scroll-y enhanced show-scrollbar="{{false}}">
+    <view class="card form-card">
+      <!-- 投诉对象 -->
+      <view class="form-row">
+        <view class="f-lab">投诉对象 <text class="req">*</text></view>
+        <view class="chips">
+          <text class="chip {{targetType === item.v ? 'on' : ''}}" wx:for="{{targets}}" wx:key="v" bindtap="setTarget" data-v="{{item.v}}">{{item.label}}</text>
+        </view>
+      </view>
+
+      <!-- 问题类型 -->
+      <view class="form-row">
+        <view class="f-lab">问题类型 <text class="req">*</text></view>
+        <view class="chips">
+          <text class="chip {{reason === item ? 'on' : ''}}" wx:for="{{reasons}}" wx:key="*this" bindtap="setReason" data-v="{{item}}">{{item}}</text>
+        </view>
+      </view>
+
+      <!-- 问题描述 -->
+      <view class="form-row">
+        <view class="f-lab">问题描述 <text class="req">*</text></view>
+        <textarea class="ta" placeholder="请描述遇到的问题，客服将在 24 小时内处理" placeholder-class="ph-txt" value="{{desc}}" bindinput="onInput" maxlength="300" />
+        <view class="count">{{desc.length}}/300</view>
+      </view>
+    </view>
+
+    <view class="tip">关联订单 #{{orderId}} · 提交后客服将尽快与你联系</view>
+
+    <view class="foot-space"></view>
+  </scroll-view>
+
+  <!-- 提交 -->
+  <view class="bbar">
+    <view class="btn-ink green bbar-btn {{submitting ? 'disabled' : ''}}" bindtap="submit" hover-class="tap">{{submitting ? '提交中…' : '提交反馈'}}</view>
+  </view>
+</view>

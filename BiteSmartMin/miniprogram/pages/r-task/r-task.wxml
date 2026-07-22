@@ -1,0 +1,68 @@
+<view class="pg">
+  <!-- 自定义导航 -->
+  <view class="nav" style="margin-top: {{menuTop}}px; height: {{menuH}}px;">
+    <view class="nav-back" bindtap="goBack" hover-class="tap"><text class="chev">‹</text></view>
+    <view class="nav-t">任务详情</view>
+  </view>
+
+  <scroll-view wx:if="{{found}}" class="body" scroll-y enhanced show-scrollbar="{{false}}">
+    <!-- 取餐码 -->
+    <view class="card code-card">
+      <view class="cd">{{pickupCode}}</view>
+      <view class="lb">向商家出示取餐码</view>
+    </view>
+
+    <!-- 商家 -->
+    <view class="card r-card">
+      <view class="avt merchant">商</view>
+      <view class="r-main">
+        <view class="nm">商家门店</view>
+        <view class="sub">{{merchantAddr}}</view>
+      </view>
+      <view class="side-ops">
+        <view class="op-btn" bindtap="navMerchant" hover-class="tap"><view class="ic-nav"></view><text>导航</text></view>
+        <view class="op-btn" bindtap="callMerchant" hover-class="tap"><view class="ic-phone"></view><text>电话</text></view>
+      </view>
+    </view>
+
+    <!-- 顾客 -->
+    <view class="card r-card">
+      <view class="avt">{{receiverInitial}}</view>
+      <view class="r-main">
+        <view class="nm">{{receiver}}</view>
+        <view class="sub">{{address}}</view>
+      </view>
+      <view class="side-ops">
+        <view class="op-btn" bindtap="navCustomer" hover-class="tap"><view class="ic-nav"></view><text>导航</text></view>
+        <view class="op-btn" bindtap="callCustomer" hover-class="tap"><view class="ic-phone"></view><text>电话</text></view>
+      </view>
+    </view>
+
+    <!-- 任务信息 -->
+    <view class="card info-card">
+      <view class="kv"><text class="k">订单编号</text><text class="v">{{orderNo}}</text></view>
+      <view class="kv"><text class="k">预计送达</text><text class="v">{{eta || '—'}}</text></view>
+      <view class="kv"><text class="k">配送费</text><text class="v fee">¥{{fee}}</text></view>
+      <view class="kv" wx:if="{{remark}}"><text class="k">订单备注</text><text class="v remark">{{remark}}</text></view>
+    </view>
+
+    <view class="op-row" wx:if="{{status === 20 || status === 30}}">
+      <view wx:if="{{status === 20}}" class="btn-ink ghost op-half" bindtap="reject" hover-class="tap">拒单</view>
+      <view class="btn-ink ghost op-half" bindtap="goException" hover-class="tap">异常上报</view>
+    </view>
+    <view style="height: 180rpx;"></view>
+  </scroll-view>
+
+  <view wx:else class="empty">
+    <view class="t">任务不存在</view>
+    <view class="s">任务可能已被取消或完成</view>
+    <view class="btn-ink ghost empty-btn" bindtap="goBack" hover-class="tap">返回</view>
+  </view>
+
+  <!-- 底部操作条 -->
+  <view wx:if="{{found}}" class="action-bar">
+    <view wx:if="{{status === 20}}" class="btn-ink green big-action" bindtap="pickup" hover-class="tap">确认取餐</view>
+    <view wx:elif="{{status === 30}}" class="btn-ink green big-action" bindtap="deliver" hover-class="tap">确认送达</view>
+    <view wx:else class="btn-ink big-action disabled">{{status === 50 ? '任务已完成' : statusText}}</view>
+  </view>
+</view>

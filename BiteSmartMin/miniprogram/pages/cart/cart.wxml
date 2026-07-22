@@ -1,47 +1,67 @@
-<view class="cart-page" style="{{topStyle}}">
-  <view class="cart-header">
-    <text class="back" bindtap="back">‹</text>
-    <view>
-      <text class="cart-title">购物车</text>
-      <text class="cart-subtitle">确认你的营养选择</text>
-    </view>
+<view class="pg">
+  <!-- 自定义导航 -->
+  <view class="nav" style="margin-top: {{menuTop}}px; height: {{menuH}}px;">
+    <view class="nav-back" bindtap="back" hover-class="tap"><text class="chev">‹</text></view>
+    <view class="nav-t">购物袋</view>
+    <view class="nav-ph"></view>
   </view>
 
-  <text class="eyebrow">READY WHEN YOU ARE</text>
-  <text class="title">选好的，</text>
-  <text class="title title-second-line">都在这里。</text>
+  <scroll-view class="body" scroll-y enhanced show-scrollbar="{{false}}">
+    <view class="c-head" wx:if="{{items.length}}">
+      <text class="h">我的餐单</text>
+      <text class="n">{{items.length}} 件商品</text>
+    </view>
 
-  <view class="cart-panel">
-    <view class="cart-item">
-      <checkbox checked color="#7773E8"></checkbox>
-      <view class="item-main">
-        <text class="item-name">青柠香煎鸡胸</text>
-        <text class="item-note">高蛋白 · 426 kcal</text>
-        <view class="quantity">
-          <button>-</button><text>1</text><button>+</button>
+    <!-- 购物车条目 -->
+    <view class="c-item" wx:for="{{items}}" wx:key="id">
+      <view class="ck {{item.selected === 1 ? 'on' : ''}}" catchtap="toggleSelected" data-id="{{item.id}}">
+        <text class="ck-t">✓</text>
+      </view>
+      <image class="ph" src="{{item.dishImage || item.comboImage}}" mode="aspectFill" lazy-load="true" />
+      <view class="c-main">
+        <view class="nm">{{item.dishName || item.comboName}}</view>
+        <view class="sub">
+          <text>¥{{item.price}} / 份</text>
+          <text class="del" catchtap="removeItem" data-id="{{item.id}}">删除</text>
+        </view>
+        <view class="b-row2">
+          <view class="price"><text class="cur">¥</text>{{item.price * item.quantity}}</view>
+          <view class="stepper">
+            <text class="st-btn" catchtap="changeQuantity" data-id="{{item.id}}" data-delta="-1">−</text>
+            <text class="st-n">{{item.quantity}}</text>
+            <text class="st-btn" catchtap="changeQuantity" data-id="{{item.id}}" data-delta="1">+</text>
+          </view>
         </view>
       </view>
-      <text class="item-price">¥29</text>
     </view>
 
-    <view class="cart-item">
-      <checkbox checked color="#7773E8"></checkbox>
-      <view class="item-main">
-        <text class="item-name">南瓜藜麦暖沙拉</text>
-        <text class="item-note">膳食纤维 · 318 kcal</text>
-        <view class="quantity">
-          <button>-</button><text>1</text><button>+</button>
-        </view>
-      </view>
-      <text class="item-price">¥25</text>
+    <!-- 热量小结 -->
+    <view class="c-note" wx:if="{{items.length}}" bindtap="goHealth" hover-class="tap">
+      <text>已选 {{selectedCount}} 件 · 合计约 <b>{{totalKcal}}</b> kcal</text>
+      <text class="go">健康目标 ›</text>
     </view>
-  </view>
 
-  <view class="checkout-bar">
-    <view class="checkout-total">
-      <text>合计</text>
-      <text class="total-price">¥54</text>
+    <!-- 空态 -->
+    <view class="empty" wx:if="{{!items.length}}">
+      <view class="empty-bag"><view class="ic-bag"></view></view>
+      <view class="t">购物袋是空的</view>
+      <view class="s">去挑一份营养师搭配好的餐吧</view>
+      <view class="btn-ink green empty-btn" bindtap="goFood" hover-class="tap">去逛逛</view>
     </view>
-    <button class="checkout-button" bindtap="checkout">去结算</button>
+
+    <view class="foot-space"></view>
+  </scroll-view>
+
+  <!-- 结算条 -->
+  <view class="checkout-bar" wx:if="{{items.length}}">
+    <view class="all" bindtap="toggleAll">
+      <view class="ck {{allSelected ? 'on' : ''}}"><text class="ck-t">✓</text></view>
+      <text>全选</text>
+    </view>
+    <view class="total">
+      <text class="lab">合计 </text>
+      <text class="amt">¥{{total}}</text>
+    </view>
+    <view class="pay {{selectedCount === 0 ? 'disabled' : ''}}" bindtap="checkout" hover-class="tap">去结算{{selectedCount ? '(' + selectedCount + ')' : ''}}</view>
   </view>
 </view>

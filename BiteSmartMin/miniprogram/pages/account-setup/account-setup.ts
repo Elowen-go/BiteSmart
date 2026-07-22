@@ -1,4 +1,5 @@
 import { setupCredentials } from '../../api/auth'
+import { getSafeArea } from '../../utils/safe-area'
 
 Component({
   data: {
@@ -6,7 +7,14 @@ Component({
     phone: '',
     password: '',
     loading: false,
-    errorMessage: ''
+    errorMessage: '',
+    padTop: 0
+  },
+  lifetimes: {
+    attached() {
+      const { padTop } = getSafeArea()
+      this.setData({ padTop })
+    }
   },
   methods: {
     onInput(event: WechatMiniprogram.Input) {
@@ -14,6 +22,10 @@ Component({
     },
     submit() {
       if (this.data.loading) return
+      if (!this.data.username || !this.data.phone || !this.data.password) {
+        this.setData({ errorMessage: '请填写完整信息' })
+        return
+      }
       this.setData({ loading: true, errorMessage: '' })
       setupCredentials(this.data.username, this.data.phone, this.data.password)
         .then(() => wx.reLaunch({ url: '/pages/index/index' }))

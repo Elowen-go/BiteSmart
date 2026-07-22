@@ -1,2 +1,86 @@
-@import "../../styles/user-page.scss";
-.recommendation image { display:block; width:100%; height:300rpx; margin-top:22rpx; border-radius:16rpx; }.small-button { margin:0; padding:10rpx 14rpx; color:#7773E8; background:#EEEDFF; border-radius:12rpx; font-size:19rpx; }.suggestions { display:flex; flex-wrap:wrap; }
+.pg { display: flex; flex-direction: column; height: 100vh; background: var(--bg); }
+
+.body { flex: 1; padding-left: 32rpx; padding-right: 32rpx; box-sizing: border-box; }
+
+/* ---------- AI 面板 ---------- */
+.ai-panel {
+  background: var(--green-ink);
+  border-radius: 20rpx;
+  padding: 36rpx 32rpx;
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+  margin-top: 16rpx;
+}
+.ai-panel::before {
+  content: '';
+  position: absolute;
+  right: -60rpx;
+  bottom: -100rpx;
+  width: 300rpx;
+  height: 300rpx;
+  border-radius: 50%;
+  background: rgba(76, 201, 138, 0.14);
+}
+.ai-panel .en { font-size: 18rpx; letter-spacing: 4rpx; color: #7FC79E; font-weight: 700; }
+.ai-panel .h2 { font-size: 40rpx; font-weight: 800; margin-top: 16rpx; }
+.ai-panel .p { font-size: 22rpx; color: #A8CDB8; line-height: 1.8; margin-top: 12rpx; max-width: 500rpx; }
+.ask-entry {
+  margin-top: 28rpx;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1rpx solid rgba(255, 255, 255, 0.16);
+  border-radius: 20rpx;
+  display: flex;
+  align-items: center;
+  padding: 18rpx 18rpx 18rpx 28rpx;
+  position: relative;
+  z-index: 1;
+}
+.ask-ph { flex: 1; font-size: 24rpx; color: rgba(255, 255, 255, 0.45); }
+.ask-go {
+  background: var(--green);
+  border-radius: 14rpx;
+  font-size: 24rpx;
+  font-weight: 700;
+  padding: 12rpx 32rpx;
+}
+
+/* ---------- 推荐餐卡 ---------- */
+.rec-card { overflow: hidden; }
+.rec-img { width: 100%; height: 300rpx; display: block; }
+.rec-bd { padding: 24rpx 28rpx 26rpx; }
+.rec-nm { font-size: 32rpx; font-weight: 800; }
+.rec-sub { font-size: 22rpx; color: var(--sub); margin-top: 8rpx; }
+.rec-ft { display: flex; justify-content: space-between; align-items: center; margin-top: 16rpx; }
+
+/* ---------- 快捷提问 ---------- */
+.q-row { white-space: nowrap; }
+.q {
+  display: inline-block;
+  border: 1rpx solid #CFE3D6;
+  background: #fff;
+  color: var(--green-ink);
+  font-size: 22rpx;
+  border-radius: 12rpx;
+  padding: 16rpx 24rpx;
+  font-weight: 600;
+  margin-right: 16rpx;
+}
+
+/* ---------- 定制入口 ---------- */
+.c-note {
+  margin-top: 24rpx;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border: 1rpx solid #BFDCCB;
+  border-radius: 20rpx;
+  padding: 24rpx 28rpx;
+  font-size: 22rpx;
+  color: var(--sub);
+  background: #FBFCFA;
+}
+.c-note b { color: var(--green-deep); }
+.c-note .go { color: var(--green-deep); font-weight: 700; flex: none; margin-left: 16rpx; }
+
+.foot-space { height: 48rpx; }

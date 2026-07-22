@@ -1,1 +1,37 @@
-<view class="user-page"><view class="back-row"><text class="back" bindtap="back">‹</text><text>健康套餐</text><text class="accent">购物车</text></view><text class="eyebrow">SMART MEAL PLANS</text><text class="title">为目标准备的，<br/>一整套好好吃饭。</text><view class="combo-list"><block wx:for="{{items}}" wx:key="id"><view class="combo-card" data-id="{{item.id}}" bindtap="openDetail"><image src="{{item.image}}" mode="aspectFill"/><view class="combo-body"><text class="combo-name">{{item.name}}</text><text class="combo-desc">{{item.desc}}</text><view><text class="combo-price">¥{{item.price}}</text><text class="combo-meta">{{item.days}} 天 · {{item.kcal}}</text></view></view></view></block></view></view>
+<view class="pg">
+  <!-- 自定义导航 -->
+  <view class="nav" style="margin-top: {{menuTop}}px; height: {{menuH}}px;">
+    <view class="nav-back" bindtap="back" hover-class="tap"><text class="chev">‹</text></view>
+    <view class="nav-t">健康套餐</view>
+    <view class="nav-ph"></view>
+  </view>
+
+  <scroll-view class="body" scroll-y enhanced show-scrollbar="{{false}}">
+    <view class="head">
+      <view class="en">MEAL PROGRAMS</view>
+      <view class="sub">按天规划 · 营养师搭配 · 三餐不重样</view>
+    </view>
+
+    <view class="cb card" wx:for="{{items}}" wx:key="id" bindtap="openDetail" data-id="{{item.id}}" hover-class="tap">
+      <image class="hero" src="{{item.image}}" mode="aspectFill" lazy-load="true" />
+      <view class="bd">
+        <view class="row1">
+          <text class="nm">{{item.name}}</text>
+          <text class="en" wx:if="{{item.en}}">{{item.en}}</text>
+        </view>
+        <view class="ds">{{item.desc}}</view>
+        <view class="tags" wx:if="{{item.tags.length}}">
+          <text class="pill green" wx:for="{{item.tags}}" wx:for-item="tag" wx:key="*this">{{tag}}</text>
+        </view>
+        <view class="ft">
+          <view class="price"><text class="cur">¥</text>{{item.price}}<text class="org" wx:if="{{item.org}}">¥{{item.org}}</text></view>
+          <text class="meta" wx:if="{{item.days}}">{{item.days}} 天 · {{item.kcal}}</text>
+          <text class="meta" wx:elif="{{item.kcal}}">{{item.kcal}}</text>
+          <text class="go">›</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="foot-space"></view>
+  </scroll-view>
+</view>

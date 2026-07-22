@@ -1,0 +1,47 @@
+.pg { display: flex; flex-direction: column; height: 100vh; background: var(--bg); }
+
+/* ---------- 自定义导航 ---------- */
+.nav { display: flex; align-items: center; padding: 0 32rpx; flex: none; }
+.nav-back {
+  width: 68rpx;
+  height: 68rpx;
+  border: 1rpx solid var(--hair);
+  border-radius: 20rpx;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.nav-back .chev { font-size: 40rpx; color: var(--ink); line-height: 1; margin-top: -4rpx; }
+.nav-t { font-size: 32rpx; font-weight: 800; margin-left: 24rpx; }
+
+.body { flex: 1; padding: 16rpx 32rpx 0; box-sizing: border-box; }
+
+/* ---------- 表单（复用用户端 exercise 自定义弹层风格） ---------- */
+.form-card { margin-top: 8rpx; padding: 8rpx 32rpx 24rpx; }
+.form-row { margin-top: 24rpx; }
+.f-lab { font-size: 24rpx; font-weight: 600; margin-bottom: 12rpx; }
+.f-lab .req { color: var(--red); }
+.f-picker {
+  border: 1rpx solid var(--hair);
+  border-radius: 12rpx;
+  padding: 18rpx 20rpx;
+  font-size: 24rpx;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #fff;
+}
+.f-picker .chev-down { color: var(--faint); transform: rotate(90deg); font-size: 28rpx; }
+.ta {
+  width: 100%;
+  border: 1rpx solid var(--hair);
+  border-radius: 12rpx;
+  padding: 18rpx 20rpx;
+  font-size: 24rpx;
+  background: #fff;
+  box-sizing: border-box;
+}
+.f-err { font-size: 20rpx; color: var(--red); margin-top: 8rpx; }
+
+.submit { margin-top: 32rpx; height: 92rpx; }

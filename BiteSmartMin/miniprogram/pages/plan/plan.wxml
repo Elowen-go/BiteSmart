@@ -1,0 +1,112 @@
+<view class="pg {{state === 'gen' ? 'pg-gen' : ''}}">
+  <!-- AI 生成中 -->
+  <view wx:if="{{state === 'gen'}}" class="gen" style="padding-top: {{padTop}}px;">
+    <view class="gen-kicker">BITESMART AI</view>
+    <view class="ring-css" style="background: conic-gradient(#1E9E62 {{genDeg}}deg, rgba(255,255,255,0.15) 0deg);">
+      <view class="ring-css-inner">{{pct}}%</view>
+    </view>
+    <view class="gen-cap">AI 正在为你生成个性化食谱…</view>
+    <view class="gen-phase">{{phase}}</view>
+    <view class="gen-proof">
+      <view class="n">1,450,783</view>
+      <view class="t">位用户已通过 AI 食谱达成目标</view>
+    </view>
+  </view>
+
+  <!-- 无计划：引导 -->
+  <view wx:if="{{state === 'empty'}}" class="empty-wrap" style="padding-top: {{padTop}}px;">
+    <view class="empty-ring"></view>
+    <view class="empty-t">还没有专属食谱</view>
+    <view class="empty-s">完成健康档案问卷，AI 将为你生成 7 天专属食谱计划</view>
+    <view class="btn-ink green empty-btn" bindtap="goAssessment" hover-class="tap">去定制我的食谱</view>
+  </view>
+
+  <!-- 结果页 -->
+  <scroll-view wx:if="{{state === 'result'}}" class="body" scroll-y enhanced show-scrollbar="{{false}}">
+    <!-- hero（顶部留出胶囊安全区） -->
+    <view class="plan-hero" style="padding-top: {{padTop}}px;">
+      <view class="hero-top">
+        <view class="hero-l">
+          <view class="hi">HI, {{nickname}}</view>
+          <view class="hero-title">你的专属食谱已生成</view>
+          <view class="hero-time">生成于 {{genTime}} · 基于 {{basis}}</view>
+        </view>
+        <view class="icon-btn" bindtap="goHome" hover-class="tap"><text class="x-t">×</text></view>
+      </view>
+      <view class="plan-stats">
+        <view class="me-num"><view class="b">{{planDays}}<text class="em"> 天</text></view><view class="s">计划时长</view></view>
+        <view class="me-num"><view class="b">{{goalDelta}}<text class="em"> kg</text></view><view class="s">食谱目标</view></view>
+        <view class="me-num"><view class="b">{{targetWeight}}<text class="em"> kg</text></view><view class="s">目标体重</view></view>
+      </view>
+      <view class="tag-row">
+        <text class="g-tag">偏好：{{prefsText}}</text>
+        <text class="g-tag">忌口：{{avoidText}}</text>
+        <text class="g-tag">部位：{{partsText}}</text>
+      </view>
+      <!-- 执行进度行（长按 = 演示进入下一天，见 plan.ts advanceDay 注释） -->
+      <view wx:if="{{started}}" class="progress-row" bindlongpress="advanceDay">
+        <view class="p-lab">
+          <text>执行进度 · 第 {{curDay + 1}} / {{planDays}} 天</text>
+          <text class="p-done">今日已打卡 {{doneCount}} / 3 餐</text>
+        </view>
+        <view class="track"><view class="fill" style="width: {{progressPct}}%; background: var(--green);"></view></view>
+      </view>
+    </view>
+
+    <view class="plan-main">
+      <!-- 7 天 tab -->
+      <scroll-view class="day-tabs" scroll-x enhanced show-scrollbar="{{false}}">
+        <view class="day-tab {{planDay === item ? 'on' : ''}}" wx:for="{{days}}" wx:key="*this" bindtap="pickDay" data-day="{{item}}">
+          第{{item + 1}}天
+          <view wx:if="{{started && item === curDay}}" class="cur-dot"></view>
+        </view>
+      </scroll-view>
+
+      <view class="sec sec-sm">
+        <text class="en">DAY {{planDay + 1}}</text>
+        <text class="cn cn-sm">第 {{planDay + 1}} 天餐单</text>
+        <view class="line"></view>
+        <text class="more">合计 {{totalKcal}} kcal</text>
+      </view>
+
+      <!-- 三餐卡 -->
+      <view class="plan-meal" wx:for="{{meals}}" wx:key="mealId">
+        <image class="ph" src="{{item.image}}" mode="aspectFill" />
+        <view class="meal-main">
+          <view class="when">{{item.when}} · {{item.en}}</view>
+          <view class="nm">{{item.name}}</view>
+          <view class="kc">{{item.kcal}} kcal · 蛋白质 {{item.protein}}g</view>
+        </view>
+        <view class="meal-side">
+          <text class="swap" catchtap="swapMeal" data-meal-id="{{item.mealId}}">换一道</text>
+          <block wx:if="{{started && planDay === curDay}}">
+            <view class="chip-check {{item.done ? 'on' : ''}}" catchtap="checkMeal" data-day="{{planDay}}" data-meal-id="{{item.mealId}}" data-done="{{item.done}}">
+              {{item.done ? '✓ 已打卡' : '打卡'}}
+            </view>
+          </block>
+          <view wx:else class="addbtn sm" catchtap="addDish" data-id="{{item.dishId}}"></view>
+        </view>
+      </view>
+
+      <!-- 三餐全打卡鼓励条 -->
+      <view wx:if="{{allDone}}" class="c-note done-note">
+        <text>今日三餐全部完成</text>
+        <text class="b">继续保持</text>
+      </view>
+
+      <!-- 会员提示：已是会员（21 天计划已解锁）则隐藏；非会员显示并跳开通页 -->
+      <view wx:if="{{!isMember}}" class="c-note">
+        <text class="c-note-l">会员可解锁 <text class="b">21 天完整计划</text>、菜品无限更换与营养周报</text>
+        <text class="c-note-r" bindtap="goMember">开通会员</text>
+      </view>
+
+      <!-- CTA -->
+      <view wx:if="{{started}}" class="btn-ink cta" bindtap="goMall" hover-class="tap">按今日餐单去点餐</view>
+      <view wx:elif="{{finished}}" class="btn-ink cta" bindtap="reCustomize" hover-class="tap">计划已完成 · 重新定制</view>
+      <view wx:else class="btn-ink cta" bindtap="startPlan" hover-class="tap">开始执行计划</view>
+      <view class="re-custom" bindtap="reCustomize" hover-class="tap">重新定制</view>
+    </view>
+
+    <view style="height: 60rpx;"></view>
+  </scroll-view>
+</view>

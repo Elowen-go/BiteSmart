@@ -1,8 +1,10 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { computed, ref, onMounted, watch } from 'vue'
 import { Refresh } from '@element-plus/icons-vue'
 import { getInventoryWarnings, getInventoryLogs } from '../../../api/merchant/inventory'
 import type { InventoryWarning, InventoryLog } from '../../../api/merchant/inventory'
+import { updateDish } from '../../../api/merchant/dishes'
+import { ElMessage } from 'element-plus'
 import { useUserStore } from '../../../stores/user'
 
 const userStore = useUserStore()
@@ -22,13 +24,12 @@ const sortedWarnings = computed(() => {
 const inventoryStats = computed(() => {
   const soldOut = warnings.value.filter((item) => Number(item.currentStock || 0) <= 0).length
   const lowStock = warnings.value.filter((item) => Number(item.currentStock || 0) > 0 && Number(item.currentStock || 0) <= Number(item.minStock || 0)).length
-  const normal = warnings.value.length - soldOut - lowStock
   const recentChanges = logs.value.length
 
   return [
     { label: '售罄菜品', value: soldOut, hint: '建议立即下架或补货', className: 'danger' },
     { label: '库存预警', value: lowStock, hint: '低于安全库存', className: 'warning' },
-    { label: '库存正常', value: normal, hint: '可继续售卖', className: 'success' },
+    { label: '预警菜品', value: warnings.value.length, hint: '需关注的菜品', className: 'brand' },
     { label: '变动记录', value: recentChanges, hint: '最近库存流水', className: 'muted' }
   ]
 })
@@ -79,6 +80,51 @@ const getChangeTypeText = (type: string) => {
   return map[type] || type || '-'
 }
 
+const getChangeTypeTag = (type: string): 'success' | 'warning' | 'info' | 'danger' => {
+  const map: Record<string, 'success' | 'warning' | 'info' | 'danger'> = {
+    IN: 'success',
+    OUT: 'warning',
+    LOCK: 'info',
+    UNLOCK: 'info',
+    ADJUST: 'danger'
+  }
+  return map[type] || 'info'
+}
+
+const replenishVisible = ref(false)
+const replenishTarget = ref<InventoryWarning | null>(null)
+const replenishStock = ref(0)
+const replenishSaving = ref(false)
+
+const openReplenish = (row: any) => {
+  const target = row as InventoryWarning
+  replenishTarget.value = target
+  // 默认补到预警值的 2 倍，至少 50，商家可直接改
+  replenishStock.value = Math.max(Number(target.minStock || 0) * 2, 50)
+  replenishVisible.value = true
+}
+
+const submitReplenish = async () => {
+  if (!replenishTarget.value) return
+  replenishSaving.value = true
+  try {
+    // 后端无专用补货接口，复用菜品更新接口：DishMapper 为动态 update，仅提交 stock 字段即可
+    const res = await updateDish(replenishTarget.value.dishId, { stock: replenishStock.value } as any)
+    if (res.code === 200) {
+      ElMessage.success('补货成功')
+      replenishVisible.value = false
+      fetchData()
+    } else {
+      ElMessage.error(res.message || '补货失败')
+    }
+  } catch (e) {
+    console.error('补货失败', e)
+    ElMessage.error('补货失败，请稍后重试')
+  } finally {
+    replenishSaving.value = false
+  }
+}
+
 onMounted(() => {
   fetchData()
   updateBreadcrumb()
@@ -125,7 +171,12 @@ onMounted(() => {
             </el-table-column>
             <el-table-column label="状态" width="120">
               <template #default="{ row }">
-                <el-tag :type="getStockStatus(row).type">{{ getStockStatus(row).label }}</el-tag>
+                <el-tag :type="getStockStatus(row).type" effect="plain">{{ getStockStatus(row).label }}</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column label="操作" width="100" fixed="right">
+              <template #default="{ row }">
+                <el-button text type="primary" size="small" @click="openReplenish(row)">去补货</el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -135,7 +186,7 @@ onMounted(() => {
             <el-table-column prop="dishName" label="菜品名称" min-width="180" />
             <el-table-column prop="changeType" label="变动类型" width="120">
               <template #default="{ row }">
-                <el-tag type="info">{{ getChangeTypeText(row.changeType) }}</el-tag>
+                <el-tag :type="getChangeTypeTag(row.changeType)" effect="plain">{{ getChangeTypeText(row.changeType) }}</el-tag>
               </template>
             </el-table-column>
             <el-table-column prop="changeAmount" label="变动数量" width="120">
@@ -153,6 +204,21 @@ onMounted(() => {
         </el-tab-pane>
       </el-tabs>
       </div>
+
+      <el-dialog v-model="replenishVisible" title="菜品补货" width="420px">
+        <div v-if="replenishTarget" class="replenish-body">
+          <p class="replenish-dish">{{ replenishTarget.dishName }}</p>
+          <p class="replenish-meta">当前库存 {{ replenishTarget.currentStock }} · 预警值 {{ replenishTarget.minStock }}</p>
+          <div class="replenish-field">
+            <span>补货后库存</span>
+            <el-input-number v-model="replenishStock" :min="0" :step="10" controls-position="right" />
+          </div>
+        </div>
+        <template #footer>
+          <el-button @click="replenishVisible = false">取消</el-button>
+          <el-button type="primary" :loading="replenishSaving" @click="submitReplenish">确认补货</el-button>
+        </template>
+      </el-dialog>
     </div>
   </div>
 </template>
@@ -228,15 +294,15 @@ onMounted(() => {
 }
 
 .summary-item.warning {
-  border-left: 3px solid #b76e2a;
+  border-left: 3px solid var(--bs-status-warning);
 }
 
-.summary-item.success {
-  border-left: 3px solid #1b6b4a;
+.summary-item.brand {
+  border-left: 3px solid var(--green);
 }
 
 .summary-item.muted {
-  border-left: 3px solid #8a9299;
+  border-left: 3px solid var(--bs-status-secondary);
 }
 
 .card-panel {
@@ -262,13 +328,35 @@ onMounted(() => {
 }
 
 .positive {
-  color: #1b6b4a;
+  color: var(--bs-status-success);
   font-weight: 600;
 }
 
 .negative {
   color: var(--bs-status-danger);
   font-weight: 600;
+}
+
+.replenish-dish {
+  margin: 0;
+  color: var(--bs-text-title);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.replenish-meta {
+  margin: 6px 0 16px;
+  color: var(--bs-text-muted);
+  font-size: 12px;
+}
+
+.replenish-field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  color: var(--bs-text-title);
+  font-size: 13px;
 }
 
 @media (max-width: 1100px) {

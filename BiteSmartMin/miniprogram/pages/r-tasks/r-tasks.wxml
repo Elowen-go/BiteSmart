@@ -1,0 +1,111 @@
+<view class="pg">
+  <scroll-view class="body" scroll-y enhanced show-scrollbar="{{false}}">
+    <!-- 在线状态卡 -->
+    <view class="card rider-status {{online ? 'online' : ''}}" style="margin-top: {{padTop}}px;">
+      <view class="dot-st"></view>
+      <view class="st-t">
+        <text class="b">{{online ? '在线接单中' : '已离线'}}</text>
+        <text class="s">{{online ? '系统将持续为你派单' : '上线后才能看到任务大厅'}}</text>
+      </view>
+      <view class="switch {{online ? 'on' : ''}}" bindtap="toggleOnline" hover-class="tap"></view>
+    </view>
+
+    <!-- 离线态 -->
+    <view wx:if="{{!online}}" class="empty">
+      <view class="t">当前处于离线状态</view>
+      <view class="s">打开上方开关开始接单</view>
+      <view class="btn-ink green empty-btn" bindtap="toggleOnline" hover-class="tap">立即上线</view>
+    </view>
+
+    <block wx:else>
+      <!-- 我的当前任务 -->
+      <block wx:if="{{mine.length}}">
+        <view class="sec">
+          <text class="en">MY TASK</text>
+          <text class="cn">我的当前任务</text>
+          <view class="line"></view>
+        </view>
+        <view class="card task-card" wx:for="{{mine}}" wx:key="id">
+          <view class="t-head">
+            <text class="no">#{{item.orderNo}}</text>
+            <text class="fee"><text class="cur">¥</text>{{item.fee}}<text class="lab"> 配送费</text></text>
+          </view>
+          <view class="task-route">
+            <view class="r-line"><view class="r-dot"></view><view class="r-dash"></view><view class="r-dot end"></view></view>
+            <view class="r-info">
+              <view class="ri">
+                <text class="lb">取 PICK UP</text>
+                <text class="b">{{item.pickup}}</text>
+              </view>
+              <view class="ri">
+                <text class="lb">送 DELIVER</text>
+                <text class="b">{{item.receiver}}</text>
+                <text class="s">{{item.deliver}}</text>
+              </view>
+            </view>
+          </view>
+          <view class="t-foot">
+            <text class="tm">{{item.statusText}} · {{item.timeText}}</text>
+            <view class="op dark" catchtap="goTask" data-id="{{item.id}}">继续任务</view>
+          </view>
+        </view>
+      </block>
+
+      <!-- 任务大厅 -->
+      <view class="sec">
+        <text class="en">HALL</text>
+        <text class="cn">任务大厅</text>
+        <view class="line"></view>
+        <text class="more">{{hall.length}} 单待接</text>
+      </view>
+      <block wx:if="{{hall.length}}">
+        <view class="card task-card" wx:for="{{hall}}" wx:key="id">
+          <view class="t-head">
+            <text class="no">#{{item.orderNo}}</text>
+            <text class="fee"><text class="cur">¥</text>{{item.fee}}<text class="lab"> 配送费</text></text>
+          </view>
+          <view class="task-route">
+            <view class="r-line"><view class="r-dot"></view><view class="r-dash"></view><view class="r-dot end"></view></view>
+            <view class="r-info">
+              <view class="ri">
+                <text class="lb">取 PICK UP</text>
+                <text class="b">{{item.pickup}}</text>
+              </view>
+              <view class="ri">
+                <text class="lb">送 DELIVER</text>
+                <text class="b">{{item.receiver}}</text>
+                <text class="s">{{item.deliver}}</text>
+              </view>
+            </view>
+          </view>
+          <view class="t-foot">
+            <text class="tm">{{item.timeText}}</text>
+            <view class="op primary" catchtap="accept" data-id="{{item.id}}">接单</view>
+          </view>
+        </view>
+      </block>
+      <view wx:else class="card empty-card">{{loadError || '暂无待接任务 · 商家出餐后订单会出现在这里'}}</view>
+    </block>
+
+    <view style="height: 32rpx;"></view>
+  </scroll-view>
+
+  <!-- 骑手端自定义底栏 -->
+  <view class="m-tabbar">
+    <view class="m-tab {{active === 'tasks' ? 'on' : ''}}" catchtap="goTab" data-key="tasks" data-url="/pages/r-tasks/r-tasks">
+      <image class="m-tab-ic" src="/assets/tab/r-tasks{{active === 'tasks' ? '-on' : ''}}.png" />
+      <text>任务</text>
+      <view class="dot"></view>
+    </view>
+    <view class="m-tab {{active === 'stats' ? 'on' : ''}}" catchtap="goTab" data-key="stats" data-url="/pages/r-stats/r-stats">
+      <image class="m-tab-ic" src="/assets/tab/r-stats{{active === 'stats' ? '-on' : ''}}.png" />
+      <text>统计</text>
+      <view class="dot"></view>
+    </view>
+    <view class="m-tab {{active === 'me' ? 'on' : ''}}" catchtap="goTab" data-key="me" data-url="/pages/r-me/r-me">
+      <image class="m-tab-ic" src="/assets/tab/profile{{active === 'me' ? '-on' : ''}}.png" />
+      <text>我的</text>
+      <view class="dot"></view>
+    </view>
+  </view>
+</view>

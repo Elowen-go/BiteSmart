@@ -15,10 +15,7 @@ const request = (options) => {
             method: options.method || 'GET',
             timeout: 8000,
             data: options.data,
-            header: {
-                'Content-Type': options.contentType === 'form' ? 'application/x-www-form-urlencoded' : 'application/json',
-                ...(token ? { Authorization: `Bearer ${token}` } : {})
-            },
+            header: Object.assign({ 'Content-Type': options.contentType === 'form' ? 'application/x-www-form-urlencoded' : 'application/json' }, (token ? { Authorization: `Bearer ${token}` } : {})),
             success: (response) => {
                 const result = response.data;
                 if (!result || typeof result.code !== 'number') {

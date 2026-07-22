@@ -4,7 +4,7 @@
 
     <sql id="BaseColumns">
         id, user_id, record_date, record_time, meal_type, food_name, quantity,
-        calories, protein, fat, carbs, source_type, order_item_id,
+        calories, protein, fat, carbs, source_type, order_item_id, plan_meal_id,
         create_time, update_time, deleted
     </sql>
 
@@ -35,12 +35,18 @@
         WHERE order_item_id = #{orderItemId} AND deleted = 0
     </select>
 
+    <select id="findByPlanMealId" resultType="com.ws.bitesmart.entity.health.DietRecord">
+        SELECT <include refid="BaseColumns"/>
+        FROM diet_record
+        WHERE plan_meal_id = #{planMealId} AND deleted = 0
+    </select>
+
     <insert id="insert" parameterType="com.ws.bitesmart.entity.health.DietRecord">
         INSERT INTO diet_record (id, user_id, record_date, record_time, meal_type, food_name, quantity,
-                                  calories, protein, fat, carbs, source_type, order_item_id,
+                                  calories, protein, fat, carbs, source_type, order_item_id, plan_meal_id,
                                   create_time, update_time)
         VALUES (#{id}, #{userId}, #{recordDate}, #{recordTime}, #{mealType}, #{foodName}, #{quantity},
-                #{calories}, #{protein}, #{fat}, #{carbs}, #{sourceType}, #{orderItemId},
+                #{calories}, #{protein}, #{fat}, #{carbs}, #{sourceType}, #{orderItemId}, #{planMealId},
                 NOW(), NOW())
     </insert>
 

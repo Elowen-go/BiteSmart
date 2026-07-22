@@ -1,0 +1,77 @@
+<view class="pg">
+  <!-- 自定义导航 -->
+  <view class="nav" style="margin-top: {{menuTop}}px; height: {{menuH}}px;">
+    <view class="nav-back" bindtap="goBack" hover-class="tap"><text class="chev">‹</text></view>
+    <view class="nav-t">{{editId ? '编辑套餐' : '新增套餐'}}</view>
+  </view>
+
+  <scroll-view class="body" scroll-y enhanced show-scrollbar="{{false}}">
+    <!-- 基本信息 -->
+    <view class="sec">
+      <text class="en">BASIC</text>
+      <text class="cn">基本信息</text>
+      <view class="line"></view>
+    </view>
+    <view class="card form-card">
+      <view class="form-row">
+        <view class="f-lab">套餐名称 <text class="req">*</text></view>
+        <input class="f-input" placeholder="如：7 天高蛋白减脂餐" placeholder-class="ph-txt" value="{{comboName}}" data-field="comboName" bindinput="onInput" />
+      </view>
+      <view class="form-grid">
+        <view class="form-row">
+          <view class="f-lab">价格（元） <text class="req">*</text></view>
+          <input class="f-input" type="digit" placeholder="0.00" placeholder-class="ph-txt" value="{{price}}" data-field="price" bindinput="onInput" />
+        </view>
+        <view class="form-row">
+          <view class="f-lab">原价（元）</view>
+          <input class="f-input" type="digit" placeholder="选填" placeholder-class="ph-txt" value="{{originalPrice}}" data-field="originalPrice" bindinput="onInput" />
+        </view>
+      </view>
+      <view class="form-row">
+        <view class="f-lab">套餐描述</view>
+        <textarea class="f-input f-textarea" placeholder="套餐亮点、适合场景等" placeholder-class="ph-txt" value="{{description}}" data-field="description" bindinput="onInput" maxlength="200" />
+      </view>
+      <view class="form-row">
+        <view class="f-lab">适宜人群</view>
+        <input class="f-input" placeholder="如：减脂期、健身人群" placeholder-class="ph-txt" value="{{suitableFor}}" data-field="suitableFor" bindinput="onInput" />
+      </view>
+      <view class="form-row">
+        <view class="f-lab">图片 URL</view>
+        <input class="f-input" placeholder="https://…" placeholder-class="ph-txt" value="{{image}}" data-field="image" bindinput="onInput" />
+        <view wx:if="{{image && !imgError}}" class="img-preview"><image src="{{image}}" mode="aspectFill" binderror="onImgError" /></view>
+        <view wx:elif="{{image && imgError}}" class="img-preview img-broken">图片加载失败，请检查 URL</view>
+      </view>
+      <view class="form-row sale-row">
+        <view class="f-lab sale-lab">立即上架</view>
+        <view class="switch {{onSale ? 'on' : ''}}" bindtap="toggleSale" hover-class="tap"></view>
+      </view>
+    </view>
+
+    <!-- 菜品组合 -->
+    <view class="sec">
+      <text class="en">DISHES</text>
+      <text class="cn">选择菜品组合</text>
+      <view class="line"></view>
+      <text class="more">已选 {{selectedCount}} 道</text>
+    </view>
+    <view class="card form-card" wx:if="{{dishes.length}}">
+      <view class="dish-pick {{item.selected ? 'on' : ''}}" wx:for="{{dishes}}" wx:key="id" data-id="{{item.id}}" bindtap="toggleDish" hover-class="tap">
+        <view class="dp-check">{{item.selected ? '✓' : ''}}</view>
+        <view class="dp-main">
+          <view class="nm">{{item.name}}</view>
+          <view class="sub">¥{{item.price}} · {{item.kcal}} kcal</view>
+        </view>
+      </view>
+      <view class="pick-note">选中的菜品将按天轮换排入每日三餐；均标记为「可替换」，用户下单时可换菜</view>
+    </view>
+    <view wx:else class="card empty-card">暂无菜品，请先在「菜品管理」中添加</view>
+
+    <view wx:if="{{err}}" class="form-err">{{err}}</view>
+    <view style="height: 160rpx;"></view>
+  </scroll-view>
+
+  <!-- 底部提交 -->
+  <view class="bbar">
+    <view class="btn-ink green bbar-btn {{submitting ? 'disabled' : ''}}" bindtap="submit" hover-class="tap">{{submitting ? '提交中…' : (editId ? '保存套餐' : '创建套餐')}}</view>
+  </view>
+</view>

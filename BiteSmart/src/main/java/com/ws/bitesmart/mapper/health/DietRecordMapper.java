@@ -25,6 +25,9 @@ public interface DietRecordMapper {
 
     DietRecord findByOrderItemId(@Param("orderItemId") Long orderItemId);
 
+    /** 按计划餐ID查饮食记录（计划打卡同步的记录，取消打卡时删除） */
+    DietRecord findByPlanMealId(@Param("planMealId") Long planMealId);
+
     int insert(DietRecord record);
 
     int updateById(DietRecord record);

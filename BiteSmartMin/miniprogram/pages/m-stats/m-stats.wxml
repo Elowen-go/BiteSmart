@@ -1,0 +1,38 @@
+<view class="pg">
+  <!-- 自定义导航 -->
+  <view class="nav" style="margin-top: {{menuTop}}px; height: {{menuH}}px;">
+    <view class="nav-back" bindtap="goBack" hover-class="tap"><text class="chev">‹</text></view>
+    <view class="nav-t">销售统计</view>
+  </view>
+
+  <scroll-view class="body" scroll-y enhanced show-scrollbar="{{false}}">
+    <!-- 近 7 日营收柱状图 -->
+    <view class="chart-box">
+      <view class="chart-title">近 7 日营收（元）</view>
+      <view class="bar-chart">
+        <view class="bar-col" wx:for="{{bars}}" wx:key="label">
+          <text class="bv">{{item.value}}</text>
+          <view class="bar {{item.hot ? 'hot' : ''}}" style="height: {{item.height}}rpx;"></view>
+          <text class="bl">{{item.label}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 热销菜品 -->
+    <view class="sec">
+      <text class="en">TOP</text>
+      <text class="cn">热销菜品</text>
+      <view class="line"></view>
+    </view>
+    <view class="card top-card" wx:if="{{top.length}}">
+      <view class="h-record" wx:for="{{top}}" wx:key="rank">
+        <text class="rank {{item.rank <= 3 ? 'hot' : ''}}">{{item.rank}}</text>
+        <text class="tname">{{item.name}}</text>
+        <text class="tv">{{item.qty}} 份</text>
+      </view>
+    </view>
+    <view wx:else class="card empty-card">暂无销售数据</view>
+
+    <view style="height: 32rpx;"></view>
+  </scroll-view>
+</view>

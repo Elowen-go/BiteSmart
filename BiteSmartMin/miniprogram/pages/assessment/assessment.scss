@@ -1,0 +1,134 @@
+.pg { display: flex; flex-direction: column; height: 100vh; }
+
+.status-pad { width: 100%; flex: none; }
+.tap { opacity: 0.72; }
+
+/* ---------- 自定义导航 ---------- */
+.nav { display: flex; align-items: center; padding: 0 32rpx; flex: none; }
+.nav-back {
+  width: 68rpx;
+  height: 68rpx;
+  border: 1rpx solid var(--hair);
+  border-radius: 20rpx;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.nav-back .chev { font-size: 40rpx; color: var(--ink); line-height: 1; margin-top: -4rpx; }
+.nav-t { font-size: 32rpx; font-weight: 800; margin-left: 24rpx; }
+.nav-ph { width: 68rpx; margin-left: auto; }
+
+.body { flex: 1; padding: 0 40rpx; box-sizing: border-box; }
+
+/* ---------- 分步进度 ---------- */
+.steps { display: flex; align-items: flex-start; padding: 20rpx 12rpx 8rpx; }
+.st-node { display: flex; flex-direction: column; align-items: center; width: 128rpx; flex: none; }
+.st-dot {
+  width: 60rpx;
+  height: 60rpx;
+  border-radius: 50%;
+  border: 3rpx solid var(--hair);
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.st-inner { width: 16rpx; height: 16rpx; border-radius: 50%; background: var(--faint); }
+.st-ck { color: #fff; font-size: 26rpx; font-weight: 700; }
+.st-lab { font-size: 20rpx; color: var(--faint); margin-top: 12rpx; white-space: nowrap; }
+.st-node.done .st-dot,
+.st-node.on .st-dot { background: var(--green); border-color: var(--green); }
+.st-node.on .st-inner { background: #fff; }
+.st-node.on .st-lab { color: var(--green-deep); font-weight: 700; }
+.st-node.done .st-lab { color: var(--sub); }
+.st-line { flex: 1; height: 4rpx; background: var(--hair); margin-top: 28rpx; border-radius: 2rpx; }
+.st-line.done { background: var(--green); }
+
+/* ---------- 问题区 ---------- */
+.asm-q { font-size: 42rpx; font-weight: 800; margin: 36rpx 0 8rpx; }
+.asm-sub { font-size: 24rpx; color: var(--sub); margin-bottom: 32rpx; line-height: 1.7; }
+.asm-sub-line { border-left: 4rpx solid var(--green); padding-left: 24rpx; }
+
+/* ---------- 配图选项卡 ---------- */
+.opt {
+  display: flex;
+  align-items: center;
+  border: 2rpx solid var(--hair);
+  border-radius: 20rpx;
+  background: #fff;
+  padding: 24rpx;
+  margin-bottom: 24rpx;
+}
+.opt .ph { width: 128rpx; height: 128rpx; border-radius: 12rpx; flex: none; background: #DCE5DD; }
+.opt-main { flex: 1; min-width: 0; margin-left: 28rpx; }
+.opt-name { font-size: 30rpx; font-weight: 700; }
+.opt-desc { font-size: 22rpx; color: var(--sub); margin-top: 8rpx; line-height: 1.5; }
+.ck-c {
+  width: 40rpx;
+  height: 40rpx;
+  border-radius: 50%;
+  border: 3rpx solid #CDD4CE;
+  flex: none;
+  margin-left: 20rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.ck-t { color: #fff; font-size: 22rpx; font-weight: 700; }
+.opt.on { border-color: var(--green); background: #FBFDFB; }
+.opt.on .ck-c { background: var(--green); border-color: var(--green); }
+
+/* ---------- chip ---------- */
+.part-chips { display: flex; flex-wrap: wrap; margin-bottom: 16rpx; }
+.chip {
+  border: 2rpx solid var(--hair);
+  border-radius: 12rpx;
+  background: #fff;
+  font-size: 24rpx;
+  padding: 16rpx 28rpx;
+  color: var(--sub);
+  margin: 0 16rpx 16rpx 0;
+}
+.chip.on { border-color: var(--green); background: var(--green-soft); color: var(--green-deep); font-weight: 700; }
+
+/* ---------- 人体模型 ---------- */
+.bodymap { display: flex; justify-content: center; padding: 24rpx 0 8rpx; }
+.fig { text-align: center; }
+.fig + .fig { margin-left: 48rpx; }
+.fig-box { position: relative; width: 240rpx; height: 440rpx; }
+.fig-img { position: absolute; left: 0; top: 0; width: 240rpx; height: 440rpx; background: transparent; }
+.fig-lab { font-size: 20rpx; color: var(--faint); display: block; margin-top: 12rpx; }
+
+/* ---------- 表单 ---------- */
+.form-row { margin-bottom: 28rpx; }
+.f-lab { font-size: 22rpx; color: var(--sub); margin-bottom: 14rpx; font-weight: 600; }
+.f-lab .req { color: var(--orange); }
+.f-input {
+  width: 100%;
+  height: 88rpx;
+  line-height: 88rpx;
+  border: 1rpx solid var(--hair);
+  border-radius: 12rpx;
+  padding: 0 24rpx;
+  font-size: 26rpx;
+  background: #fff;
+  box-sizing: border-box;
+}
+.input-3 { display: flex; }
+.input-3 .f-input { flex: 1; }
+.input-3 .f-input + .f-input { margin-left: 16rpx; }
+.form-err { font-size: 22rpx; color: var(--red); margin-top: 8rpx; }
+
+/* ---------- 底部按钮 ---------- */
+.asm-foot {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  background: #fff;
+  border-top: 1rpx solid var(--hair);
+  padding: 24rpx 40rpx 48rpx;
+  display: flex;
+}
+.foot-btn { flex: 1; }
+.foot-btn.main { margin-left: 24rpx; }
+.foot-btn.main:first-child { margin-left: 0; }

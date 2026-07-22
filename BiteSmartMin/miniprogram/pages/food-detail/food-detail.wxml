@@ -1,1 +1,79 @@
-<view class="food-detail"><image class="detail-image" src="{{item.image}}" mode="aspectFill"/><view class="detail-body"><view class="back-floating" bindtap="back">‹</view><text class="eyebrow">{{item.kcal}}</text><text class="title">{{item.name}}</text><text class="subtitle">{{item.desc}}</text><view class="nutrition"><view><text>蛋白质</text><text>32g</text></view><view><text>脂肪</text><text>12g</text></view><view><text>碳水</text><text>28g</text></view></view><view class="panel"><text class="panel-title">适宜人群</text><text class="panel-note">适合减脂、日常控油和需要补充蛋白质的人群。</text></view><view class="bottom-action"><text class="price">¥{{item.price}}</text><button data-label="加入购物车" bindtap="add">加入购物车</button></view></view></view>
+<view class="pg">
+  <scroll-view class="body" scroll-y enhanced show-scrollbar="{{false}}">
+    <!-- 顶格 hero -->
+    <view class="hero">
+      <image src="{{item.image}}" mode="aspectFill" lazy-load="true" />
+    </view>
+
+    <!-- 上移叠卡 -->
+    <view class="sheet">
+      <view class="t-row">
+        <view class="t-main">
+          <view class="nm">{{item.name}}</view>
+          <view class="ds">{{item.desc}}</view>
+        </view>
+        <view class="t-side">
+          <view class="price"><text class="cur">¥</text>{{item.price}}</view>
+          <view class="sold" wx:if="{{item.sold}}">月售 {{item.sold}}</view>
+        </view>
+      </view>
+
+      <!-- 营养四格 -->
+      <view class="nutri card">
+        <view class="nut">
+          <b>{{item.kcal}}</b>
+          <span>热量 kcal</span>
+          <view class="track"><view class="fill green" style="width: {{item.wKcal}}%;"></view></view>
+        </view>
+        <view class="nut">
+          <b>{{item.protein}}</b>
+          <span>蛋白质 g</span>
+          <view class="track"><view class="fill green" style="width: {{item.wProtein}}%;"></view></view>
+        </view>
+        <view class="nut">
+          <b>{{item.carbs}}</b>
+          <span>碳水 g</span>
+          <view class="track"><view class="fill mid" style="width: {{item.wCarbs}}%;"></view></view>
+        </view>
+        <view class="nut">
+          <b>{{item.fat}}</b>
+          <span>脂肪 g</span>
+          <view class="track"><view class="fill light" style="width: {{item.wFat}}%;"></view></view>
+        </view>
+      </view>
+
+      <!-- AI 营养点评 -->
+      <view class="quote" wx:if="{{item.ai}}">
+        <view class="q-head"><view class="ic-spark"></view><text>AI 营养点评</text></view>
+        <view class="q-p">{{item.ai}}</view>
+      </view>
+
+      <!-- 适宜 / 注意 -->
+      <view class="fit" wx:if="{{item.fit.length || item.caution.length}}">
+        <view class="col" wx:if="{{item.fit.length}}">
+          <view class="h ok"><text class="mk">✓</text><text>适宜</text></view>
+          <view class="it" wx:for="{{item.fit}}" wx:key="*this">{{item}}</view>
+        </view>
+        <view class="col" wx:if="{{item.caution.length}}">
+          <view class="h no"><text class="mk">×</text><text>注意</text></view>
+          <view class="it" wx:for="{{item.caution}}" wx:key="*this">{{item}}</view>
+        </view>
+      </view>
+
+      <view class="foot-space"></view>
+    </view>
+  </scroll-view>
+
+  <!-- 浮动按钮 -->
+  <view class="nav-back hero-back" style="top: {{menuTop}}px;" bindtap="back" hover-class="tap"><text class="chev">‹</text></view>
+  <button class="nav-back hero-share" style="top: {{menuTop}}px;" open-type="share" hover-class="tap"><view class="ic-share"></view></button>
+
+  <!-- 底部操作条 -->
+  <view class="bbar">
+    <view class="bag" bindtap="goCart" hover-class="tap">
+      <view class="ic-bag"></view>
+      <view class="badge" wx:if="{{cartCount > 0}}">{{cartCount > 99 ? '99+' : cartCount}}</view>
+    </view>
+    <view class="btn-ink green bbar-btn" bindtap="add" hover-class="tap">加入购物袋</view>
+  </view>
+</view>

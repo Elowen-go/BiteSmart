@@ -1,0 +1,71 @@
+<view class="pg">
+  <scroll-view class="body" scroll-y enhanced show-scrollbar="{{false}}">
+    <!-- 骑手头 -->
+    <view class="me-top" style="padding-top: {{padTop}}px;">
+      <view class="avatar">{{initial}}</view>
+      <view class="me-main">
+        <view class="nm">{{nickname}}<text class="vip">实名已认证</text></view>
+        <view class="goal">BiteSmart 配送骑手</view>
+      </view>
+    </view>
+
+    <!-- 服务数据 -->
+    <view class="stat-strip">
+      <view class="stat-cell"><view class="b">{{rating}}</view><view class="s">服务评分</view></view>
+      <view class="stat-cell"><view class="b">{{reviewCount}}</view><view class="s">评价数</view></view>
+      <view class="stat-cell"><view class="b">{{totalCount}}</view><view class="s">累计单量</view></view>
+    </view>
+
+    <!-- 功能组 -->
+    <view class="card m-group">
+      <view class="m-row" bindtap="toggleOnline" hover-class="tap">
+        <view class="m-ic ic-online"></view>
+        <text>在线状态</text>
+        <text class="hint">{{online ? '在线' : '离线'}}</text>
+        <view class="switch {{online ? 'on' : ''}}"></view>
+      </view>
+      <view class="m-row" bindtap="goReviews" hover-class="tap">
+        <view class="m-ic ic-star"></view>
+        <text>服务评价</text>
+        <text class="hint">{{rating}} 分</text>
+        <text class="arrow">›</text>
+      </view>
+      <view class="m-row" bindtap="goProfile" hover-class="tap">
+        <view class="m-ic ic-id"></view>
+        <text>编辑资料</text>
+        <text class="arrow">›</text>
+      </view>
+      <view class="m-row" bindtap="vehicle" hover-class="tap">
+        <view class="m-ic ic-bike"></view>
+        <text>车辆信息</text>
+        <text class="arrow">›</text>
+      </view>
+      <view class="m-row" bindtap="logout" hover-class="tap">
+        <view class="m-ic ic-exit"></view>
+        <text>退出骑手端</text>
+        <text class="arrow">›</text>
+      </view>
+    </view>
+
+    <view style="height: 32rpx;"></view>
+  </scroll-view>
+
+  <!-- 骑手端自定义底栏 -->
+  <view class="m-tabbar">
+    <view class="m-tab {{active === 'tasks' ? 'on' : ''}}" catchtap="goTab" data-key="tasks" data-url="/pages/r-tasks/r-tasks">
+      <image class="m-tab-ic" src="/assets/tab/r-tasks{{active === 'tasks' ? '-on' : ''}}.png" />
+      <text>任务</text>
+      <view class="dot"></view>
+    </view>
+    <view class="m-tab {{active === 'stats' ? 'on' : ''}}" catchtap="goTab" data-key="stats" data-url="/pages/r-stats/r-stats">
+      <image class="m-tab-ic" src="/assets/tab/r-stats{{active === 'stats' ? '-on' : ''}}.png" />
+      <text>统计</text>
+      <view class="dot"></view>
+    </view>
+    <view class="m-tab {{active === 'me' ? 'on' : ''}}" catchtap="goTab" data-key="me" data-url="/pages/r-me/r-me">
+      <image class="m-tab-ic" src="/assets/tab/profile{{active === 'me' ? '-on' : ''}}.png" />
+      <text>我的</text>
+      <view class="dot"></view>
+    </view>
+  </view>
+</view>

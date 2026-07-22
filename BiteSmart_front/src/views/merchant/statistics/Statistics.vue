@@ -1,7 +1,13 @@
-﻿﻿<script setup lang="ts">
-import { computed, ref, onMounted } from 'vue'
+<script setup lang="ts">
+import { computed, ref, nextTick, onMounted, onBeforeUnmount } from 'vue'
+import { use, init, type ECharts } from 'echarts/core'
+import { LineChart, BarChart } from 'echarts/charts'
+import { TooltipComponent, LegendComponent, GridComponent } from 'echarts/components'
+import { CanvasRenderer } from 'echarts/renderers'
 import { Refresh } from '@element-plus/icons-vue'
 import { getTodayStats, getDailyStats, getTopDishes } from '../../../api/merchant/statistics'
+
+use([LineChart, BarChart, TooltipComponent, LegendComponent, GridComponent, CanvasRenderer])
 
 const loading = ref(false)
 const todayStats = ref({
@@ -26,10 +32,6 @@ const avgDailyRevenue = computed(() => {
   return totalRevenue.value / periodStats.value.length
 })
 
-const maxRevenue = computed(() => {
-  return Math.max(...periodStats.value.map((item) => Number(item.revenue || 0)), 0)
-})
-
 const metricCards = computed(() => [
   { label: '今日营收', value: `¥${formatAmount(todayStats.value.revenue)}`, hint: '当天已完成销售额' },
   { label: '今日订单', value: todayStats.value.orderCount, hint: '当天订单量' },
@@ -47,12 +49,69 @@ const getDateStr = (daysAgo: number) => {
 }
 
 const formatAmount = (amount: number | string | undefined) => {
-  return Number(amount || 0).toFixed(2)
+  return Number(amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
-const getBarHeight = (revenue: number | string | undefined) => {
-  if (!maxRevenue.value) return '8%'
-  return `${Math.max((Number(revenue || 0) / maxRevenue.value) * 100, 8)}%`
+const trendChartRef = ref<HTMLElement | null>(null)
+let trendChart: ECharts | null = null
+
+const renderTrendChart = () => {
+  if (!trendChartRef.value || !periodStats.value.length) return
+  trendChart?.dispose()
+  trendChart = init(trendChartRef.value)
+  trendChart.setOption({
+    tooltip: { trigger: 'axis' },
+    legend: { bottom: 0, data: ['营收', '订单量'], textStyle: { color: '#6B7A72' } },
+    grid: { left: 60, right: 48, top: 20, bottom: 46 },
+    xAxis: {
+      type: 'category',
+      data: periodStats.value.map((item) => item.date?.slice(5)),
+      axisLine: { lineStyle: { color: '#E4E8E3' } },
+      axisTick: { show: false },
+      axisLabel: { color: '#6B7A72' }
+    },
+    yAxis: [
+      {
+        type: 'value',
+        name: '营收',
+        nameTextStyle: { color: '#6B7A72' },
+        axisLabel: { formatter: '¥{value}', color: '#6B7A72' },
+        splitLine: { lineStyle: { color: '#E4E8E3', type: 'dashed' } }
+      },
+      {
+        type: 'value',
+        name: '订单',
+        nameTextStyle: { color: '#6B7A72' },
+        minInterval: 1,
+        axisLabel: { color: '#6B7A72' },
+        splitLine: { show: false }
+      }
+    ],
+    series: [
+      {
+        name: '营收',
+        type: 'line',
+        smooth: true,
+        yAxisIndex: 0,
+        data: periodStats.value.map((item) => Number(item.revenue || 0)),
+        lineStyle: { color: '#1E9E62', width: 3 },
+        itemStyle: { color: '#1E9E62' },
+        areaStyle: { color: 'rgba(30,158,98,.14)' }
+      },
+      {
+        name: '订单量',
+        type: 'bar',
+        yAxisIndex: 1,
+        barMaxWidth: 22,
+        data: periodStats.value.map((item) => Number(item.orderCount || 0)),
+        itemStyle: { color: '#DCE9DF', borderRadius: [3, 3, 0, 0] }
+      }
+    ]
+  })
+}
+
+const resizeCharts = () => {
+  trendChart?.resize()
 }
 
 const fetchData = async () => {
@@ -77,10 +136,18 @@ const fetchData = async () => {
   } finally {
     loading.value = false
   }
+  nextTick(() => renderTrendChart())
 }
 
 onMounted(() => {
   fetchData()
+  window.addEventListener('resize', resizeCharts)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', resizeCharts)
+  trendChart?.dispose()
+  trendChart = null
 })
 </script>
 
@@ -112,15 +179,7 @@ onMounted(() => {
             </div>
           </div>
 
-          <div class="bars" v-if="periodStats.length">
-            <div v-for="item in periodStats" :key="item.date" class="bar-item">
-              <div class="bar-track">
-                <div class="bar-fill" :style="{ height: getBarHeight(item.revenue) }"></div>
-              </div>
-              <span>{{ item.date?.slice(5) }}</span>
-              <em>¥{{ formatAmount(item.revenue) }}</em>
-            </div>
-          </div>
+          <div v-if="periodStats.length" ref="trendChartRef" class="trend-chart"></div>
           <el-empty v-else description="暂无销售数据" />
 
           <el-table :data="periodStats" class="period-table" empty-text="暂无期间统计">
@@ -144,7 +203,7 @@ onMounted(() => {
 
           <div class="ranking-list" v-if="topDishes.length">
             <div v-for="(item, index) in topDishes" :key="item.dishId || item.dishName" class="ranking-item">
-              <span class="rank">{{ index + 1 }}</span>
+              <span class="rank" :class="{ top: index === 0 }">{{ index + 1 }}</span>
               <div class="ranking-main">
                 <strong>{{ item.dishName }}</strong>
                 <em>{{ item.soldCount }} 份</em>
@@ -259,46 +318,10 @@ onMounted(() => {
   font-size: 13px;
 }
 
-.bars {
-  display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 12px;
-  height: 220px;
-  padding: 12px 4px 18px;
+.trend-chart {
+  height: 260px;
+  padding-bottom: 12px;
   border-bottom: 1px solid var(--bs-border-light);
-}
-
-.bar-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  min-width: 0;
-}
-
-.bar-track {
-  display: flex;
-  align-items: flex-end;
-  width: 100%;
-  height: 145px;
-  background: var(--bs-bg-hover);
-  border-radius: var(--bs-radius-sm);
-  overflow: hidden;
-}
-
-.bar-fill {
-  width: 100%;
-  min-height: 8px;
-  background: var(--bs-primary);
-  border-radius: var(--bs-radius-sm) var(--bs-radius-sm) 0 0;
-}
-
-.bar-item span,
-.bar-item em {
-  color: var(--bs-text-muted);
-  font-size: 12px;
-  font-style: normal;
-  white-space: nowrap;
 }
 
 .period-table {
@@ -332,11 +355,16 @@ onMounted(() => {
   justify-content: center;
   width: 28px;
   height: 28px;
-  color: #fff;
-  background: var(--bs-primary);
+  color: var(--green-deep);
+  background: #BFE3CD;
   border-radius: 50%;
   font-size: 13px;
   font-weight: 600;
+}
+
+.rank.top {
+  color: #fff;
+  background: var(--green);
 }
 
 .ranking-main {
@@ -383,11 +411,6 @@ onMounted(() => {
 
   .metric-grid {
     grid-template-columns: 1fr;
-  }
-
-  .bars {
-    overflow-x: auto;
-    grid-template-columns: repeat(7, 72px);
   }
 }
 </style>

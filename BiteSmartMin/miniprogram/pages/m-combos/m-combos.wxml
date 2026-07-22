@@ -1,0 +1,30 @@
+<view class="pg">
+  <!-- 自定义导航 -->
+  <view class="nav" style="margin-top: {{menuTop}}px; height: {{menuH}}px;">
+    <view class="nav-back" bindtap="goBack" hover-class="tap"><text class="chev">‹</text></view>
+    <view class="nav-t">套餐管理</view>
+    <view class="nav-right" bindtap="addCombo" hover-class="tap">+ 新增</view>
+  </view>
+
+  <scroll-view class="body" scroll-y enhanced show-scrollbar="{{false}}">
+    <view class="card combo-card" wx:if="{{list.length}}">
+      <view class="combo-row" wx:for="{{list}}" wx:key="id">
+        <image class="ph" src="{{item.image}}" mode="aspectFill" />
+        <view class="combo-main" bindtap="editCombo" data-id="{{item.id}}">
+          <view class="nm">{{item.name}}</view>
+          <view class="sub">¥{{item.price}} · {{item.kcal}} kcal · 蛋白质 {{item.protein}}g</view>
+          <view class="sub faint">月售 {{item.sold}} · 点击编辑</view>
+        </view>
+        <view class="combo-side">
+          <view class="switch {{item.onSale ? 'on' : ''}}" catchtap="toggleCombo" data-id="{{item.id}}"></view>
+          <view class="side-lab">{{item.onSale ? '在售' : '下架'}}</view>
+        </view>
+      </view>
+    </view>
+    <view wx:else class="empty">
+      <view class="t">暂无套餐</view>
+      <view class="s">点击右上角「+ 新增」创建第一个套餐</view>
+    </view>
+    <view style="height: 32rpx;"></view>
+  </scroll-view>
+</view>

@@ -9,25 +9,28 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { useRouter } from 'vue-router'
 import { ArrowRight } from '@element-plus/icons-vue'
 import { resolveFileUrl } from '../../../utils/fileUrl'
+import { merchantLabel } from '../../../utils/display'
 
 const router = useRouter()
 const loading = ref(false)
 const cartItems = ref<any[]>([])
 const addresses = ref<any[]>([])
 const checkoutVisible = ref(false)
-const selectedAddressId = ref<number | undefined>()
+const selectedAddressId = ref<number | string | undefined>()
 const merchantRemarks = ref<Record<string, string>>({})
 const checkoutStateKey = 'bitesmart-cart-checkout-state'
 const selectedItems = computed(() => cartItems.value.filter(i => i.selected !== 0))
 const selectedQuantity = computed(() => selectedItems.value.reduce((sum, item) => sum + Number(item.quantity || 0), 0))
 const totalAmount = computed(() => selectedItems.value.reduce((sum, i) => sum + Number(i.price || i.itemPrice || 0) * i.quantity, 0))
 const merchantGroups = computed(() => {
-  const groups = new Map<number, { merchantId: number, items: any[], total: number }>()
+  // merchantId 是雪花 ID（字符串），不可 Number() 强转，否则丢精度后传给后端会下错商家
+  const groups = new Map<string, { merchantId: string, shopName: string, items: any[], total: number }>()
   selectedItems.value.forEach(item => {
-    const merchantId = Number(item.merchantId || 0)
+    const merchantId = String(item.merchantId || '')
     if (!merchantId) return
-    const group = groups.get(merchantId) || { merchantId, items: [], total: 0 }
+    const group = groups.get(merchantId) || { merchantId, shopName: '', items: [], total: 0 }
     group.items.push(item)
+    if (!group.shopName && item.shopName) group.shopName = item.shopName
     group.total += Number(item.price || item.itemPrice || 0) * Number(item.quantity || 0)
     groups.set(merchantId, group)
   })
@@ -36,7 +39,8 @@ const merchantGroups = computed(() => {
 const allSelected = computed(() => cartItems.value.length > 0 && cartItems.value.every(i => i.selected !== 0))
 const someSelected = computed(() => selectedItems.value.length > 0 && !allSelected.value)
 const itemName = (item: any) => item.dishName || item.comboName || item.name || '商品'
-const itemImage = (item: any) => resolveFileUrl(item.dishImage || item.comboImage) || '/images/home/meal-card.jpg'
+// 无图商品用首字徽章占位，不再回退到无关素材图
+const itemImage = (item: any) => resolveFileUrl(item.dishImage || item.comboImage) || ''
 const comboDishes = (item: any) => {
   if (item.itemType !== 20) return []
   try {
@@ -52,7 +56,8 @@ const fetchData = async () => {
   try {
     const [cartRes, addressRes, dishRes] = await Promise.all([getCartList(), getAddressList(), getDishList({ page: 1, size: 100 })])
     const dishes = dishRes.data?.data?.list || []
-    const comboIds: number[] = [...new Set<number>((cartRes.data || []).filter((item: any) => item.itemType === 20 && item.comboId).map((item: any) => Number(item.comboId)))]
+    // comboId 是雪花 ID（字符串），保持字符串透传，Number() 会丢精度导致详情 404
+    const comboIds: string[] = [...new Set<string>((cartRes.data || []).filter((item: any) => item.itemType === 20 && item.comboId).map((item: any) => String(item.comboId)))]
     const comboDetails = await Promise.all(comboIds.map(async (id) => {
       try { return await getComboDetail(id) } catch { return null }
     }))
@@ -123,7 +128,7 @@ onMounted(fetchData)
         </div>
         <div v-for="item in cartItems" :key="item.id" class="cart-item">
           <el-checkbox :model-value="item.selected !== 0" @change="(v: any) => changeSelected(item, Boolean(v))" />
-          <img :src="itemImage(item)" :alt="itemName(item)" />
+          <img v-if="itemImage(item)" :src="itemImage(item)" :alt="itemName(item)" /><span v-else class="img-placeholder">{{ itemName(item)[0] }}</span>
           <div class="cart-item-info">
             <span>{{ item.itemType === 20 ? '健康套餐' : '精选菜品' }}</span>
             <h2>{{ itemName(item) }}</h2>
@@ -159,7 +164,7 @@ onMounted(fetchData)
         </el-form-item>
         <div class="merchant-checkout-list">
           <section v-for="group in merchantGroups" :key="group.merchantId" class="merchant-checkout-group">
-            <div class="merchant-checkout-header"><strong>商家 #{{ group.merchantId }}</strong><span>¥{{ group.total.toFixed(2) }}</span></div>
+            <div class="merchant-checkout-header"><strong>{{ merchantLabel(group.shopName, group.merchantId) }}</strong><span>¥{{ group.total.toFixed(2) }}</span></div>
             <ul><li v-for="item in group.items" :key="item.id">{{ itemName(item) }} × {{ item.quantity }}</li></ul>
             <el-input v-model="merchantRemarks[String(group.merchantId)]" type="textarea" :rows="2" maxlength="200" show-word-limit placeholder="给该商家留言" />
           </section>
@@ -171,7 +176,10 @@ onMounted(fetchData)
   </div>
 </template>
 <style scoped>
-.cart-toolbar{display:flex;align-items:center;justify-content:space-between;padding:0 0 12px;color:#718078;font-size:12px}.combo-dishes{margin:9px 0 0;padding:8px 0 0 16px;border-top:1px solid #edf0ed;color:#718078;font-size:11px;line-height:1.7}.combo-dishes li{margin:0}.merchant-checkout-list{display:grid;gap:16px;width:100%}.merchant-checkout-group{padding:14px 16px;border:1px solid #e1e9e2;background:#f8faf8}.merchant-checkout-header{display:flex;justify-content:space-between;color:#1f4d3a}.merchant-checkout-group ul{margin:8px 0 12px;padding-left:18px;color:#718078;font-size:12px;line-height:1.7}
-.cart-page{max-width:1192px;margin:0 auto;padding:66px 24px 90px;color:#1f2a24}.cart-intro{margin-bottom:38px}.cart-intro span,.cart-summary>span{display:block;color:#cf704f;font-size:11px;letter-spacing:.14em;font-weight:650}.cart-intro h1{margin:12px 0 8px;font-family:"Source Han Serif SC","Songti SC",serif;font-size:38px;font-weight:600}.cart-intro p{margin:0;color:#6d7971;font-size:14px}.cart-layout{display:grid;grid-template-columns:1fr 286px;gap:44px;align-items:start}.cart-list{min-height:230px}.cart-item{display:grid;grid-template-columns:26px 94px 1fr 112px 90px 28px;align-items:center;gap:17px;padding:18px 0;border-top:1px solid #dfe7df}.cart-item:last-child{border-bottom:1px solid #dfe7df}.cart-item img{width:94px;height:78px;object-fit:cover;background:#eef2ed}.cart-item-info>span{color:#cf704f;font-size:10px;letter-spacing:.1em}.cart-item-info h2{margin:7px 0 5px;font-size:17px;font-weight:650}.cart-item-info p{margin:0;color:#78857d;font-size:12px}.cart-item>strong{color:#1f4d3a;font-size:16px}.remove-item{border:0;background:none;color:#9a6960;font-size:22px;cursor:pointer}.cart-summary{position:sticky;top:100px;padding:26px 24px;background:#1f4d3a;color:#fff}.cart-summary h2{margin:12px 0 28px;font-family:"Source Han Serif SC","Songti SC",serif;font-size:25px;font-weight:600}.summary-row,.summary-total{display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-top:1px solid rgba(255,255,255,.22);font-size:12px;color:#d3e0d8}.summary-total{margin-top:24px;padding-top:20px}.summary-total strong{font-size:23px;color:#f5c06d}.checkout-button{display:flex;align-items:center;justify-content:space-between;width:100%;margin-top:24px;padding:13px 0;border:0;border-top:1px solid rgba(255,255,255,.4);background:none;color:#fff;font-weight:650;cursor:pointer}.checkout-button span{color:#f5c06d;font-size:20px}.checkout-button:disabled{opacity:.4;cursor:not-allowed}.cart-empty{display:flex;align-items:center;justify-content:center;gap:24px;min-height:260px;background:#eff3ee}.cart-empty img{width:135px;height:135px;object-fit:cover}.cart-empty h2{margin:0 0 8px;font-family:"Source Han Serif SC","Songti SC",serif}.cart-empty p{margin:0;color:#718078;font-size:13px}.cart-empty button{margin-top:17px;border:0;background:none;color:#1f4d3a;font-weight:650;cursor:pointer}.cart-empty button span{color:#cf704f;margin-left:6px}.address-option{display:flex;width:100%;height:auto;line-height:1.6;margin:0 0 10px;white-space:normal}.amount{font-size:20px;color:var(--bs-primary)}@media(max-width:850px){.cart-layout{grid-template-columns:1fr}.cart-summary{position:static;display:grid;grid-template-columns:1fr 1fr;gap:0 20px}.cart-summary h2,.cart-summary>span{grid-column:1/-1}.summary-total,.checkout-button{grid-column:2}.summary-row{grid-column:1;grid-row:3}.checkout-button{margin-top:0;align-self:center}}@media(max-width:600px){.cart-page{padding:45px 18px 68px}.cart-intro h1{font-size:32px}.cart-item{grid-template-columns:22px 72px 1fr 24px;gap:10px}.cart-item img{width:72px;height:66px}.cart-item :deep(.el-input-number){grid-column:3}.cart-item>strong{grid-column:3}.cart-item-info h2{font-size:15px}.remove-item{grid-column:4;grid-row:1}.cart-summary{display:block}.summary-row,.summary-total{margin-top:14px}.checkout-button{margin-top:20px}.cart-empty{padding:24px;justify-content:flex-start}}
-.checkout-button{justify-content:center;gap:12px;padding:13px 16px;border:0;background:#f5c06d;color:#1f4d3a;font-size:14px;font-weight:700;transition:background .2s ease,transform .2s ease}.checkout-button:hover:not(:disabled){background:#ffd58f;transform:translateY(-1px)}.checkout-button span{display:none}.checkout-button svg{width:17px;height:17px;color:#1f4d3a}.checkout-button:disabled{background:rgba(245,192,109,.35);color:rgba(255,255,255,.55)}
+.cart-toolbar{display:flex;align-items:center;justify-content:space-between;padding:0 0 12px;color:#718078;font-size:12px}.combo-dishes{margin:9px 0 0;padding:8px 0 0 16px;border-top:1px solid #edf0ed;color:#718078;font-size:11px;line-height:1.7}.combo-dishes li{margin:0}.merchant-checkout-list{display:grid;gap:16px;width:100%}.merchant-checkout-group{padding:14px 16px;border:1px solid #e1e9e2;background:#f8faf8}.merchant-checkout-header{display:flex;justify-content:space-between;color:var(--green)}.merchant-checkout-group ul{margin:8px 0 12px;padding-left:18px;color:#718078;font-size:12px;line-height:1.7}
+.cart-page{max-width:1192px;margin:0 auto;padding:66px 24px 90px;color:#1f2a24}.cart-intro{margin-bottom:38px}.cart-intro span,.cart-summary>span{display:block;color:var(--orange);font-size:11px;letter-spacing:.14em;font-weight:650}.cart-intro h1{margin:12px 0 8px;font-family:"Source Han Serif SC","Songti SC",serif;font-size:38px;font-weight:600}.cart-intro p{margin:0;color:#6d7971;font-size:14px}.cart-layout{display:grid;grid-template-columns:1fr 286px;gap:44px;align-items:start}.cart-list{min-height:230px}.cart-item{display:grid;grid-template-columns:26px 94px 1fr 112px 90px 28px;align-items:center;gap:17px;padding:18px 0;border-top:1px solid #dfe7df}.cart-item:last-child{border-bottom:1px solid #dfe7df}.cart-item img{width:94px;height:78px;object-fit:cover;background:#eef2ed}.cart-item-info>span{color:var(--orange);font-size:10px;letter-spacing:.1em}.cart-item-info h2{margin:7px 0 5px;font-size:17px;font-weight:650}.cart-item-info p{margin:0;color:#78857d;font-size:12px}.cart-item>strong{color:var(--green);font-size:16px}.remove-item{border:0;background:none;color:var(--danger-brand);font-size:22px;cursor:pointer}.cart-summary{position:sticky;top:100px;padding:26px 24px;background:var(--green-ink);color:#fff}.cart-summary h2{margin:12px 0 28px;font-family:"Source Han Serif SC","Songti SC",serif;font-size:25px;font-weight:600}.summary-row,.summary-total{display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-top:1px solid rgba(255,255,255,.22);font-size:12px;color:#d3e0d8}.summary-total{margin-top:24px;padding-top:20px}.summary-total strong{font-size:23px;color:var(--orange)}.checkout-button{display:flex;align-items:center;justify-content:space-between;width:100%;margin-top:24px;padding:13px 0;border:0;border-top:1px solid rgba(255,255,255,.4);background:none;color:#fff;font-weight:650;cursor:pointer}.checkout-button span{color:var(--orange);font-size:20px}.checkout-button:disabled{opacity:.4;cursor:not-allowed}.cart-empty{display:flex;align-items:center;justify-content:center;gap:24px;min-height:260px;background:#eff3ee}.cart-empty img{width:135px;height:135px;object-fit:cover}.cart-empty h2{margin:0 0 8px;font-family:"Source Han Serif SC","Songti SC",serif}.cart-empty p{margin:0;color:#718078;font-size:13px}.cart-empty button{margin-top:17px;border:0;background:none;color:var(--green);font-weight:650;cursor:pointer}.cart-empty button span{color:var(--orange);margin-left:6px}.address-option{display:flex;width:100%;height:auto;line-height:1.6;margin:0 0 10px;white-space:normal}.amount{font-size:20px;color:var(--green)}@media(max-width:850px){.cart-layout{grid-template-columns:1fr}.cart-summary{position:static;display:grid;grid-template-columns:1fr 1fr;gap:0 20px}.cart-summary h2,.cart-summary>span{grid-column:1/-1}.summary-total,.checkout-button{grid-column:2}.summary-row{grid-column:1;grid-row:3}.checkout-button{margin-top:0;align-self:center}}@media(max-width:600px){.cart-page{padding:45px 18px 68px}.cart-intro h1{font-size:32px}.cart-item{grid-template-columns:22px 72px 1fr 24px;gap:10px}.cart-item img{width:72px;height:66px}.cart-item :deep(.el-input-number){grid-column:3}.cart-item>strong{grid-column:3}.cart-item-info h2{font-size:15px}.remove-item{grid-column:4;grid-row:1}.cart-summary{display:block}.summary-row,.summary-total{margin-top:14px}.checkout-button{margin-top:20px}.cart-empty{padding:24px;justify-content:flex-start}}
+.checkout-button{justify-content:center;gap:12px;padding:13px 16px;border:0;background:var(--orange);color:#fff;font-size:14px;font-weight:700;transition:background .2s ease,transform .2s ease}.checkout-button:hover:not(:disabled){filter:brightness(1.08);transform:translateY(-1px)}.checkout-button span{display:none}.checkout-button svg{width:17px;height:17px;color:#fff}.checkout-button:disabled{background:rgba(217,123,43,.35);color:rgba(255,255,255,.55)}
+</style>
+<style scoped>
+.cart-item .img-placeholder{display:flex;align-items:center;justify-content:center;width:94px;height:78px;background:var(--green-soft);color:var(--green-deep);font-family:"Source Han Serif SC","Songti SC",serif;font-size:26px;font-weight:600}
 </style>

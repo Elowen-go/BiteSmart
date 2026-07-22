@@ -73,6 +73,20 @@ public class DeliveryTask {
     /** 异常原因 */
     private String exceptionReason;
 
+    /** 骑手拒单原因（拒单后任务回待接单池） */
+    private String rejectReason;
+
+    /** 订单备注快照（创建任务时从订单拷贝） */
+    private String orderRemark;
+
+    // ==================== 联表带出的骑手信息（非表字段，商家视角展示用） ====================
+
+    /** 骑手姓名（delivery_driver.real_name） */
+    private String driverName;
+
+    /** 骑手电话（delivery_driver.phone） */
+    private String driverPhone;
+
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
     private Integer deleted;

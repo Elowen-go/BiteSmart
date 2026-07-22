@@ -59,6 +59,9 @@ CREATE TABLE `user_profile` (
   `disease_history` json DEFAULT NULL COMMENT '疾病史（JSON数组）',
   `health_goal` varchar(64) DEFAULT NULL COMMENT '健康目标：减肥/增肌/维持/控糖/其他',
   `daily_calorie_target` int(8) DEFAULT NULL COMMENT '每日推荐摄入热量（由AI计算）',
+  `target_weight` decimal(5,2) DEFAULT NULL COMMENT '目标体重（kg）',
+  `exercise_freq` int(4) DEFAULT NULL COMMENT '每周运动频次（次）',
+  `focus_parts` json DEFAULT NULL COMMENT '重点锻炼部位（JSON数组）如：["全身","腰腹"]',
   `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `deleted` tinyint(1) DEFAULT 0 COMMENT '逻辑删除：0-未删 1-已删',
@@ -166,6 +169,7 @@ CREATE TABLE `merchant` (
   `business_hours` json DEFAULT NULL COMMENT '营业时间（JSON）如：{"monday":[{"start":"08:00","end":"22:00"}]}',
   `shop_notice` varchar(255) DEFAULT NULL COMMENT '店铺公告',
   `status` tinyint(4) DEFAULT 10 COMMENT '状态：10-待审核 20-审核通过 30-审核驳回 40-已关闭',
+  `open_status` tinyint(4) NOT NULL DEFAULT 10 COMMENT '营业状态：10-营业中 20-打烊',
   `audit_remark` varchar(255) DEFAULT NULL COMMENT '审核备注',
   `avg_rating` decimal(2,1) DEFAULT 0.0 COMMENT '平均评分',
   `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
@@ -297,13 +301,15 @@ CREATE TABLE `diet_record` (
   `protein` decimal(8,2) DEFAULT 0.00 COMMENT '蛋白质（g）',
   `fat` decimal(8,2) DEFAULT 0.00 COMMENT '脂肪（g）',
   `carbs` decimal(8,2) DEFAULT 0.00 COMMENT '碳水（g）',
-  `source_type` tinyint(4) DEFAULT 20 COMMENT '来源：10-平台订单自动 20-用户手动添加',
+  `source_type` tinyint(4) DEFAULT 20 COMMENT '来源：10-平台订单自动 20-用户手动添加 30-专属计划打卡',
   `order_item_id` bigint(20) DEFAULT NULL COMMENT '关联订单明细ID（自动导入时）',
+  `plan_meal_id` bigint(20) DEFAULT NULL COMMENT '关联计划餐ID（source_type=30 时），取消打卡按此删除',
   `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `deleted` tinyint(1) DEFAULT 0 COMMENT '逻辑删除：0-未删 1-已删',
   PRIMARY KEY (`id`),
-  KEY `idx_user_date` (`user_id`, `record_date`)
+  KEY `idx_user_date` (`user_id`, `record_date`),
+  KEY `idx_plan_meal_id` (`plan_meal_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='饮食记录表';
 
 -- 12. 运动记录表
@@ -375,6 +381,10 @@ CREATE TABLE `dish` (
   `unit` varchar(16) DEFAULT '份' COMMENT '单位',
   `description` varchar(255) DEFAULT NULL COMMENT '菜品描述',
   `suitable_for` json DEFAULT NULL COMMENT '适宜人群：["减肥","增肌","控糖","儿童","老人"]',
+  `tags` json DEFAULT NULL COMMENT '菜品标签（JSON数组）如：["高蛋白","减脂"]',
+  `ai_comment` varchar(500) DEFAULT NULL COMMENT 'AI点评文案',
+  `fit_scenes` json DEFAULT NULL COMMENT '适用场景（JSON数组）如：["减脂期","健身增肌"]',
+  `cautions` json DEFAULT NULL COMMENT '忌口/注意事项（JSON数组）',
   `calories` int(8) DEFAULT 0 COMMENT '热量（大卡）',
   `protein` decimal(8,2) DEFAULT 0.00 COMMENT '蛋白质（g）',
   `fat` decimal(8,2) DEFAULT 0.00 COMMENT '脂肪（g）',
@@ -622,6 +632,8 @@ CREATE TABLE `delivery_task` (
   `estimated_delivery_time` datetime DEFAULT NULL COMMENT '预计送达时间',
   `route_json` json DEFAULT NULL COMMENT '配送路线（经纬度点数组）',
   `exception_reason` varchar(255) DEFAULT NULL COMMENT '异常原因',
+  `reject_reason` varchar(255) DEFAULT NULL COMMENT '骑手拒单原因',
+  `order_remark` varchar(500) DEFAULT NULL COMMENT '订单备注快照（创建任务时从订单拷贝）',
   `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `deleted` tinyint(1) DEFAULT 0 COMMENT '逻辑删除：0-未删 1-已删',
@@ -1023,8 +1035,85 @@ CREATE TABLE `platform_transaction` (
 
 
 -- ============================================================
+-- 补充表（20260718 专属计划模块 + 运动库）
+-- 对应迁移脚本 docs/sql/20260718_plan_module.sql
+-- ============================================================
+
+-- 44. 用户专属计划表
+CREATE TABLE `user_plan` (
+  `id` bigint(20) NOT NULL COMMENT '主键ID',
+  `user_id` bigint(20) NOT NULL COMMENT '用户ID',
+  `plan_days` int(4) NOT NULL DEFAULT 7 COMMENT '计划天数（当前固定7天）',
+  `goal` varchar(64) DEFAULT NULL COMMENT '健康目标快照（生成时从健康档案拷贝）',
+  `activity_level` tinyint(4) DEFAULT NULL COMMENT '活动量等级快照：10-久坐 20-轻度 30-中度 40-重度',
+  `target_weight` decimal(5,2) DEFAULT NULL COMMENT '目标体重（kg）',
+  `start_weight` decimal(5,2) DEFAULT NULL COMMENT '开始体重（kg，生成时档案体重）',
+  `prefs` json DEFAULT NULL COMMENT '饮食偏好快照（JSON数组）',
+  `avoid` json DEFAULT NULL COMMENT '忌口快照（JSON数组）',
+  `focus_parts` json DEFAULT NULL COMMENT '重点部位快照（JSON数组）',
+  `status` tinyint(4) NOT NULL DEFAULT 10 COMMENT '状态：10-未开始 20-进行中 30-已完成 40-已取消',
+  `cur_day` int(4) NOT NULL DEFAULT 0 COMMENT '当前进行到的天（0起，0表示第1天）',
+  `created_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '生成时间',
+  `started_time` datetime DEFAULT NULL COMMENT '开始执行时间',
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `deleted` tinyint(1) DEFAULT 0 COMMENT '逻辑删除：0-未删 1-已删',
+  PRIMARY KEY (`id`),
+  KEY `idx_user_status` (`user_id`, `status`),
+  KEY `idx_user_created` (`user_id`, `created_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户专属计划表';
+
+-- 45. 专属计划餐次表（7天 × 3餐 = 21条）
+CREATE TABLE `user_plan_meal` (
+  `id` bigint(20) NOT NULL COMMENT '主键ID',
+  `plan_id` bigint(20) NOT NULL COMMENT '计划ID',
+  `day_index` int(4) NOT NULL COMMENT '第几天（0起，与 user_plan.cur_day 对齐）',
+  `meal_index` tinyint(4) NOT NULL COMMENT '餐次：0-早餐 1-午餐 2-晚餐',
+  `dish_id` bigint(20) NOT NULL COMMENT '菜品ID',
+  `swap_count` int(4) NOT NULL DEFAULT 0 COMMENT '换菜次数（用于菜品池偏移重新选菜）',
+  `checked` tinyint(1) NOT NULL DEFAULT 0 COMMENT '是否已打卡：0-未打卡 1-已打卡',
+  `checked_time` datetime DEFAULT NULL COMMENT '打卡时间',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `deleted` tinyint(1) DEFAULT 0 COMMENT '逻辑删除：0-未删 1-已删',
+  PRIMARY KEY (`id`),
+  KEY `idx_plan_day` (`plan_id`, `day_index`, `meal_index`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='专属计划餐次表';
+
+-- 46. 运动库表
+CREATE TABLE `exercise_library` (
+  `id` bigint(20) NOT NULL COMMENT '主键ID',
+  `category` varchar(32) NOT NULL COMMENT '分类：aerobic-有氧 strength-力量 shape-塑形 yoga-瑜伽',
+  `name` varchar(64) NOT NULL COMMENT '运动名称',
+  `std_text` varchar(64) DEFAULT NULL COMMENT '标准消耗描述，如 331kcal/5km',
+  `kcal_per_min` decimal(6,2) DEFAULT NULL COMMENT '每分钟消耗热量（大卡）',
+  `def_mins` int(4) DEFAULT 30 COMMENT '默认时长（分钟）',
+  `def_dist` decimal(6,2) DEFAULT 0.00 COMMENT '默认距离（公里，无距离概念的运动为0）',
+  `image_url` varchar(255) DEFAULT NULL COMMENT '封面图URL',
+  `tags` json DEFAULT NULL COMMENT '标签（JSON数组）如：["全身","有氧","户外"]',
+  `hot` tinyint(1) NOT NULL DEFAULT 0 COMMENT '是否常用：0-否 1-是',
+  `sort` int(4) NOT NULL DEFAULT 0 COMMENT '排序序号，小的在前',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `deleted` tinyint(1) DEFAULT 0 COMMENT '逻辑删除：0-未删 1-已删',
+  PRIMARY KEY (`id`),
+  KEY `idx_category_sort` (`category`, `sort`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='运动库表';
+
+-- 47. 骑手配送轨迹点表
+CREATE TABLE `rider_location` (
+  `id` bigint(20) NOT NULL COMMENT '主键ID',
+  `task_id` bigint(20) NOT NULL COMMENT '配送任务ID',
+  `driver_id` bigint(20) NOT NULL COMMENT '骑手ID（delivery_driver.id）',
+  `latitude` decimal(10,7) NOT NULL COMMENT '纬度（GCJ-02）',
+  `longitude` decimal(10,7) NOT NULL COMMENT '经度（GCJ-02）',
+  `created_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '上报时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_task_id` (`task_id`, `created_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='骑手配送轨迹点表';
+
+-- ============================================================
 -- 执行完成
--- 共 43 张表
+-- 共 47 张表
 -- 表清单：
 --   1. sys_user              2. user_profile
 --   3. membership_plan       4. user_membership
@@ -1047,5 +1136,7 @@ CREATE TABLE `platform_transaction` (
 --   37. report_statistics    38. coupon_template
 --   39. user_coupon          40. complaint_ticket
 --   41. dish_nutrition       42. operation_log_detail
---   43. platform_transaction
+--   43. platform_transaction 44. user_plan
+--   45. user_plan_meal       46. exercise_library
+--   47. rider_location
 -- ============================================================

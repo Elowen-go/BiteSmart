@@ -1,2 +1,147 @@
-@import "../../styles/user-page.scss";
-.food-detail { min-height:100vh; background:#F7F7FB; }.detail-image { width:100%; height:500rpx; }.detail-body { position:relative; padding:30rpx 36rpx 150rpx; }.back-floating { position:absolute; top:-450rpx; left:30rpx; width:66rpx; height:66rpx; line-height:58rpx; text-align:center; color:#302E3A; background:rgba(255,255,255,.88); border-radius:50%; font-size:38rpx; }.nutrition { display:flex; justify-content:space-around; padding:24rpx 0; margin-top:28rpx; background:#fff; border-radius:20rpx; text-align:center; }.nutrition view { flex:1; border-right:1rpx solid #ECEBF1; }.nutrition view:last-child { border:0; }.nutrition text { display:block; color:#9998A6; font-size:19rpx; }.nutrition text:last-child { color:#3A3846; font-size:28rpx; font-weight:700; margin-top:8rpx; }.bottom-action { position:fixed; left:36rpx; right:36rpx; bottom:28rpx; display:flex; align-items:center; justify-content:space-between; padding:12rpx 0; }.price { color:#7773E8; font-size:36rpx; font-weight:700; }.bottom-action button { margin:0; padding:20rpx 34rpx; color:#fff; background:#292833; border-radius:18rpx; font-size:23rpx; }
+.pg { display: flex; flex-direction: column; height: 100vh; background: var(--bg); position: relative; }
+
+.body { flex: 1; }
+
+/* ---------- hero ---------- */
+.hero { height: 560rpx; background: #DCE5DD; }
+.hero image { width: 100%; height: 100%; }
+
+/* ---------- 浮动按钮 ---------- */
+.nav-back {
+  width: 68rpx;
+  height: 68rpx;
+  border: 1rpx solid var(--hair);
+  border-radius: 20rpx;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+.nav-back .chev { font-size: 40rpx; color: var(--ink); line-height: 1; margin-top: -4rpx; }
+.hero-back { position: absolute; left: 32rpx; z-index: 10; box-shadow: 0 4rpx 16rpx rgba(23, 37, 31, 0.08); }
+.hero-share { position: absolute; right: 32rpx; z-index: 10; box-shadow: 0 4rpx 16rpx rgba(23, 37, 31, 0.08); }
+
+/* CSS 分享图标（箭头出框） */
+.ic-share { position: relative; width: 26rpx; height: 26rpx; border: 3rpx solid var(--ink); border-top: none; border-radius: 0 0 8rpx 8rpx; }
+.ic-share::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: -14rpx;
+  width: 3rpx;
+  height: 18rpx;
+  margin-left: -1.5rpx;
+  background: var(--ink);
+}
+.ic-share::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: -16rpx;
+  width: 12rpx;
+  height: 12rpx;
+  margin-left: -7.5rpx;
+  border-left: 3rpx solid var(--ink);
+  border-top: 3rpx solid var(--ink);
+  transform: rotate(45deg);
+}
+
+/* ---------- 叠卡内容 ---------- */
+.sheet {
+  background: var(--bg);
+  border-top: 1rpx solid var(--hair);
+  border-radius: 28rpx 28rpx 0 0;
+  margin-top: -28rpx;
+  position: relative;
+  padding: 40rpx 40rpx 0;
+}
+
+.t-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 24rpx; }
+.t-main { flex: 1; }
+.nm { font-size: 42rpx; font-weight: 800; line-height: 1.3; }
+.ds { font-size: 24rpx; color: var(--sub); margin-top: 12rpx; line-height: 1.7; }
+.t-side { flex: none; text-align: right; }
+.t-side .price { font-size: 48rpx; }
+.sold { font-size: 20rpx; color: var(--faint); margin-top: 8rpx; }
+
+/* ---------- 营养四格 ---------- */
+.nutri { display: flex; margin-top: 32rpx; overflow: hidden; }
+.nut { flex: 1; padding: 26rpx 8rpx; text-align: center; }
+.nut + .nut { border-left: 1rpx solid var(--hair); }
+.nut b { font-size: 34rpx; font-variant-numeric: tabular-nums; }
+.nut span { display: block; font-size: 18rpx; color: var(--sub); margin-top: 8rpx; }
+.nut .track { margin: 16rpx 20rpx 0; }
+.nut .fill.green { background: var(--green); }
+.nut .fill.mid { background: #5BBF8A; }
+.nut .fill.light { background: #A8D9BF; }
+
+/* ---------- AI 点评 ---------- */
+.quote { margin-top: 32rpx; border-left: 4rpx solid var(--green); padding: 4rpx 0 4rpx 28rpx; }
+.q-head { display: flex; align-items: center; gap: 12rpx; font-size: 22rpx; font-weight: 800; color: var(--green-deep); letter-spacing: 2rpx; }
+.q-p { font-size: 24rpx; color: var(--sub); line-height: 1.9; margin-top: 16rpx; }
+
+/* ---------- 适宜 / 注意 ---------- */
+.fit { display: flex; gap: 48rpx; margin-top: 32rpx; }
+.fit .col { flex: 1; }
+.fit .h { display: flex; align-items: center; gap: 10rpx; font-size: 22rpx; font-weight: 800; margin-bottom: 12rpx; }
+.fit .h.ok { color: var(--green-deep); }
+.fit .h.no { color: var(--red); }
+.fit .h .mk { font-size: 26rpx; }
+.fit .it { font-size: 22rpx; color: var(--sub); padding: 12rpx 0; border-top: 1rpx dashed var(--hair); }
+
+/* ---------- 底部操作条 ---------- */
+.bbar {
+  flex: none;
+  background: #fff;
+  border-top: 1rpx solid var(--hair);
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+  padding: 20rpx 40rpx calc(20rpx + env(safe-area-inset-bottom));
+}
+.bag {
+  width: 84rpx;
+  height: 84rpx;
+  border: 1rpx solid var(--hair);
+  border-radius: 20rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  flex: none;
+}
+.badge {
+  position: absolute;
+  top: -10rpx;
+  right: -10rpx;
+  background: var(--orange);
+  color: #fff;
+  font-size: 18rpx;
+  font-weight: 800;
+  min-width: 34rpx;
+  height: 34rpx;
+  border-radius: 17rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 6rpx;
+}
+.bbar-btn { flex: 1; }
+
+/* CSS 购物袋图标 */
+.ic-bag { position: relative; width: 30rpx; height: 26rpx; border: 3rpx solid var(--ink); border-radius: 4rpx 4rpx 8rpx 8rpx; margin-top: 8rpx; }
+.ic-bag::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: -12rpx;
+  width: 14rpx;
+  height: 12rpx;
+  margin-left: -7rpx;
+  border: 3rpx solid var(--ink);
+  border-bottom: none;
+  border-radius: 8rpx 8rpx 0 0;
+}
+
+.foot-space { height: 40rpx; }

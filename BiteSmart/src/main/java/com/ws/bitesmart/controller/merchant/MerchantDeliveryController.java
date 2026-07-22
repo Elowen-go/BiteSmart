@@ -4,6 +4,7 @@ import com.ws.bitesmart.common.ResultVO;
 import com.ws.bitesmart.entity.delivery.DeliveryTask;
 import com.ws.bitesmart.security.LoginUser;
 import com.ws.bitesmart.service.delivery.DeliveryTaskService;
+import com.ws.bitesmart.service.merchant.MerchantService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -26,14 +27,17 @@ import java.util.List;
 public class MerchantDeliveryController {
 
     private final DeliveryTaskService deliveryTaskService;
+    private final MerchantService merchantService;
 
     /**
-     * 商家的配送任务列表
+     * 商家的配送任务列表（含骑手姓名/电话）
      */
     @GetMapping("/tasks")
     public ResultVO<List<DeliveryTask>> tasks(@AuthenticationPrincipal LoginUser loginUser) {
         if (loginUser == null) return ResultVO.error(401, "未登录");
-        return ResultVO.success(deliveryTaskService.getMerchantTasks(loginUser.getUserId()));
+        // 商家ID取 merchant.id（不是 userId），与订单/套餐管理接口保持一致
+        return ResultVO.success(deliveryTaskService.getMerchantTasks(
+                merchantService.getMerchantId(loginUser.getUserId())));
     }
 
     /**

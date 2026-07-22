@@ -98,6 +98,33 @@ public class DeliveryDriverService {
     }
 
     /**
+     * 获取当前骑手的个人信息
+     */
+    public DeliveryDriver getProfile(Long userId) {
+        DeliveryDriver driver = deliveryDriverMapper.findByUserId(userId);
+        if (driver == null) {
+            throw new BusinessException(ResultCodeEnum.NOT_FOUND, "配送员信息不存在");
+        }
+        return driver;
+    }
+
+    /**
+     * 更新骑手个人信息（只允许基础资料字段：姓名/电话/车辆类型/服务区域）
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public void updateProfile(Long userId, DeliveryDriver request) {
+        DeliveryDriver driver = getProfile(userId);
+        DeliveryDriver update = new DeliveryDriver();
+        update.setId(driver.getId());
+        update.setRealName(request.getRealName());
+        update.setPhone(request.getPhone());
+        update.setVehicleType(request.getVehicleType());
+        update.setServiceArea(request.getServiceArea());
+        deliveryDriverMapper.updateById(update);
+        log.info("配送员资料更新: driverId={}", driver.getId());
+    }
+
+    /**
      * 查找附近可接单配送员
      *
      * @return 可接单配送员列表

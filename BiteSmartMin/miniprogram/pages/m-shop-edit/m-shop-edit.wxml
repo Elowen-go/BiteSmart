@@ -1,0 +1,52 @@
+<view class="pg">
+  <!-- 自定义导航 -->
+  <view class="nav" style="margin-top: {{menuTop}}px; height: {{menuH}}px;">
+    <view class="nav-back" bindtap="goBack" hover-class="tap"><text class="chev">‹</text></view>
+    <view class="nav-t">店铺信息</view>
+  </view>
+
+  <scroll-view class="body" scroll-y enhanced show-scrollbar="{{false}}">
+    <!-- 营业状态 -->
+    <view class="card open-card">
+      <view class="oc-l">
+        <view class="oc-t">营业状态</view>
+        <view class="oc-s">{{open ? '用户可正常下单' : '打烊后用户端将暂停接单'}}</view>
+      </view>
+      <view class="oc-state {{open ? 'on' : ''}}">{{open ? '营业中' : '已打烊'}}</view>
+      <view class="switch {{open ? 'on' : ''}}" bindtap="toggleOpen" hover-class="tap"></view>
+    </view>
+
+    <!-- 基本信息 -->
+    <view class="sec">
+      <text class="en">SHOP</text>
+      <text class="cn">基本信息</text>
+      <view class="line"></view>
+    </view>
+    <view class="card form-card">
+      <view class="form-row">
+        <view class="f-lab">店铺名称 <text class="req">*</text></view>
+        <input class="f-input" placeholder="店铺名称" placeholder-class="ph-txt" value="{{shopName}}" data-field="shopName" bindinput="onInput" />
+      </view>
+      <view class="form-row">
+        <view class="f-lab">联系电话</view>
+        <input class="f-input" placeholder="手机或座机号" placeholder-class="ph-txt" value="{{contactPhone}}" data-field="contactPhone" bindinput="onInput" />
+      </view>
+      <view class="form-row">
+        <view class="f-lab">店铺地址</view>
+        <input class="f-input" placeholder="省市区 + 详细地址" placeholder-class="ph-txt" value="{{shopAddress}}" data-field="shopAddress" bindinput="onInput" />
+      </view>
+      <view class="form-row">
+        <view class="f-lab">店铺公告</view>
+        <textarea class="f-input f-textarea" placeholder="展示给用户端的公告，如营业时间调整、优惠活动" placeholder-class="ph-txt" value="{{shopNotice}}" data-field="shopNotice" bindinput="onInput" maxlength="200" />
+      </view>
+    </view>
+
+    <view wx:if="{{err}}" class="form-err">{{err}}</view>
+    <view style="height: 160rpx;"></view>
+  </scroll-view>
+
+  <!-- 底部提交 -->
+  <view class="bbar">
+    <view class="btn-ink green bbar-btn {{submitting ? 'disabled' : ''}}" bindtap="submit" hover-class="tap">{{submitting ? '保存中…' : '保存'}}</view>
+  </view>
+</view>

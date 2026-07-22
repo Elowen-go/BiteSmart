@@ -25,79 +25,6 @@ import { getProfile } from '../api/merchant/profile'
 import { getNoticeList } from '../api/user/notices'
 import { resolveFileUrl } from '../utils/fileUrl'
 
-// 店铺选择器样式 - 全局样式
-const shopSelectorStyles = `
-/* 店铺选择器输入框 - 深色主题 */
-.shop-select-input .el-select__wrapper {
-  background: rgba(255,255,255,0.08) !important;
-  border: 1px solid rgba(255,255,255,0.2) !important;
-  box-shadow: none !important;
-  border-radius: 6px !important;
-}
-.shop-select-input .el-select__wrapper:hover {
-  background: rgba(255,255,255,0.12) !important;
-  border-color: rgba(255,255,255,0.3) !important;
-}
-.shop-select-input .el-select__wrapper.is-focused {
-  background: rgba(255,255,255,0.15) !important;
-  border-color: #A8D5BA !important;
-  box-shadow: 0 0 0 2px rgba(168, 213, 186, 0.2) !important;
-}
-.shop-select-input .el-select__selection {
-  color: #FFFFFF !important;
-}
-.shop-select-input .el-select__placeholder {
-  color: #FFFFFF !important;
-}
-.shop-select-input .el-select__selected-item {
-  color: #FFFFFF !important;
-}
-.shop-select-input .el-select__suffix {
-  color: rgba(255,255,255,0.7) !important;
-}
-.shop-select-input .el-select__caret {
-  color: rgba(255,255,255,0.7) !important;
-}
-.shop-select-input .el-icon {
-  color: rgba(255,255,255,0.7) !important;
-}
-
-/* 店铺选择器下拉框 - 深色主题 */
-.shop-select-dropdown {
-  background: #1B3A2F !important;
-  border: 1px solid rgba(255,255,255,0.15) !important;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.4) !important;
-}
-.shop-select-dropdown .el-select-dropdown__list {
-  background: #1B3A2F !important;
-  padding: 4px 0;
-}
-.shop-select-dropdown .el-select-dropdown__item {
-  color: rgba(255,255,255,0.85) !important;
-  background: transparent !important;
-}
-.shop-select-dropdown .el-select-dropdown__item:hover,
-.shop-select-dropdown .el-select-dropdown__item.hover {
-  background: rgba(255,255,255,0.12) !important;
-  color: #FFFFFF !important;
-}
-.shop-select-dropdown .el-select-dropdown__item.selected {
-  color: #A8D5BA !important;
-  font-weight: 600;
-  background: rgba(168, 213, 186, 0.15) !important;
-}
-.shop-select-dropdown .el-popper__arrow::before {
-  background: #1B3A2F !important;
-  border-color: rgba(255,255,255,0.15) !important;
-}
-.shop-select-dropdown .el-scrollbar {
-  background: #1B3A2F !important;
-}
-.shop-select-dropdown .el-scrollbar__view {
-  background: #1B3A2F !important;
-}
-`
-
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
@@ -107,6 +34,8 @@ const logoUrl = ref('')
 const shopName = ref('')
 const shopList = ref<any[]>([])
 const notificationCount = ref(0)
+/** 营业状态：10-营业中 20-打烊（缺省按营业中处理），store 共享给 ShopInfo 开关实时同步 */
+const openStatus = computed(() => userStore.shopOpenStatus ?? 10)
 
 const loadNotificationCount = async () => {
   try {
@@ -123,9 +52,9 @@ const toggleSidebar = () => {
 
 const currentShopId = computed(() => userStore.currentShopId)
 
-const switchShop = (shopId: number) => {
+const switchShop = (shopId: number | string) => {
   userStore.setCurrentShopId(shopId)
-  const shop = shopList.value.find(s => s.id === shopId)
+  const shop = shopList.value.find(s => String(s.id) === String(shopId))
   if (shop) {
     shopName.value = shop.shopName
   }
@@ -162,13 +91,12 @@ const menuItems = [
     items: [
       { path: '/merchant/profile', icon: User, label: '个人中心' },
     ]
+  },
+  {
+    label: '资金',
+    items: [{ path: '/merchant/finance', icon: PieChart, label: '资金中心' }]
   }
 ]
-
-menuItems.push({
-  label: '资金',
-  items: [{ path: '/merchant/finance', icon: PieChart, label: '资金中心' }]
-})
 
 const currentPath = computed(() => route.path)
 
@@ -189,6 +117,7 @@ const fetchLogo = async () => {
         logoUrl.value = resolveFileUrl(res.data.shopLogo)
       }
       shopName.value = res.data.shopName || ''
+      userStore.setShopOpenStatus(res.data.openStatus === 20 ? 20 : 10)
     }
   } catch (e) {
     console.error('获取店铺Logo失败', e)
@@ -239,12 +168,6 @@ onMounted(() => {
   fetchShopList()
   fetchUserInfo()
   loadNotificationCount()
-  
-  // 注入全局样式
-  const styleEl = document.createElement('style')
-  styleEl.id = 'shop-selector-global-styles'
-  styleEl.textContent = shopSelectorStyles
-  document.head.appendChild(styleEl)
 })
 </script>
 
@@ -252,7 +175,8 @@ onMounted(() => {
   <div class="merchant-layout">
     <aside class="sidebar" :class="{ collapsed }">
       <div class="sidebar-logo">
-        <Shop class="logo-icon" />
+        <img v-if="logoUrl" :src="logoUrl" class="logo-img" alt="店铺Logo" />
+        <Shop v-else class="logo-icon" />
         <span v-if="!collapsed">商家后台</span>
       </div>
       
@@ -296,7 +220,7 @@ onMounted(() => {
       <div class="sidebar-footer">
         <template v-if="!collapsed">
           <Shop />
-          <span>商家</span>
+          <span class="footer-shop-name">{{ shopName || '商家后台' }}</span>
         </template>
         <button class="collapse-btn" @click="collapsed = !collapsed" :title="collapsed ? '展开侧边栏' : '收起侧边栏'">
           <ArrowLeft v-if="!collapsed" />
@@ -320,6 +244,9 @@ onMounted(() => {
         </div>
         
         <div class="header-right">
+          <span class="open-pill" :class="{ closed: openStatus === 20 }">
+            <i class="open-dot"></i>{{ openStatus === 20 ? '已打烊' : '营业中' }}
+          </span>
           <button class="icon-btn notification-btn">
             <Bell />
             <span v-if="notificationCount > 0" class="notification-badge">{{ notificationCount > 99 ? '99+' : notificationCount }}</span>
@@ -387,6 +314,13 @@ onMounted(() => {
   color: #A8D5BA;
 }
 
+.logo-img {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  object-fit: cover;
+}
+
 .sidebar.collapsed .sidebar-logo {
   padding: 0 0 24px 0;
   justify-content: center;
@@ -400,95 +334,35 @@ onMounted(() => {
   width: 100%;
 }
 
-.shop-selector :deep(.el-select .el-input__wrapper) {
-  background: rgba(255,255,255,0.08) !important;
-  border: 1px solid rgba(255,255,255,0.2) !important;
-  box-shadow: none !important;
+/* 店铺选择器输入框 - 深色主题（Element 2.x 结构为 .el-select__wrapper） */
+.shop-selector :deep(.el-select__wrapper) {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: none;
   border-radius: 6px;
+  min-height: 32px;
 }
 
-.shop-selector :deep(.el-select .el-input__wrapper:hover) {
-  background: rgba(255,255,255,0.12) !important;
-  border-color: rgba(255,255,255,0.3) !important;
+.shop-selector :deep(.el-select__wrapper:hover) {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.3);
 }
 
-.shop-selector :deep(.el-select .el-input__wrapper.is-focus) {
-  background: rgba(255,255,255,0.15) !important;
-  border-color: #A8D5BA !important;
-  box-shadow: 0 0 0 2px rgba(168, 213, 186, 0.2) !important;
+.shop-selector :deep(.el-select__wrapper.is-focused) {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: #A8D5BA;
+  box-shadow: 0 0 0 2px rgba(168, 213, 186, 0.2);
 }
 
-.shop-selector :deep(.el-select .el-input__inner) {
-  color: #FFFFFF !important;
-  font-size: 14px;
-}
-
-.shop-selector :deep(.el-select .el-input__inner::placeholder) {
-  color: rgba(255,255,255,0.5) !important;
-}
-
-.shop-selector :deep(.el-select .el-input__suffix) {
-  color: rgba(255,255,255,0.7) !important;
-}
-
-.shop-selector :deep(.el-select .el-input__suffix-inner) {
-  color: rgba(255,255,255,0.7) !important;
-}
-
-.shop-selector :deep(.el-select .el-icon) {
-  color: rgba(255,255,255,0.7) !important;
-}
-
-/* 下拉弹出框容器 - 覆盖所有可能的类名 */
-.shop-selector :deep(.el-popper),
-.shop-selector :deep(.el-select__popper),
-.shop-selector :deep(.el-select .el-select__popper) {
-  background: #1B3A2F !important;
-  border: 1px solid rgba(255,255,255,0.15) !important;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.4) !important;
-}
-
-/* 弹窗箭头 */
-.shop-selector :deep(.el-popper__arrow::before),
-.shop-selector :deep(.el-select .el-select__popper .el-popper__arrow::before) {
-  background: #1B3A2F !important;
-  border-color: rgba(255,255,255,0.15) !important;
-}
-
-/* el-scrollbar 背景 */
-.shop-selector :deep(.el-select-dropdown),
-.shop-selector :deep(.el-select-dropdown__wrap),
-.shop-selector :deep(.el-select-dropdown__list),
-.shop-selector :deep(.el-scrollbar),
-.shop-selector :deep(.el-scrollbar__view),
-.shop-selector :deep(.el-select-dropdown .el-scrollbar),
-.shop-selector :deep(.el-select-dropdown .el-scrollbar__view) {
-  background: #1B3A2F !important;
-}
-
-.shop-selector :deep(.el-select-dropdown__list) {
-  padding: 4px 0;
-}
-
-/* 选项项 */
-.shop-selector :deep(.el-select-dropdown__item) {
-  color: rgba(255,255,255,0.85);
-  background: transparent !important;
-  padding: 10px 16px;
-}
-
-/* 悬停 */
-.shop-selector :deep(.el-select-dropdown__item:hover),
-.shop-selector :deep(.el-select-dropdown__item.hover) {
-  background: rgba(255,255,255,0.12) !important;
+.shop-selector :deep(.el-select__selected-item),
+.shop-selector :deep(.el-select__placeholder) {
   color: #FFFFFF;
 }
 
-/* 选中 */
-.shop-selector :deep(.el-select-dropdown__item.selected) {
-  color: #A8D5BA !important;
-  font-weight: 600;
-  background: rgba(168, 213, 186, 0.15) !important;
+.shop-selector :deep(.el-select__suffix),
+.shop-selector :deep(.el-select__caret),
+.shop-selector :deep(.el-icon) {
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .sidebar-menu {
@@ -525,7 +399,8 @@ onMounted(() => {
   align-items: center;
   gap: 14px;
   padding: 10px 16px;
-  border-radius: var(--bs-radius-md);
+  border-left: 2px solid transparent;
+  border-radius: 0 var(--bs-radius-md) var(--bs-radius-md) 0;
   color: rgba(255,255,255,0.7);
   text-decoration: none;
   font-size: var(--bs-font-size-md);
@@ -544,22 +419,23 @@ onMounted(() => {
 }
 
 .sidebar-menu a:hover {
-  background: rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.06);
   color: #FFFFFF;
 }
 
+/* 对齐 Dashboard 预览版：激活项品牌绿左边条 + 白字 */
 .sidebar-menu a.active {
-  background: rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.06);
+  border-left-color: var(--green);
   color: #FFFFFF;
 }
 
 .menu-label {
-  font-size: var(--bs-font-size-xs);
-  text-transform: uppercase;
-  color: rgba(255,255,255,0.35);
   padding: 16px 16px 8px 16px;
-  letter-spacing: 0.5px;
-  font-weight: 600;
+  color: #5E7A6C;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
 }
 
 .sidebar-footer {
@@ -577,7 +453,13 @@ onMounted(() => {
 .sidebar-footer svg {
   width: 20px;
   height: 20px;
-  gap: 8px;
+  flex-shrink: 0;
+}
+
+.footer-shop-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .sidebar.collapsed .sidebar-footer {
@@ -604,11 +486,6 @@ onMounted(() => {
   transition: all 0.2s;
   margin-left: auto;
   margin-top: 8px;
-}
-
-.collapse-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
-  color: #A8D5BA;
 }
 
 .collapse-btn:hover {
@@ -722,7 +599,7 @@ onMounted(() => {
 
 .icon-btn:hover {
   background: var(--bs-bg-hover);
-  color: #A8D5BA;
+  color: var(--bs-text-title);
 }
 
 .icon-btn svg {
@@ -738,7 +615,7 @@ onMounted(() => {
   position: absolute;
   top: -2px;
   right: -4px;
-  background: #E57373;
+  background: var(--bs-status-danger);
   color: #FFFFFF;
   font-size: 10px;
   min-width: 16px;
@@ -748,6 +625,35 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   padding: 0 4px;
+}
+
+.open-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: var(--green-soft);
+  color: var(--green-deep);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.open-pill .open-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+}
+
+.open-pill.closed {
+  background: var(--orange-soft);
+  color: var(--orange);
+}
+
+.open-pill.closed .open-dot {
+  background: var(--orange);
 }
 
 .user-info {
@@ -791,5 +697,49 @@ onMounted(() => {
   overflow-y: auto;
   padding: var(--bs-spacing-lg) var(--bs-spacing-xl);
   background: var(--bs-bg-page);
+}
+</style>
+
+<!-- 店铺选择器下拉面板（popper teleport 到 body，scoped 无法触达，必须全局；
+     用 popper-class="shop-select-dropdown" 限定作用范围，不会污染其他布局） -->
+<style>
+.shop-select-dropdown.el-select__popper,
+.shop-select-dropdown.el-popper {
+  background: #1B3A2F;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.shop-select-dropdown .el-select-dropdown__list,
+.shop-select-dropdown .el-scrollbar,
+.shop-select-dropdown .el-scrollbar__view {
+  background: #1B3A2F;
+}
+
+.shop-select-dropdown .el-select-dropdown__list {
+  padding: 4px 0;
+}
+
+.shop-select-dropdown .el-select-dropdown__item {
+  color: rgba(255, 255, 255, 0.85);
+  background: transparent;
+  padding: 10px 16px;
+}
+
+.shop-select-dropdown .el-select-dropdown__item:hover,
+.shop-select-dropdown .el-select-dropdown__item.hover {
+  background: rgba(255, 255, 255, 0.12) !important;
+  color: #FFFFFF;
+}
+
+.shop-select-dropdown .el-select-dropdown__item.selected {
+  color: #A8D5BA !important;
+  font-weight: 600;
+  background: rgba(168, 213, 186, 0.15) !important;
+}
+
+.shop-select-dropdown .el-popper__arrow::before {
+  background: #1B3A2F !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
 }
 </style>

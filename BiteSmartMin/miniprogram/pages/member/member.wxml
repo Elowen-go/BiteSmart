@@ -1,1 +1,44 @@
-<view class="user-page member-page"><view class="back-row"><text class="back" bindtap="back">‹</text><text>会员中心</text><text></text></view><view class="member-hero"><text class="eyebrow">BiteSmart MEMBER</text><text class="member-level">{{status ? '会员有效期内' : '体验会员'}}</text><text class="member-copy">解锁更完整的健康计划和 AI 能力</text></view><view class="panel"><text class="panel-title">会员权益</text><view class="benefit-grid"><view><text>AI 热量计算</text><text>更快得到营养分析</text></view><view><text>个性化食谱</text><text>按目标定制餐单</text></view><view><text>轻断食计划</text><text>跟踪每日节奏</text></view><view><text>专业健康助手</text><text>随时回答你的问题</text></view></view></view><view class="plans"><block wx:for="{{plans}}" wx:key="id"><view class="plan {{index === 0 ? 'active' : ''}}"><text>{{item.planName || '会员套餐'}}</text><text>¥{{item.price || 98}}</text><text>{{item.validDays || 30}} 天有效</text></view></block><view wx:if="{{!plans.length}}" class="plan active"><text>体验会员</text><text>¥98</text><text>限时特价</text></view></view><button class="primary" data-label="立即订阅" bindtap="action">立即订阅</button></view>
+<view class="pg">
+  <!-- 自定义导航 -->
+  <view class="nav" style="margin-top: {{menuTop}}px; height: {{menuH}}px;">
+    <view class="nav-back" bindtap="back" hover-class="tap"><text class="chev">‹</text></view>
+    <view class="nav-t">会员中心</view>
+    <view class="nav-ph"></view>
+  </view>
+
+  <scroll-view class="body" scroll-y enhanced show-scrollbar="{{false}}">
+    <!-- PRO 状态卡 -->
+    <view class="vip-hero">
+      <view class="lv">BITESMART PRO</view>
+      <view class="h3">{{isVip ? 'PRO ' + (typeText || '会员') + '生效中' : '开通 PRO 会员'}}</view>
+      <view class="exp">{{isVip ? (expire ? '有效期至 ' + expire : '尊享全部会员权益') : '解锁免配送费与专属餐单'}}</view>
+    </view>
+
+    <!-- 会员权益 -->
+    <view class="sec"><text class="en">BENEFITS</text><text class="cn">会员权益</text><view class="line"></view></view>
+    <view class="card bn-card">
+      <view class="benefit" wx:for="{{benefits}}" wx:key="t">
+        <view class="bic">{{item.ic}}</view>
+        <view class="bm">
+          <b>{{item.t}}</b>
+          <span>{{item.s}}</span>
+        </view>
+      </view>
+    </view>
+
+    <!-- 套餐 -->
+    <view class="sec"><text class="en">PLANS</text><text class="cn">{{isVip ? '续费套餐' : '开通套餐'}}</text><view class="line"></view></view>
+    <view class="vip-plan {{item.best ? 'best' : ''}}" wx:for="{{plans}}" wx:key="id" bindtap="buy" data-id="{{item.id}}" hover-class="tap">
+      <view class="best-tag" wx:if="{{item.best}}">最划算</view>
+      <view class="per">{{item.name}}<span>{{item.days || 'PRO 全部权益'}}</span></view>
+      <view class="pr"><b>¥{{item.price}}</b><span wx:if="{{item.org}}">¥{{item.org}}</span></view>
+    </view>
+
+    <view class="empty" wx:if="{{!plans.length}}">
+      <view class="t">套餐加载中</view>
+      <view class="s">稍候片刻，或下拉重新进入</view>
+    </view>
+
+    <view class="foot-space"></view>
+  </scroll-view>
+</view>

@@ -1,7 +1,7 @@
 import request from '../../utils/request'
 
 export interface UserInfo {
-  id: number
+  id: number | string
   username: string
   nickname: string
   avatar: string
@@ -11,16 +11,30 @@ export interface UserInfo {
   status: number
 }
 
+// 与后端 entity/user/UserProfile 对齐（含 20260718 迁移新增列）
 export interface UserProfile {
-  id: number
-  userId: number
+  id: number | string
+  userId: number | string
   age: number
+  /** 性别：10-男 20-女 */
   gender: number
   height: number
   weight: number
+  /** 运动量等级：10-久坐 20-轻度 30-中度 40-重度 */
   activityLevel: number
-  dietaryRestrictions: string
-  healthGoals: string
+  /** 饮食偏好 JSON 字符串，如 ["少盐","少油"] */
+  dietPreference: string
+  /** 过敏史 JSON 字符串 */
+  allergyInfo: string
+  /** 疾病史 JSON 字符串 */
+  diseaseHistory: string
+  /** 健康目标：减肥/增肌/维持/控糖/其他 */
+  healthGoal: string
+  dailyCalorieTarget?: number
+  targetWeight?: number
+  exerciseFreq?: number
+  /** 重点锻炼部位 JSON 数组字符串 */
+  focusParts?: string
   createTime: string
   updateTime: string
 }
@@ -46,6 +60,6 @@ export const getProfile = (): Promise<any> => {
   return request.get('/user/profile')
 }
 
-export const saveProfile = (data: UserProfile): Promise<any> => {
+export const saveProfile = (data: Partial<UserProfile>): Promise<any> => {
   return request.put('/user/profile', data)
 }

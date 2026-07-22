@@ -1,0 +1,36 @@
+.pg { display: flex; flex-direction: column; height: 100vh; background: var(--bg); }
+
+/* ---------- 自定义导航 ---------- */
+.nav { display: flex; align-items: center; padding: 0 32rpx; flex: none; }
+.nav-back {
+  width: 68rpx;
+  height: 68rpx;
+  border: 1rpx solid var(--hair);
+  border-radius: 20rpx;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.nav-back .chev { font-size: 40rpx; color: var(--ink); line-height: 1; margin-top: -4rpx; }
+.nav-t { font-size: 32rpx; font-weight: 800; margin-left: 24rpx; }
+.nav-right { margin-left: auto; font-size: 24rpx; color: var(--green-deep); font-weight: 700; padding: 12rpx 8rpx; }
+
+.body { flex: 1; padding: 0 32rpx; box-sizing: border-box; }
+
+/* ---------- 套餐卡 ---------- */
+.combo-card { padding: 0 32rpx; margin-top: 24rpx; }
+.combo-row { display: flex; align-items: center; gap: 20rpx; padding: 24rpx 0; border-top: 1rpx solid var(--hair); }
+.combo-row:first-child { border-top: none; }
+.combo-row .ph { width: 96rpx; height: 96rpx; border-radius: 16rpx; flex: none; background: var(--bg); }
+.combo-main { flex: 1; min-width: 0; }
+.combo-main .nm { font-size: 26rpx; font-weight: 800; }
+.combo-main .sub { font-size: 20rpx; color: var(--sub); margin-top: 6rpx; }
+.combo-main .sub.faint { color: var(--faint); }
+.combo-side { display: flex; flex-direction: column; align-items: center; gap: 8rpx; flex: none; }
+.side-lab { font-size: 18rpx; color: var(--faint); }
+
+/* ---------- 空态 ---------- */
+.empty { display: flex; flex-direction: column; align-items: center; padding: 120rpx 0 80rpx; }
+.empty .t { font-size: 28rpx; font-weight: 700; color: var(--ink); }
+.empty .s { font-size: 22rpx; color: var(--sub); margin-top: 12rpx; }

@@ -5,10 +5,12 @@ import com.github.pagehelper.PageInfo;
 import com.ws.bitesmart.common.enums.ResultCodeEnum;
 import com.ws.bitesmart.common.util.SnowflakeUtil;
 import com.ws.bitesmart.entity.delivery.DeliveryDriver;
+import com.ws.bitesmart.entity.delivery.DeliveryTask;
 import com.ws.bitesmart.entity.order.Orders;
 import com.ws.bitesmart.entity.review.Review;
 import com.ws.bitesmart.exception.BusinessException;
 import com.ws.bitesmart.mapper.delivery.DeliveryDriverMapper;
+import com.ws.bitesmart.mapper.delivery.DeliveryTaskMapper;
 import com.ws.bitesmart.mapper.order.OrdersMapper;
 import com.ws.bitesmart.mapper.review.ReviewMapper;
 import lombok.RequiredArgsConstructor;
@@ -37,6 +39,7 @@ public class ReviewService {
     private final ReviewMapper reviewMapper;
     private final OrdersMapper ordersMapper;
     private final DeliveryDriverMapper deliveryDriverMapper;
+    private final DeliveryTaskMapper deliveryTaskMapper;
 
     /**
      * 用户创建评价
@@ -81,6 +84,11 @@ public class ReviewService {
         review.setMerchantId(order.getMerchantId());
         review.setOrderId(orderId);
         review.setOverallRating(overall);
+        // 快照配送骑手（骑手端"我收到的评价"按 review.driver_id 查）
+        DeliveryTask task = deliveryTaskMapper.findByOrderId(orderId);
+        if (task != null && task.getDriverId() != null) {
+            review.setDriverId(task.getDriverId());
+        }
         review.setStatus(10); // 已发布
         reviewMapper.insert(review);
 

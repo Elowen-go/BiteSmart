@@ -1,0 +1,122 @@
+<view class="pg">
+  <!-- 自定义导航（margin-top = 胶囊 top，高度 = 胶囊高度，与胶囊同行对齐） -->
+  <view class="nav" style="margin-top: {{menuTop}}px; height: {{menuH}}px;">
+    <view class="nav-back" bindtap="goBack" hover-class="tap"><text class="chev">‹</text></view>
+    <view class="nav-t">运动库</view>
+    <view class="nav-w">{{curWeight}} kg</view>
+  </view>
+
+  <!-- 搜索框（静态） -->
+  <view class="search-wrap">
+    <view class="searchbox">
+      <view class="ic-search"></view>
+      <text class="search-ph">搜索运动</text>
+    </view>
+  </view>
+
+  <!-- 分类 + 列表 -->
+  <view class="exlib">
+    <view class="exlib-side">
+      <view class="c {{cat === item.k ? 'on' : ''}}" wx:for="{{cats}}" wx:key="k" bindtap="pickCat" data-k="{{item.k}}">{{item.n}}</view>
+    </view>
+    <scroll-view class="exlib-main" scroll-y enhanced show-scrollbar="{{false}}">
+      <view class="ex-card" wx:for="{{list}}" wx:key="id">
+        <image class="ph" src="{{item.image}}" mode="aspectFill" />
+        <view class="ex-main">
+          <view class="nm">{{item.name}}</view>
+          <view class="std">{{item.std}}</view>
+        </view>
+        <view class="add" bindtap="openSheet" data-id="{{item.id}}" hover-class="tap"></view>
+      </view>
+      <view wx:if="{{!list.length}}" class="empty-s">该分类暂无运动</view>
+      <view style="height: 140rpx;"></view>
+    </scroll-view>
+  </view>
+
+  <!-- 底部：自定义运动 -->
+  <view class="exlib-foot">
+    <view class="btn-ink" bindtap="openCustom" hover-class="tap">自定义运动</view>
+  </view>
+
+  <!-- 参数弹层 -->
+  <view class="mask {{sheetShow ? 'show' : ''}}" bindtap="closeSheet"></view>
+  <view class="sheet {{sheetShow ? 'show' : ''}}" wx:if="{{cur}}">
+    <view class="grab"></view>
+    <view class="s-head">
+      <text class="s-title">{{cur.name}}</text>
+      <text class="s-x" bindtap="closeSheet">×</text>
+    </view>
+    <view class="s-body">
+      <view class="ex-info">
+        <image class="ph" src="{{cur.image}}" mode="aspectFill" />
+        <view class="ex-info-main">
+          <view class="nm">{{cur.name}}</view>
+          <view class="std">{{cur.std}}</view>
+        </view>
+      </view>
+      <view class="tag-row">
+        <text class="g-tag" wx:for="{{cur.tags}}" wx:key="*this">{{item}}</text>
+      </view>
+      <view class="param-title">记录参数<text class="param-sub">按距离和时长估算消耗</text></view>
+      <view class="param-row">
+        <text class="p-lab">时长</text>
+        <view class="p-ctrl">
+          <view class="stepper lg">
+            <view class="st-btn" bindtap="exStep" data-field="mins" data-delta="-5">−</view>
+            <view class="st-val">{{mins}}</view>
+            <view class="st-btn plus" bindtap="exStep" data-field="mins" data-delta="5">+</view>
+          </view>
+          <text class="unit">min</text>
+        </view>
+      </view>
+      <view class="param-row">
+        <text class="p-lab">距离</text>
+        <view class="p-ctrl">
+          <view class="stepper lg">
+            <view class="st-btn" bindtap="exStep" data-field="dist" data-delta="-0.5">−</view>
+            <view class="st-val">{{dist}}</view>
+            <view class="st-btn plus" bindtap="exStep" data-field="dist" data-delta="0.5">+</view>
+          </view>
+          <text class="unit">km</text>
+        </view>
+      </view>
+      <view class="param-row kcal-row">
+        <text class="p-lab">预计消耗</text>
+        <text class="p-kcal">{{kcal}} kcal</text>
+      </view>
+    </view>
+    <view class="s-foot">
+      <view class="btn-ink green s-save" bindtap="confirmAdd" hover-class="tap">确认记录</view>
+    </view>
+  </view>
+
+  <!-- 自定义运动弹层 -->
+  <view class="mask {{customShow ? 'show' : ''}}" bindtap="closeCustom"></view>
+  <view class="sheet {{customShow ? 'show' : ''}}">
+    <view class="grab"></view>
+    <view class="s-head">
+      <text class="s-title">自定义运动</text>
+      <text class="s-x" bindtap="closeCustom">×</text>
+    </view>
+    <view class="s-body">
+      <view class="form-row">
+        <view class="f-lab">运动名称 <text class="req">*</text></view>
+        <input class="f-input" placeholder="例如：椭圆机" value="{{cName}}" bindinput="onCName" />
+        <view class="f-err" wx:if="{{errName}}">请填写运动名称</view>
+      </view>
+      <view class="form-row">
+        <view class="f-lab">运动时长（分钟）<text class="req">*</text>（1 - 600）</view>
+        <input class="f-input" type="number" placeholder="例如：30" value="{{cMins}}" bindinput="onCMins" />
+        <view class="f-err" wx:if="{{errMins}}">请输入 1 - 600 之间的数值</view>
+      </view>
+      <view class="form-row">
+        <view class="f-lab">消耗热量 kcal <text class="req">*</text>（1 - 2000）</view>
+        <input class="f-input" type="number" placeholder="例如：240" value="{{cKcal}}" bindinput="onCKcal" />
+        <view class="f-err" wx:if="{{errKcal}}">请输入 1 - 2000 之间的数值</view>
+      </view>
+    </view>
+    <view class="s-foot">
+      <view class="btn-ink green s-save" bindtap="saveCustom" hover-class="tap">保存记录</view>
+    </view>
+  </view>
+</view>

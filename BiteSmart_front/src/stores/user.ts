@@ -7,7 +7,10 @@ export const useUserStore = defineStore('user', () => {
   const role = ref(getRole())
   const userInfo = ref<any>(getUserInfo())
   const breadcrumbSubtitle = ref('')
-  const currentShopId = ref(Number(localStorage.getItem('currentShopId') || 0))
+  /** 店铺营业状态：10-营业中 20-打烊，null 表示尚未拉取（MerchantLayout pill / ShopInfo 开关共享） */
+  const shopOpenStatus = ref<number | null>(null)
+  // 店铺 id 是雪花 ID，必须保持字符串，Number() 强转会丢精度
+  const currentShopId = ref<string>(localStorage.getItem('currentShopId') || '')
 
   const isAuthenticated = computed(() => !!token.value)
   const isAdmin = computed(() => role.value === 'ADMIN' || role.value === '40')
@@ -44,8 +47,12 @@ export const useUserStore = defineStore('user', () => {
     breadcrumbSubtitle.value = subtitle
   }
 
-  const setCurrentShopId = (shopId: number) => {
-    currentShopId.value = shopId
+  const setShopOpenStatus = (status: number | null) => {
+    shopOpenStatus.value = status
+  }
+
+  const setCurrentShopId = (shopId: number | string) => {
+    currentShopId.value = String(shopId)
     localStorage.setItem('currentShopId', String(shopId))
   }
 
@@ -55,6 +62,7 @@ export const useUserStore = defineStore('user', () => {
     userInfo,
     breadcrumbSubtitle,
     currentShopId,
+    shopOpenStatus,
     isAuthenticated,
     isAdmin,
     isMerchant,
@@ -63,6 +71,7 @@ export const useUserStore = defineStore('user', () => {
     logout,
     setUserInfo,
     setBreadcrumbSubtitle,
+    setShopOpenStatus,
     setCurrentShopId
   }
 })

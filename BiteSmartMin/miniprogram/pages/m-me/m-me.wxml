@@ -1,0 +1,74 @@
+<view class="pg">
+  <scroll-view class="body" scroll-y enhanced show-scrollbar="{{false}}">
+    <!-- 店铺头 -->
+    <view class="shop-head" style="padding-top: {{padTop}}px;">
+      <view class="logo"><image src="{{shopLogo}}" mode="aspectFill" /></view>
+      <view class="shop-main">
+        <view class="nm">{{shopName}}</view>
+        <view class="st"><text>{{shopSub}}</text></view>
+      </view>
+    </view>
+
+    <!-- 今日数据 -->
+    <view class="stat-strip">
+      <view class="stat-cell"><view class="b">{{orderCount}}</view><view class="s">今日订单</view></view>
+      <view class="stat-cell"><view class="b">{{revenue}}</view><view class="s">今日营收</view></view>
+      <view class="stat-cell"><view class="b">{{rating}}</view><view class="s">综合评分</view></view>
+    </view>
+
+    <!-- 功能组 -->
+    <view class="card m-group">
+      <view class="m-row" bindtap="goStats" hover-class="tap">
+        <view class="m-ic ic-chart"></view>
+        <text>销售统计</text>
+        <text class="arrow">›</text>
+      </view>
+      <view class="m-row" bindtap="goReviews" hover-class="tap">
+        <view class="m-ic ic-star"></view>
+        <text>评价管理</text>
+        <text class="arrow">›</text>
+      </view>
+      <view class="m-row" bindtap="goCombos" hover-class="tap">
+        <view class="m-ic ic-combo"></view>
+        <text>套餐管理</text>
+        <text class="arrow">›</text>
+      </view>
+      <view class="m-row" bindtap="shopInfo" hover-class="tap">
+        <view class="m-ic ic-shop"></view>
+        <text>店铺信息</text>
+        <text class="arrow">›</text>
+      </view>
+      <view class="m-row" bindtap="logout" hover-class="tap">
+        <view class="m-ic ic-exit"></view>
+        <text>退出商家端</text>
+        <text class="arrow">›</text>
+      </view>
+    </view>
+
+    <view style="height: 32rpx;"></view>
+  </scroll-view>
+
+  <!-- 商家端自定义底栏 -->
+  <view class="m-tabbar">
+    <view class="m-tab {{active === 'home' ? 'on' : ''}}" catchtap="goTab" data-key="home" data-url="/pages/m-home/m-home">
+      <image class="m-tab-ic" src="/assets/tab/m-home{{active === 'home' ? '-on' : ''}}.png" />
+      <text>工作台</text>
+      <view class="dot"></view>
+    </view>
+    <view class="m-tab {{active === 'orders' ? 'on' : ''}}" catchtap="goTab" data-key="orders" data-url="/pages/m-orders/m-orders">
+      <image class="m-tab-ic" src="/assets/tab/m-orders{{active === 'orders' ? '-on' : ''}}.png" />
+      <text>订单</text>
+      <view class="dot"></view>
+    </view>
+    <view class="m-tab {{active === 'dishes' ? 'on' : ''}}" catchtap="goTab" data-key="dishes" data-url="/pages/m-dishes/m-dishes">
+      <image class="m-tab-ic" src="/assets/tab/m-dishes{{active === 'dishes' ? '-on' : ''}}.png" />
+      <text>菜品</text>
+      <view class="dot"></view>
+    </view>
+    <view class="m-tab {{active === 'me' ? 'on' : ''}}" catchtap="goTab" data-key="me" data-url="/pages/m-me/m-me">
+      <image class="m-tab-ic" src="/assets/tab/profile{{active === 'me' ? '-on' : ''}}.png" />
+      <text>我的</text>
+      <view class="dot"></view>
+    </view>
+  </view>
+</view>

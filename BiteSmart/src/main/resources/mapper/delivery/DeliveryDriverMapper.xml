@@ -97,6 +97,15 @@
         WHERE id = #{id} AND current_orders > 0 AND deleted = 0
     </update>
 
+    <!-- 拒单回退当前订单数（不影响累计配送次数） -->
+    <update id="decrementOrdersForReject">
+        UPDATE delivery_driver
+        SET current_orders = current_orders - 1,
+            status = CASE WHEN current_orders - 1 &lt;= 0 THEN 10 ELSE status END,
+            update_time = NOW()
+        WHERE id = #{id} AND current_orders &gt; 0 AND deleted = 0
+    </update>
+
     <!-- 分页查询所有配送员 -->
     <select id="findAll" resultType="com.ws.bitesmart.entity.delivery.DeliveryDriver">
         SELECT <include refid="BaseColumns"/>

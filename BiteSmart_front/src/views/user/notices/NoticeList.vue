@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { getNoticeList, getNoticeDetail } from '../../../api/user/notices'
 import type { Notice } from '../../../api/user/notices'
 import { ArrowRight } from '@element-plus/icons-vue'
@@ -13,6 +13,12 @@ const pageSize = ref(10)
 const detailVisible = ref(false)
 const currentNotice = ref<Notice | null>(null)
 const detailLoading = ref(false)
+
+// 公告接口不分页，一次性拿全量后在前端切片；total 是全量长度
+const pagedNotices = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value
+  return notices.value.slice(start, start + pageSize.value)
+})
 
 const fetchNotices = async () => {
   loading.value = true
@@ -29,7 +35,10 @@ const fetchNotices = async () => {
 
 const handlePageChange = (page: number) => {
   currentPage.value = page
-  fetchNotices()
+}
+
+const handleSizeChange = () => {
+  currentPage.value = 1
 }
 
 const handleViewDetail = async (row: Notice) => {
@@ -71,7 +80,7 @@ onMounted(() => {
         <h3>系统公告</h3>
       </div>
       <div v-loading="loading" style="padding-top: 20px;">
-        <div v-for="item in notices" :key="item.id" class="notice-item" @click="handleViewDetail(item)">
+        <div v-for="item in pagedNotices" :key="item.id" class="notice-item" @click="handleViewDetail(item)">
           <div class="notice-left">
             <el-tag :type="getTypeTag(item.noticeType).type as any" size="small">
               {{ getTypeTag(item.noticeType).label }}
@@ -96,6 +105,7 @@ onMounted(() => {
             :page-sizes="[10, 20, 50]"
             layout="total, sizes, prev, pager, next"
             @current-change="handlePageChange"
+            @size-change="handleSizeChange"
           />
         </div>
       </div>

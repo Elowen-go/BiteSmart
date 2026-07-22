@@ -1,2 +1,123 @@
-@import "../../styles/user-page.scss";
-.address { position:relative; }.address text:nth-child(2) { display:block; color:#3A3846; font-size:25rpx; margin-top:20rpx; }.address .accent { display:block; margin-top:18rpx; }
+.pg { display: flex; flex-direction: column; height: 100vh; background: var(--bg); }
+
+/* ---------- 自定义导航 ---------- */
+.nav { display: flex; align-items: center; padding: 0 32rpx; flex: none; }
+.nav-back {
+  width: 68rpx;
+  height: 68rpx;
+  border: 1rpx solid var(--hair);
+  border-radius: 20rpx;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.nav-back .chev { font-size: 40rpx; color: var(--ink); line-height: 1; margin-top: -4rpx; }
+.nav-t { font-size: 32rpx; font-weight: 800; margin-left: 24rpx; }
+.nav-ph { width: 68rpx; margin-left: auto; }
+
+.body { flex: 1; padding: 0 32rpx; box-sizing: border-box; }
+
+/* ---------- 地址卡 ---------- */
+.co-addr { display: flex; gap: 24rpx; align-items: center; padding: 28rpx; margin-top: 20rpx; }
+.pin {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 16rpx;
+  background: var(--green-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+/* CSS 定位图标 */
+.ic-pin { position: relative; width: 26rpx; height: 26rpx; border: 3rpx solid var(--green-deep); border-radius: 50% 50% 50% 0; transform: rotate(-45deg); }
+.ic-pin::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 8rpx;
+  height: 8rpx;
+  margin: -4rpx 0 0 -4rpx;
+  border-radius: 50%;
+  background: var(--green-deep);
+}
+.addr-main { flex: 1; min-width: 0; }
+.who { font-size: 28rpx; font-weight: 700; }
+.who text { font-size: 22rpx; color: var(--sub); font-weight: 400; margin-left: 16rpx; }
+.where { font-size: 22rpx; color: var(--sub); margin-top: 8rpx; line-height: 1.6; }
+.co-addr .go { font-size: 40rpx; color: var(--faint); flex: none; }
+
+/* ---------- 商品清单 ---------- */
+.co-list { padding: 0 28rpx; }
+.meal { display: flex; align-items: center; gap: 24rpx; padding: 24rpx 0; border-top: 1rpx solid var(--hair); }
+.meal:first-child { border-top: none; }
+.meal .ph { width: 104rpx; height: 104rpx; border-radius: 16rpx; background: #DCE5DD; flex: none; }
+.mm { flex: 1; min-width: 0; }
+.mn { font-size: 28rpx; font-weight: 700; }
+.ms { font-size: 20rpx; color: var(--sub); margin-top: 6rpx; }
+.mr { text-align: right; flex: none; }
+.qty { font-size: 20rpx; color: var(--faint); }
+.amt { font-size: 26rpx; font-weight: 700; margin-top: 6rpx; font-variant-numeric: tabular-nums; }
+
+/* ---------- 配送与备注 ---------- */
+.co-block { padding: 8rpx 28rpx; }
+.co-line { display: flex; justify-content: space-between; align-items: center; padding: 26rpx 0; border-top: 1rpx solid var(--hair); }
+.co-line:first-child { border-top: none; }
+.co-line .lab { color: var(--sub); font-size: 24rpx; }
+.co-line .val { font-size: 24rpx; }
+.seg { display: flex; border: 1rpx solid var(--hair); border-radius: 12rpx; overflow: hidden; }
+.seg-i { padding: 12rpx 28rpx; font-size: 22rpx; background: #fff; color: var(--sub); }
+.seg-i.on { background: var(--green-ink); color: #fff; font-weight: 700; }
+.co-remark { padding: 0 0 26rpx; }
+.remark-input {
+  width: 100%;
+  min-height: 96rpx;
+  border: 1rpx solid var(--hair);
+  border-radius: 12rpx;
+  padding: 20rpx 24rpx;
+  font-size: 24rpx;
+  background: #FBFCFA;
+  color: var(--ink);
+  box-sizing: border-box;
+}
+.ph-txt { color: var(--faint); }
+
+/* ---------- 费用明细 ---------- */
+.money { padding-top: 16rpx; padding-bottom: 20rpx; }
+.money-row { display: flex; justify-content: space-between; font-size: 24rpx; padding: 16rpx 0; color: var(--sub); }
+.money-row b { color: var(--ink); font-variant-numeric: tabular-nums; }
+.money-row.big { border-top: 1rpx solid var(--hair); margin-top: 12rpx; padding-top: 24rpx; color: var(--ink); font-weight: 700; align-items: baseline; }
+.money-row.big b { font-size: 44rpx; color: var(--orange); font-weight: 800; }
+
+/* ---------- 底部提交条 ---------- */
+.bbar {
+  flex: none;
+  background: #fff;
+  border-top: 1rpx solid var(--hair);
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+  padding: 20rpx 40rpx calc(20rpx + env(safe-area-inset-bottom));
+}
+.total { flex: 1; }
+.total .lab { font-size: 20rpx; color: var(--sub); }
+.total .amt { font-size: 40rpx; color: var(--orange); font-weight: 800; font-variant-numeric: tabular-nums; }
+.pay-btn {
+  width: 280rpx;
+  height: 88rpx;
+  background: var(--green);
+  border-radius: 20rpx;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28rpx;
+  font-weight: 700;
+  letter-spacing: 2rpx;
+  flex: none;
+}
+.pay-btn.disabled { background: #E4E8E3; color: var(--faint); }
+
+.foot-space { height: 40rpx; }

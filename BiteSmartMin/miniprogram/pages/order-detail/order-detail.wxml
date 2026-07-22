@@ -1,1 +1,86 @@
-<view class="user-page"><view class="back-row"><text class="back" bindtap="back">‹</text><text>订单详情</text><text class="accent">配送中</text></view><view class="timeline"><view class="timeline-active"></view><view><text>骑手正在赶来</text><text>预计 18:42 送达</text></view><view><text>商家已出餐</text><text>18:20</text></view><view><text>订单已接单</text><text>18:04</text></view></view><view class="panel"><text class="panel-title">禾下厨房</text><text class="panel-note">滨江创意园 A 座 · 联系商家 〉</text><view class="row"><text>青柠香煎鸡胸 × 1</text><text>¥29</text></view><view class="row"><text>南瓜藜麦暖沙拉 × 1</text><text>¥25</text></view><view class="total"><text>实付金额</text><text>¥54</text></view></view><button class="primary" data-label="查看配送进度" bindtap="delivery">查看配送进度</button><button class="outline" data-label="再次购买" bindtap="action">再次购买</button></view>
+<view class="pg">
+  <!-- 自定义导航 -->
+  <view class="nav" style="margin-top: {{menuTop}}px; height: {{menuH}}px;">
+    <view class="nav-back" bindtap="back" hover-class="tap"><text class="chev">‹</text></view>
+    <view class="nav-t">订单详情</view>
+    <view class="nav-ph"></view>
+  </view>
+
+  <scroll-view class="body" scroll-y enhanced show-scrollbar="{{false}}">
+    <block wx:if="{{view}}">
+      <!-- 状态头 -->
+      <view class="st-card card">
+        <view class="st-main">
+          <view class="st-t {{view.statusClass}}">{{view.statusText}}</view>
+          <view class="st-h">{{view.hint}}</view>
+        </view>
+        <view class="st-badge {{view.statusClass}}"></view>
+      </view>
+
+      <!-- 状态时间线 -->
+      <block wx:if="{{view.timeline.length}}">
+        <view class="sec"><text class="en">TRACKING</text><text class="cn">订单进度</text><view class="line"></view></view>
+        <view class="card tl-card">
+          <view class="tl-item {{item.cls}}" wx:for="{{view.timeline}}" wx:key="index">
+            <view class="tl-dot"></view>
+            <view class="tt">
+              <b>{{item.text}}</b>
+              <span>{{item.time}}</span>
+            </view>
+          </view>
+        </view>
+      </block>
+
+      <!-- 商品明细 -->
+      <view class="sec" wx:if="{{view.items.length}}"><text class="en">ITEMS</text><text class="cn">商品明细</text><view class="line"></view><text class="more">{{view.items.length}} 件</text></view>
+      <view class="card it-card" wx:if="{{view.items.length}}">
+        <view class="it-row" wx:for="{{view.items}}" wx:key="index">
+          <image class="ph" src="{{item.image}}" mode="aspectFill" lazy-load="true" wx:if="{{item.image}}" />
+          <view class="ph ph-txt" wx:else><text>餐</text></view>
+          <view class="im">
+            <view class="inm">{{item.name}}</view>
+            <view class="isub">¥{{item.price}} / 份</view>
+          </view>
+          <view class="ir">
+            <view class="qty">×{{item.qty}}</view>
+          </view>
+        </view>
+        <view class="money-row big"><text>实付</text><b>¥{{view.amountText}}</b></view>
+      </view>
+
+      <!-- 订单信息 -->
+      <view class="sec"><text class="en">INFO</text><text class="cn">订单信息</text><view class="line"></view></view>
+      <view class="card kv-card">
+        <view class="result-kv"><text>订单编号</text><b>{{view.orderNo}}</b></view>
+        <view class="result-kv" wx:if="{{view.timeText}}"><text>下单时间</text><b>{{view.timeText}}</b></view>
+        <view class="result-kv" wx:if="{{view.receiver}}"><text>收货人</text><b>{{view.receiver}} {{view.phone}}</b></view>
+        <view class="result-kv" wx:if="{{view.address}}"><text>收货地址</text><b class="addr">{{view.address}}</b></view>
+      </view>
+
+      <view class="foot-space"></view>
+    </block>
+
+    <view class="empty" wx:if="{{!loading && !view}}">
+      <view class="t">订单加载失败</view>
+      <view class="s">请返回重试</view>
+    </view>
+  </scroll-view>
+
+  <!-- 底部操作 -->
+  <view class="bbar" wx:if="{{view}}">
+    <block wx:if="{{view.group === 'unpaid'}}">
+      <view class="btn-ink ghost bbar-btn" bindtap="cancel" hover-class="tap">取消订单</view>
+      <view class="btn-ink green bbar-btn" bindtap="pay" hover-class="tap">去支付</view>
+    </block>
+    <block wx:elif="{{view.group === 'doing'}}">
+      <view class="btn-ink green bbar-btn wide" bindtap="delivery" hover-class="tap">查看配送进度</view>
+    </block>
+    <block wx:elif="{{view.group === 'done'}}">
+      <view class="btn-ink ghost bbar-btn" bindtap="rebuy" hover-class="tap">再次购买</view>
+      <view class="btn-ink green bbar-btn" bindtap="goReview" hover-class="tap">评价本单</view>
+    </block>
+    <block wx:else>
+      <view class="btn-ink ghost bbar-btn wide" bindtap="rebuy" hover-class="tap">再次购买</view>
+    </block>
+  </view>
+</view>

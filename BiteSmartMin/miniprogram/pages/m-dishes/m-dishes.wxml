@@ -1,0 +1,58 @@
+<view class="pg">
+  <!-- 自定义导航 -->
+  <view class="nav" style="margin-top: {{menuTop}}px; height: {{menuH}}px;">
+    <view class="nav-t">菜品管理</view>
+    <view class="nav-right" bindtap="addDish" hover-class="tap">+ 新增</view>
+  </view>
+
+  <scroll-view class="body" scroll-y enhanced show-scrollbar="{{false}}">
+    <view class="card dish-card" wx:if="{{list.length}}">
+      <view class="dish-row" wx:for="{{list}}" wx:key="id">
+        <image class="ph" src="{{item.image}}" mode="aspectFill" />
+        <view class="dish-main">
+          <view class="nm">{{item.name}}<text wx:if="{{item.stock === 0}}" class="pill red">售罄</text><text wx:elif="{{item.low}}" class="pill orange">库存紧张</text></view>
+          <view class="sub">¥{{item.price}} · {{item.kcal}} kcal · 月售 {{item.sold}}</view>
+          <view class="stock-edit">
+            <text>库存</text>
+            <input type="number" class="{{item.low ? 'low' : ''}}" value="{{item.stock}}" data-id="{{item.id}}" bindblur="onStockBlur" />
+            <text>份</text>
+          </view>
+          <view class="edit-link" catchtap="editDish" data-id="{{item.id}}" hover-class="tap">编辑</view>
+        </view>
+        <view class="dish-side">
+          <view class="switch {{item.onSale ? 'on' : ''}}" catchtap="toggleDish" data-id="{{item.id}}"></view>
+          <view class="side-lab">{{item.onSale ? '在售' : '下架'}}</view>
+        </view>
+      </view>
+    </view>
+    <view wx:else class="empty">
+      <view class="t">暂无菜品</view>
+      <view class="s">菜品上架后会显示在这里</view>
+    </view>
+    <view style="height: 32rpx;"></view>
+  </scroll-view>
+
+  <!-- 商家端自定义底栏 -->
+  <view class="m-tabbar">
+    <view class="m-tab {{active === 'home' ? 'on' : ''}}" catchtap="goTab" data-key="home" data-url="/pages/m-home/m-home">
+      <image class="m-tab-ic" src="/assets/tab/m-home{{active === 'home' ? '-on' : ''}}.png" />
+      <text>工作台</text>
+      <view class="dot"></view>
+    </view>
+    <view class="m-tab {{active === 'orders' ? 'on' : ''}}" catchtap="goTab" data-key="orders" data-url="/pages/m-orders/m-orders">
+      <image class="m-tab-ic" src="/assets/tab/m-orders{{active === 'orders' ? '-on' : ''}}.png" />
+      <text>订单</text>
+      <view class="dot"></view>
+    </view>
+    <view class="m-tab {{active === 'dishes' ? 'on' : ''}}" catchtap="goTab" data-key="dishes" data-url="/pages/m-dishes/m-dishes">
+      <image class="m-tab-ic" src="/assets/tab/m-dishes{{active === 'dishes' ? '-on' : ''}}.png" />
+      <text>菜品</text>
+      <view class="dot"></view>
+    </view>
+    <view class="m-tab {{active === 'me' ? 'on' : ''}}" catchtap="goTab" data-key="me" data-url="/pages/m-me/m-me">
+      <image class="m-tab-ic" src="/assets/tab/profile{{active === 'me' ? '-on' : ''}}.png" />
+      <text>我的</text>
+      <view class="dot"></view>
+    </view>
+  </view>
+</view>

@@ -242,7 +242,7 @@ const backToCart = () => router.push('/user/cart')
 }
 
 .address-card:hover {
-  border-color: var(--bs-primary);
+  border-color: var(--green);
   box-shadow: 0 2px 8px rgba(0,0,0,0.06);
 }
 

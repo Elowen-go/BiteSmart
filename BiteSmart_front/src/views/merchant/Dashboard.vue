@@ -1,1190 +1,1027 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import {
-  Money,
-  ShoppingCart,
-  UserFilled,
-  Coin,
-  Clock,
-  Warning,
-  Message,
-  Star,
-  DataBoard,
-  PieChart,
-  Box,
-  Bowl
-} from '@element-plus/icons-vue'
-import { getTodayStats, getTopDishes, getDailyStats, getCategoryRevenue } from '../../api/merchant/statistics'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { use, init, type ECharts } from 'echarts/core'
+import { LineChart, BarChart } from 'echarts/charts'
+import { GridComponent, TooltipComponent } from 'echarts/components'
+import { CanvasRenderer } from 'echarts/renderers'
+import { getTodayStats, getDailyStats, getTopDishes } from '../../api/merchant/statistics'
+import { getOrderList, getOrderDetail, acceptOrder, rejectOrder } from '../../api/merchant/orders'
+import { getDishList } from '../../api/merchant/dishes'
+import { getReviewList } from '../../api/merchant/reviews'
+import { LOW_STOCK_THRESHOLD } from '../../constants/merchant'
+
+use([LineChart, BarChart, GridComponent, TooltipComponent, CanvasRenderer])
 
 const router = useRouter()
-const loading = ref(false)
 
-const todayStats = ref({
-  orderCount: 0,
-  revenue: 0,
-  newUserCount: 0,
-  avgOrderAmount: 0,
-  pendingOrderCount: 0,
-  stockAlertCount: 0,
-  reviewCount: 0
+/** 待接单 / 出餐中（备餐中）订单状态 */
+const STATUS_PENDING = 20
+const STATUS_PREPARING = 30
+/** 待办中心拉取的订单页大小（前端按状态过滤，无状态筛选参数） */
+const ORDER_SCAN_SIZE = 50
+
+const loading = ref(false)
+const todayStats = ref<any>(null)
+const dailyStats = ref<any[]>([])
+const pendingOrders = ref<any[]>([])
+const preparingCount = ref<number | null>(null)
+const lowStocks = ref<any[]>([])
+const latestReviews = ref<any[]>([])
+const topDishes = ref<any[]>([])
+const opLoading = ref<Record<string, boolean>>({})
+
+/* ---------------- 格式化工具 ---------------- */
+const getDateStr = (daysAgo: number) => {
+  const d = new Date()
+  d.setDate(d.getDate() - daysAgo)
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${d.getFullYear()}-${month}-${day}`
+}
+
+const fmtMoney = (value: any, digits = 2) =>
+  Number(value || 0).toLocaleString('en-US', { minimumFractionDigits: digits, maximumFractionDigits: digits })
+
+const todayLabel = computed(() => {
+  const now = new Date()
+  const week = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'][now.getDay()]
+  return `${String(now.getMonth() + 1).padStart(2, '0')} / ${String(now.getDate()).padStart(2, '0')} ${week}`
 })
 
-const topDishes = ref<any[]>([])
-const periodStats = ref<any[]>([])
-const categoryRevenueStats = ref<any[]>([])
-
-const getDateStr = (daysAgo: number) => {
-  const date = new Date()
-  date.setDate(date.getDate() - daysAgo)
-  return date.toISOString().slice(0, 10)
+const parseTime = (value?: string) => {
+  if (!value) return null
+  const t = new Date(String(value).replace(' ', 'T')).getTime()
+  return Number.isNaN(t) ? null : t
 }
 
-const formatShortDate = (dateText: string) => {
-  if (!dateText) {
-    return ''
-  }
-  const date = new Date(dateText)
-  return `${date.getMonth() + 1}/${date.getDate()}`
+const fromNow = (value?: string) => {
+  const t = parseTime(value)
+  if (!t) return '-'
+  const diff = Math.max(0, Date.now() - t)
+  const minutes = Math.floor(diff / 60000)
+  if (minutes < 1) return '刚刚'
+  if (minutes < 60) return `${minutes} 分钟前`
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `${hours} 小时前`
+  return `${Math.floor(hours / 24)} 天前`
 }
 
-const formatCurrency = (value: number) => {
-  return `¥${Number(value || 0).toLocaleString()}`
+const maskName = (name?: string) => {
+  if (!name) return '顾客'
+  return `${name[0]}**`
 }
 
-const weekStats = computed(() => {
-  if (!periodStats.value.length) {
-    return Array.from({ length: 7 }, (_, index) => ({
-      label: formatShortDate(getDateStr(6 - index)),
-      revenue: 0,
-      orderCount: 0
-    }))
-  }
+const shortOrderNo = (orderNo?: string) => {
+  if (!orderNo) return '#----'
+  return `#${String(orderNo).slice(-4)}`
+}
 
-  return periodStats.value.map((item: any, index: number) => ({
-    label: formatShortDate(item.date || item.statDate || getDateStr(6 - index)),
-    revenue: Number(item.revenue || item.periodSales || 0),
+/* ---------------- 经营概览主卡 ---------------- */
+const trendData = computed(() => {
+  const list = dailyStats.value || []
+  return list.map((item: any, index: number) => ({
+    label: formatShortDate(item.date || item.statDate || getDateStr(list.length - 1 - index)),
+    revenue: Number(item.revenue || 0),
     orderCount: Number(item.orderCount || 0)
   }))
 })
 
-const maxRevenue = computed(() => {
-  return Math.max(...weekStats.value.map((item) => item.revenue), 1)
+const formatShortDate = (dateText: string) => {
+  if (!dateText) return ''
+  const parts = String(dateText).split('-')
+  if (parts.length >= 3) return `${Number(parts[1])}/${Number(parts[2])}`
+  return dateText
+}
+
+const todayRevenue = computed(() => (todayStats.value ? Number(todayStats.value.revenue || 0) : null))
+
+const yesterdayRevenue = computed(() => {
+  const list = dailyStats.value || []
+  if (!list.length) return null
+  const yesterday = getDateStr(1)
+  const hit = list.find((item: any) => String(item.date || item.statDate || '') === yesterday)
+  if (hit) return Number(hit.revenue || 0)
+  // 接口未覆盖昨天时，退化为倒数第二条
+  return list.length >= 2 ? Number(list[list.length - 2]?.revenue || 0) : null
 })
 
-const maxOrderCount = computed(() => {
-  return Math.max(...weekStats.value.map((item) => item.orderCount), 1)
+const weekRevenue = computed(() => {
+  const list = dailyStats.value || []
+  if (!list.length) return null
+  return list.reduce((sum: number, item: any) => sum + Number(item.revenue || 0), 0)
 })
 
-const lineChartPoints = computed(() => {
-  if (weekStats.value.length === 1) {
-    const singleStat = weekStats.value[0]
-    return singleStat ? [{ x: 50, y: 50, value: singleStat.orderCount }] : []
-  }
+// 环比：今日营收 vs 昨日营收；昨日缺失或为 0 时不展示（防御）
+const revenueDelta = computed(() => {
+  if (todayRevenue.value === null || !yesterdayRevenue.value) return null
+  return ((todayRevenue.value - yesterdayRevenue.value) / yesterdayRevenue.value) * 100
+})
 
-  const width = 100 / Math.max(weekStats.value.length - 1, 1)
-  return weekStats.value.map((item, index) => ({
-    x: index * width,
-    y: 100 - (item.orderCount / maxOrderCount.value) * 100,
-    value: item.orderCount
+/* ---------------- 指标带 ---------------- */
+const metricItems = computed(() => [
+  { en: '今日订单 ORDERS', value: todayStats.value ? String(todayStats.value.orderCount ?? 0) : '-', unit: '单' },
+  { en: '出餐中 PREPARING', value: preparingCount.value === null ? '-' : String(preparingCount.value), unit: '单' },
+  { en: '新客 NEW CUSTOMERS', value: todayStats.value ? String(todayStats.value.newUserCount ?? 0) : '-', unit: '人' },
+  { en: '客单价 AVG. ORDER', value: todayStats.value ? `¥${fmtMoney(todayStats.value.avgOrderAmount, 1)}` : '-', unit: '' }
+])
+
+/* ---------------- 待办中心 ---------------- */
+const todoList = computed(() =>
+  pendingOrders.value.map((order: any) => ({
+    raw: order,
+    no: shortOrderNo(order.orderNo),
+    time: fromNow(order.createTime),
+    summary: order.itemsSummary || '订单商品',
+    buyer: maskName(order.buyerName || order.receiverName),
+    address: order.deliveryAddress || '',
+    remark: order.remark || '',
+    amount: fmtMoney(order.payAmount ?? order.totalAmount)
   }))
-})
+)
 
-const linePath = computed(() => {
-  if (lineChartPoints.value.length < 2) {
-    return ''
-  }
+const enrichAndSetPending = async (list: any[]) => {
+  const pending = list
+    .filter((item: any) => item.orderStatus === STATUS_PENDING)
+    .slice(0, 3)
+  const enriched = await Promise.all(
+    pending.map(async (order: any) => {
+      try {
+        const res = await getOrderDetail(order.id)
+        const items = res.data?.items || []
+        const buyer = res.data?.buyer
+        return {
+          ...order,
+          itemsSummary: items.length
+            ? items.map((it: any) => `${it.snapshotName || '商品'} ×${it.quantity || 1}`).join(' · ')
+            : '',
+          buyerName: buyer?.nickname || buyer?.username || order.receiverName
+        }
+      } catch {
+        return { ...order }
+      }
+    })
+  )
+  pendingOrders.value = enriched
+}
 
-  return lineChartPoints.value
-    .map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`)
-    .join(' ')
-})
-
-const areaPath = computed(() => {
-  if (lineChartPoints.value.length < 2) {
-    return ''
-  }
-
-  const lastPoint = lineChartPoints.value[lineChartPoints.value.length - 1]
-  if (!lastPoint) {
-    return ''
-  }
-  return `${linePath.value} L ${lastPoint.x} 100 L 0 100 Z`
-})
-
-const categoryColors = ['#1b5e4a', '#2d7a61', '#4b9b72', '#80b88a', '#d3934a', '#da5f52']
-
-const totalCategoryRevenue = computed(() => {
-  return categoryRevenueStats.value.reduce((sum, item) => sum + Number(item.revenue || 0), 0)
-})
-
-const categorySegments = computed(() => {
-  const total = totalCategoryRevenue.value || 1
-  let start = 0
-
-  return categoryRevenueStats.value.map((item, index) => {
-    const revenue = Number(item.revenue || 0)
-    const percent = revenue / total
-    const end = start + percent * 360
-    const segment = {
-      ...item,
-      revenue,
-      percent,
-      color: categoryColors[index % categoryColors.length],
-      start,
-      end
-    }
-    start = end
-    return segment
-  })
-})
-
-const donutStyle = computed(() => {
-  if (!categorySegments.value.length) {
-    return {
-      background: 'conic-gradient(#dfe8e3 0deg 360deg)'
-    }
-  }
-
-  return {
-    background: `conic-gradient(${categorySegments.value
-      .map((segment) => `${segment.color} ${segment.start}deg ${segment.end}deg`)
-      .join(', ')})`
-  }
-})
-
-const comboRevenue = computed(() => {
-  return categoryRevenueStats.value.reduce((sum, item) => {
-    const name = String(item.categoryName || '')
-    if (name.includes('套餐') || name.includes('组合')) {
-      return sum + Number(item.revenue || 0)
-    }
-    return sum
-  }, 0)
-})
-
-const comboRevenueRate = computed(() => {
-  if (!totalCategoryRevenue.value) {
-    return 0
-  }
-  return Math.round((comboRevenue.value / totalCategoryRevenue.value) * 100)
-})
-
-const reviewHealth = computed(() => {
-  if (todayStats.value.reviewCount === 0) {
-    return '今日评价较少，适合主动引导用户反馈口味和包装体验。'
-  }
-  if (todayStats.value.reviewCount >= 8) {
-    return '评价活跃度不错，建议优先处理新评价，保持口碑滚动。'
-  }
-  return '评价数量稳定，适合把高频好评菜品做成首页推荐。'
-})
-
-const priorityList = computed(() => [
-  {
-    title: '待处理订单',
-    value: `${todayStats.value.pendingOrderCount || 0} 单`,
-    hint: todayStats.value.pendingOrderCount ? '优先确认出餐节奏' : '当前出餐压力平稳',
-    tone: 'warning'
-  },
-  {
-    title: '库存预警',
-    value: `${todayStats.value.stockAlertCount || 0} 项`,
-    hint: todayStats.value.stockAlertCount ? '建议尽快补货或调整套餐' : '库存状态健康',
-    tone: todayStats.value.stockAlertCount ? 'danger' : 'success'
-  },
-  {
-    title: '今日评价',
-    value: `${todayStats.value.reviewCount || 0} 条`,
-    hint: todayStats.value.reviewCount ? '记得及时回复用户反馈' : '可引导首批订单用户评价',
-    tone: 'neutral'
-  }
-])
-
-const coreMetrics = computed(() => [
-  {
-    label: '今日营收',
-    value: formatCurrency(todayStats.value.revenue),
-    note: '经营结果',
-    icon: Money,
-    tone: 'emerald'
-  },
-  {
-    label: '今日订单',
-    value: `${todayStats.value.orderCount || 0}`,
-    note: '交易规模',
-    icon: ShoppingCart,
-    tone: 'forest'
-  },
-  {
-    label: '新用户数',
-    value: `${todayStats.value.newUserCount || 0}`,
-    note: '拉新表现',
-    icon: UserFilled,
-    tone: 'mint'
-  },
-  {
-    label: '平均客单价',
-    value: formatCurrency(todayStats.value.avgOrderAmount),
-    note: '客单结构',
-    icon: Coin,
-    tone: 'gold'
-  }
-])
-
-const businessSignals = computed(() => [
-  {
-    title: '套餐营收占比',
-    value: `${comboRevenueRate.value}%`,
-    detail: comboRevenue.value ? `${formatCurrency(comboRevenue.value)} 来自套餐销售` : '暂无套餐类营收数据',
-    icon: Box
-  },
-  {
-    title: '菜品分类活跃度',
-    value: `${categoryRevenueStats.value.length || 0}`,
-    detail: categoryRevenueStats.value.length ? '有成交的分类数量' : '暂无分类成交数据',
-    icon: PieChart
-  },
-  {
-    title: '热销菜品覆盖',
-    value: `${topDishes.value.length || 0}`,
-    detail: topDishes.value.length ? `榜首菜品：${topDishes.value[0]?.dishName || '暂无'}` : '今日还没有形成热销榜',
-    icon: Bowl
-  }
-])
-
-const topDishSummary = computed(() => {
-  if (!topDishes.value.length) {
-    return null
-  }
-
-  const topDish = topDishes.value[0]
-  return {
-    name: topDish.dishName || '招牌菜品',
-    quantity: Number(topDish.totalQuantity || 0),
-    revenue: Number(topDish.revenue || 0)
-  }
-})
-
-const topCategory = computed(() => {
-  if (!categorySegments.value.length) {
-    return null
-  }
-  return [...categorySegments.value].sort((a, b) => b.revenue - a.revenue)[0]
-})
-
-const fetchData = async () => {
-  loading.value = true
+const handleAccept = async (order: any) => {
+  const key = String(order.id)
+  if (opLoading.value[key]) return
+  opLoading.value[key] = true
   try {
-    const [todayRes, topRes, dailyRes, categoryRes] = await Promise.all([
-      getTodayStats(),
-      getTopDishes({ limit: 10 }),
-      getDailyStats({ startDate: getDateStr(6), endDate: getDateStr(0) }),
-      getCategoryRevenue()
-    ])
-
-    if (todayRes.code === 200) {
-      todayStats.value = todayRes.data
+    // 雪花 id 字符串透传，禁止 Number() 强转
+    const res = await acceptOrder(order.id)
+    if (res.code === 200) {
+      ElMessage.success(`已接单 ${order.orderNo || ''}`)
+      await refreshAfterAction()
+    } else {
+      ElMessage.error(res.message || '接单失败')
     }
-
-    if (topRes.code === 200) {
-      topDishes.value = topRes.data.list || topRes.data || []
-    }
-
-    if (dailyRes.code === 200) {
-      periodStats.value = dailyRes.data || []
-    }
-
-    if (categoryRes.code === 200) {
-      categoryRevenueStats.value = categoryRes.data || []
-    }
-  } catch (error) {
-    console.error('获取统计数据失败', error)
+  } catch {
+    ElMessage.error('接单失败，请稍后重试')
   } finally {
-    loading.value = false
+    opLoading.value[key] = false
   }
 }
 
+const handleReject = (order: any) => {
+  ElMessageBox.prompt('请输入拒绝原因', `拒绝订单 ${order.orderNo || ''}`, {
+    confirmButtonText: '确定拒单',
+    cancelButtonText: '取消',
+    inputPlaceholder: '例如：食材售罄 / 超出配送范围'
+  }).then(async ({ value }) => {
+    const key = String(order.id)
+    opLoading.value[key] = true
+    try {
+      const res = await rejectOrder(order.id, value || '')
+      if (res.code === 200) {
+        ElMessage.success('已拒单')
+        await refreshAfterAction()
+      } else {
+        ElMessage.error(res.message || '拒单失败')
+      }
+    } catch {
+      ElMessage.error('拒单失败，请稍后重试')
+    } finally {
+      opLoading.value[key] = false
+    }
+  }).catch(() => {})
+}
+
+const refreshAfterAction = async () => {
+  await Promise.allSettled([loadOrders(), loadTodayStats()])
+}
+
+/* ---------------- 库存预警 ---------------- */
+// stock ≤ LOW_STOCK_THRESHOLD 升序取前 3
+const stockList = computed(() =>
+  lowStocks.value.map((dish: any) => {
+    const stock = Number(dish.stock ?? 0)
+    return {
+      name: dish.dishName || '未命名菜品',
+      sub: dish.salesReal !== undefined && dish.salesReal !== null
+        ? `累计已售 ${dish.salesReal} 份`
+        : `库存不高于 ${LOW_STOCK_THRESHOLD} 份`,
+      stock,
+      width: `${Math.max(6, Math.min(100, Math.round((stock / LOW_STOCK_THRESHOLD) * 100)))}%`
+    }
+  })
+)
+
+/* ---------------- 最新评价 ---------------- */
+const reviewList = computed(() =>
+  latestReviews.value.map((review: any) => {
+    const rating = Math.round(Number(review.overallRating ?? review.rating ?? 0))
+    const safeRating = Math.max(0, Math.min(5, rating))
+    const name = review.isAnonymous === 1
+      ? '匿名用户'
+      : review.userNickname || review.username || '用户'
+    return {
+      letter: (name[0] || '评').slice(0, 1),
+      name,
+      stars: '★★★★★'.slice(0, safeRating) + '☆☆☆☆☆'.slice(0, 5 - safeRating),
+      content: review.content || '用户未填写评价内容'
+    }
+  })
+)
+
+/* ---------------- 数据加载 ---------------- */
+const loadTodayStats = async () => {
+  const res = await getTodayStats()
+  if (res.code === 200) todayStats.value = res.data
+}
+
+const loadOrders = async () => {
+  const res = await getOrderList({ page: 1, size: ORDER_SCAN_SIZE })
+  if (res.code !== 200) return
+  const list = res.data?.list || res.data || []
+  preparingCount.value = list.filter((item: any) => item.orderStatus === STATUS_PREPARING).length
+  await enrichAndSetPending(list)
+}
+
+const fetchAll = async () => {
+  loading.value = true
+  try {
+    const results = await Promise.allSettled([
+      loadTodayStats(),
+      getDailyStats({ startDate: getDateStr(6), endDate: getDateStr(0) }).then((res) => {
+        if (res.code === 200) dailyStats.value = res.data || []
+      }),
+      getTopDishes({ limit: 5 }).then((res) => {
+        if (res.code === 200) topDishes.value = res.data?.list || res.data || []
+      }),
+      loadOrders(),
+      getDishList({ page: 1, size: 100 }).then((res) => {
+        if (res.code !== 200) return
+        const list = res.data?.list || res.data || []
+        lowStocks.value = list
+          .filter((item: any) => Number(item.stock ?? 0) <= LOW_STOCK_THRESHOLD)
+          .sort((a: any, b: any) => Number(a.stock ?? 0) - Number(b.stock ?? 0))
+          .slice(0, 3)
+      }),
+      getReviewList({ page: 1, size: 2 }).then((res) => {
+        if (res.code === 200) latestReviews.value = res.data?.list || res.data || []
+      })
+    ])
+    results.forEach((result) => {
+      if (result.status === 'rejected') console.error('工作台数据加载失败', result.reason)
+    })
+  } finally {
+    loading.value = false
+    await nextTick()
+    renderCharts()
+  }
+}
+
+/* ---------------- 图表 ---------------- */
+const sparkRef = ref<HTMLElement | null>(null)
+const trendRef = ref<HTMLElement | null>(null)
+const top5Ref = ref<HTMLElement | null>(null)
+let sparkChart: ECharts | null = null
+let trendChart: ECharts | null = null
+let top5Chart: ECharts | null = null
+
+const GREEN = '#1E9E62'
+const SOFT_GREEN = '#A8D9BF'
+const HAIR = '#E4E8E3'
+const SUB = '#6B7A72'
+
+const renderCharts = () => {
+  const data = trendData.value
+  const labels = data.map((item) => item.label)
+  const revenues = data.map((item) => item.revenue)
+  const orders = data.map((item) => item.orderCount)
+
+  if (sparkRef.value) {
+    sparkChart?.dispose()
+    sparkChart = init(sparkRef.value)
+    // 订单量按营收量级等比缩放，共用隐藏轴（同设计蓝本）
+    const maxRevenue = Math.max(...revenues, 1)
+    const maxOrders = Math.max(...orders, 1)
+    const scale = maxRevenue / maxOrders
+    sparkChart.setOption({
+      grid: { left: 0, right: 0, top: 10, bottom: 0 },
+      xAxis: { type: 'category', show: false, data: labels },
+      yAxis: { type: 'value', show: false },
+      series: [
+        {
+          type: 'line', smooth: true, symbol: 'none', data: revenues,
+          lineStyle: { width: 2, color: GREEN },
+          areaStyle: {
+            color: {
+              type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
+              colorStops: [
+                { offset: 0, color: 'rgba(30,158,98,.18)' },
+                { offset: 1, color: 'rgba(30,158,98,0)' }
+              ]
+            }
+          }
+        },
+        {
+          type: 'line', smooth: true, symbol: 'none',
+          data: orders.map((v) => v * scale),
+          lineStyle: { width: 1.5, color: SOFT_GREEN, type: 'dashed' }
+        }
+      ]
+    })
+  }
+
+  if (trendRef.value) {
+    trendChart?.dispose()
+    trendChart = init(trendRef.value)
+    trendChart.setOption({
+      grid: { left: 50, right: 44, top: 24, bottom: 28 },
+      tooltip: { trigger: 'axis', axisPointer: { type: 'line', lineStyle: { color: HAIR } } },
+      xAxis: {
+        type: 'category', data: labels,
+        axisLine: { lineStyle: { color: HAIR } },
+        axisTick: { show: false },
+        axisLabel: { color: SUB, fontSize: 11 }
+      },
+      yAxis: [
+        {
+          type: 'value', name: '营收', nameTextStyle: { color: SUB, fontSize: 10 },
+          splitLine: { lineStyle: { color: HAIR, type: 'dashed' } },
+          axisLabel: { color: SUB, fontSize: 11 }
+        },
+        {
+          type: 'value', name: '订单', nameTextStyle: { color: SUB, fontSize: 10 },
+          splitLine: { show: false },
+          axisLabel: { color: SUB, fontSize: 11 },
+          minInterval: 1
+        }
+      ],
+      series: [
+        {
+          name: '营收', type: 'line', smooth: true, symbol: 'circle', symbolSize: 5,
+          data: revenues,
+          lineStyle: { width: 2.5, color: GREEN }, itemStyle: { color: GREEN },
+          areaStyle: {
+            color: {
+              type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
+              colorStops: [
+                { offset: 0, color: 'rgba(30,158,98,.14)' },
+                { offset: 1, color: 'rgba(30,158,98,0)' }
+              ]
+            }
+          }
+        },
+        {
+          name: '订单量', type: 'bar', yAxisIndex: 1, data: orders, barWidth: 12,
+          itemStyle: { color: '#DCE9DF', borderRadius: [3, 3, 0, 0] }
+        }
+      ]
+    })
+  }
+
+  if (top5Ref.value) {
+    top5Chart?.dispose()
+    top5Chart = init(top5Ref.value)
+    const names = topDishes.value.map((item: any) => item.dishName || '未命名菜品')
+    const values = topDishes.value.map((item: any) => Number(item.totalQuantity ?? item.soldCount ?? 0))
+    top5Chart.setOption({
+      grid: { left: 8, right: 40, top: 10, bottom: 10, containLabel: true },
+      xAxis: { type: 'value', show: false },
+      yAxis: {
+        type: 'category', inverse: true, data: names,
+        axisLine: { show: false }, axisTick: { show: false },
+        axisLabel: { color: '#17251F', fontSize: 12 }
+      },
+      series: [{
+        type: 'bar', data: values, barWidth: 14,
+        itemStyle: {
+          color: (p: any) => (p.dataIndex === 0 ? GREEN : '#BFE3CD'),
+          borderRadius: [0, 4, 4, 0]
+        },
+        label: { show: true, position: 'right', color: SUB, fontSize: 11, fontWeight: 700, formatter: '{c} 份' }
+      }]
+    })
+  }
+}
+
+const resizeCharts = () => {
+  sparkChart?.resize()
+  trendChart?.resize()
+  top5Chart?.resize()
+}
+
 onMounted(() => {
-  fetchData()
+  fetchAll()
+  window.addEventListener('resize', resizeCharts)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', resizeCharts)
+  sparkChart?.dispose()
+  trendChart?.dispose()
+  top5Chart?.dispose()
 })
 </script>
 
 <template>
-  <div class="dashboard" v-loading="loading">
-    <section class="hero-board">
-      <div class="hero-main">
-        <p class="hero-eyebrow">轻食经营总览</p>
-        <h2>把出餐、库存和套餐表现放在同一张工作台上。</h2>
-        <p class="hero-copy">
-          今天的首页优先关注待处理订单、库存异常和套餐销售占比，让商家先看到最该处理的事。
-        </p>
-        <div class="hero-actions">
-          <button class="hero-btn primary" @click="router.push('/merchant/orders')">
-            处理订单
-          </button>
-          <button class="hero-btn secondary" @click="router.push('/merchant/combos')">
-            调整套餐
-          </button>
+  <div class="db" v-loading="loading">
+    <!-- 经营概览主卡 -->
+    <div class="card hero">
+      <div class="hero-left">
+        <div class="hero-lab">
+          <span class="en">TODAY'S REVENUE</span>
+          <span class="hero-date">{{ todayLabel }}</span>
         </div>
-        <div class="hero-tags">
-          <span class="hero-tag">今日订单 {{ todayStats.orderCount || 0 }}</span>
-          <span class="hero-tag">库存预警 {{ todayStats.stockAlertCount || 0 }}</span>
-          <span class="hero-tag">新客 {{ todayStats.newUserCount || 0 }}</span>
+        <div class="hero-big num">
+          <small>¥</small> {{ todayRevenue === null ? '-' : fmtMoney(todayRevenue) }}
+        </div>
+        <span v-if="revenueDelta !== null" class="hero-delta" :class="{ down: revenueDelta < 0 }">
+          {{ revenueDelta >= 0 ? '↑' : '↓' }} {{ Math.abs(revenueDelta).toFixed(1) }}%
+        </span>
+        <div v-if="yesterdayRevenue !== null || weekRevenue !== null" class="hero-vs">
+          <template v-if="yesterdayRevenue !== null">昨日营收 ¥{{ fmtMoney(yesterdayRevenue) }}</template>
+          <template v-if="weekRevenue !== null">{{ yesterdayRevenue !== null ? ' · ' : '' }}近 7 日累计 ¥{{ fmtMoney(weekRevenue, 0) }}</template>
         </div>
       </div>
+      <div class="hero-right">
+        <div class="hero-chart-head">
+          <span class="en">7-DAY TREND</span>
+          <div class="legend">
+            <span><i style="background:#1E9E62"></i>营收</span>
+            <span><i style="background:#A8D9BF"></i>订单量</span>
+          </div>
+        </div>
+        <div ref="sparkRef" class="spark-chart"></div>
+      </div>
+    </div>
 
-      <div class="hero-side">
-        <div
-          v-for="item in priorityList"
-          :key="item.title"
-          class="priority-card"
-          :class="item.tone"
-        >
-          <div class="priority-label">{{ item.title }}</div>
-          <div class="priority-value">{{ item.value }}</div>
-          <div class="priority-hint">{{ item.hint }}</div>
+    <!-- 指标带 -->
+    <div class="card metrics-band">
+      <div class="metrics-grid">
+        <div v-for="item in metricItems" :key="item.en" class="metric-cell">
+          <span class="en">{{ item.en }}</span>
+          <div class="metric-value num">{{ item.value }}<em v-if="item.unit && item.value !== '-'"> {{ item.unit }}</em></div>
         </div>
       </div>
-    </section>
+    </div>
 
-    <section class="metric-grid">
-      <article
-        v-for="metric in coreMetrics"
-        :key="metric.label"
-        class="metric-card"
-        :class="metric.tone"
-      >
-        <div class="metric-top">
-          <div class="metric-icon">
-            <component :is="metric.icon" />
-          </div>
-          <span class="metric-note">{{ metric.note }}</span>
+    <!-- 待办 + 预警口碑 -->
+    <div class="grid">
+      <div class="card panel">
+        <div class="panel-head">
+          <span class="panel-title">待办中心</span>
+          <span class="en panel-en">PENDING</span>
+          <span class="panel-link" @click="router.push('/merchant/orders')">查看全部订单 →</span>
         </div>
-        <div class="metric-label">{{ metric.label }}</div>
-        <div class="metric-value">{{ metric.value }}</div>
-      </article>
-    </section>
-
-    <section class="insight-grid">
-      <article class="panel">
-        <div class="panel-header">
-          <div class="panel-title">
-            <Clock />
-            <h3>经营信号</h3>
-          </div>
-        </div>
-        <div class="signal-list">
-          <div v-for="item in businessSignals" :key="item.title" class="signal-item">
-            <div class="signal-icon">
-              <component :is="item.icon" />
+        <template v-if="todoList.length">
+          <div v-for="todo in todoList" :key="String(todo.raw.id)" class="todo">
+            <div class="todo-no"><b>{{ todo.no }}</b>{{ todo.time }}</div>
+            <div class="todo-what">
+              <b>{{ todo.summary }}</b>
+              <span>{{ todo.buyer }}<template v-if="todo.address"> · 送到 {{ todo.address }}</template><template v-if="todo.remark"> · 备注：{{ todo.remark }}</template></span>
             </div>
-            <div class="signal-body">
-              <div class="signal-top">
-                <span>{{ item.title }}</span>
-                <strong>{{ item.value }}</strong>
+            <div class="todo-amt num">¥{{ todo.amount }}</div>
+            <div class="todo-ops">
+              <span class="todo-rej" :class="{ disabled: opLoading[String(todo.raw.id)] }" @click="handleReject(todo.raw)">拒单</span>
+              <span class="btn-green" :class="{ disabled: opLoading[String(todo.raw.id)] }" @click="handleAccept(todo.raw)">接单</span>
+            </div>
+          </div>
+        </template>
+        <div v-else class="empty-line">暂无待接单订单</div>
+      </div>
+
+      <div class="side-col">
+        <div class="card panel">
+          <div class="panel-head">
+            <span class="panel-title">库存预警</span>
+            <span class="en panel-en">LOW STOCK</span>
+            <span class="panel-link" @click="router.push('/merchant/dishes')">去补货 →</span>
+          </div>
+          <template v-if="stockList.length">
+            <div v-for="dish in stockList" :key="dish.name" class="stock">
+              <div class="stock-nm">{{ dish.name }}<span>{{ dish.sub }}</span></div>
+              <div class="stock-bar"><i :style="{ width: dish.width }"></i></div>
+              <div class="stock-ct num">剩 {{ dish.stock }}</div>
+            </div>
+          </template>
+          <div v-else class="empty-line">库存状态健康，暂无预警菜品</div>
+        </div>
+
+        <div class="card panel">
+          <div class="panel-head">
+            <span class="panel-title">最新评价</span>
+            <span class="en panel-en">REVIEWS</span>
+            <span class="panel-link" @click="router.push('/merchant/reviews')">全部 →</span>
+          </div>
+          <template v-if="reviewList.length">
+            <div v-for="(review, index) in reviewList" :key="index" class="review">
+              <div class="review-head">
+                <div class="review-ava">{{ review.letter }}</div>
+                <span class="review-name">{{ review.name }}</span>
+                <span class="review-stars">{{ review.stars }}</span>
               </div>
-              <p>{{ item.detail }}</p>
+              <p>{{ review.content }}</p>
             </div>
-          </div>
+          </template>
+          <div v-else class="empty-line">暂无评价</div>
         </div>
-      </article>
+      </div>
+    </div>
 
-      <article class="panel spotlight">
-        <div class="panel-header">
-          <div class="panel-title">
-            <Star />
-            <h3>今日主推建议</h3>
+    <!-- 图表区 -->
+    <div class="charts">
+      <div class="card chart-card">
+        <div class="panel-head">
+          <span class="panel-title">经营趋势</span>
+          <span class="en panel-en">PERFORMANCE</span>
+          <div class="legend">
+            <span><i style="background:#1E9E62"></i>营收（元）</span>
+            <span><i style="background:#A8D9BF"></i>订单量（单）</span>
           </div>
         </div>
-        <div class="spotlight-content">
-          <div class="spotlight-block">
-            <span class="spotlight-label">口碑反馈</span>
-            <p>{{ reviewHealth }}</p>
-          </div>
-          <div class="spotlight-block" v-if="topDishSummary">
-            <span class="spotlight-label">热销菜品</span>
-            <p>{{ topDishSummary.name }} 今日售出 {{ topDishSummary.quantity }} 份，带来 {{ formatCurrency(topDishSummary.revenue) }}。</p>
-          </div>
-          <div class="spotlight-block" v-else>
-            <span class="spotlight-label">热销菜品</span>
-            <p>今天还没有形成热销榜，可以优先把招牌套餐放到更显眼的位置。</p>
-          </div>
-          <div class="spotlight-block" v-if="topCategory">
-            <span class="spotlight-label">分类表现</span>
-            <p>{{ topCategory.categoryName }} 当前贡献最高，占分类营收 {{ Math.round(topCategory.percent * 100) }}%。</p>
-          </div>
+        <div ref="trendRef" class="trend-chart"></div>
+      </div>
+      <div class="card chart-card">
+        <div class="panel-head">
+          <span class="panel-title">热销 TOP 5</span>
+          <span class="en panel-en">BEST SELLERS</span>
         </div>
-      </article>
-    </section>
-
-    <section class="visual-grid">
-      <article class="panel">
-        <div class="panel-header">
-          <div class="panel-title">
-            <Money />
-            <h3>近 7 日营收走势</h3>
-          </div>
-          <span class="panel-meta">{{ formatCurrency(todayStats.revenue) }} / 今日</span>
-        </div>
-        <div class="bar-chart" v-if="weekStats.length">
-          <div v-for="item in weekStats" :key="item.label" class="bar-item">
-            <div class="bar-track">
-              <div class="bar-fill" :style="{ height: `${(item.revenue / maxRevenue) * 100}%` }"></div>
-            </div>
-            <span class="bar-label">{{ item.label }}</span>
-            <strong class="bar-value">{{ formatCurrency(item.revenue) }}</strong>
-          </div>
-        </div>
-      </article>
-
-      <article class="panel">
-        <div class="panel-header">
-          <div class="panel-title">
-            <PieChart />
-            <h3>分类营收结构</h3>
-          </div>
-          <span class="panel-meta">{{ formatCurrency(totalCategoryRevenue) }}</span>
-        </div>
-        <div class="structure-panel">
-          <div class="donut-wrapper">
-            <div class="donut" :style="donutStyle"></div>
-            <div class="donut-center">
-              <strong>{{ formatCurrency(totalCategoryRevenue) }}</strong>
-              <span>分类总营收</span>
-            </div>
-          </div>
-          <div class="legend-list" v-if="categorySegments.length">
-            <div v-for="item in categorySegments" :key="item.categoryName" class="legend-item">
-              <span class="legend-dot" :style="{ background: item.color }"></span>
-              <span class="legend-name">{{ item.categoryName }}</span>
-              <span class="legend-percent">{{ Math.round(item.percent * 100) }}%</span>
-            </div>
-          </div>
-          <div v-else class="empty-state compact">
-            <p>还没有分类营收数据</p>
-            <span>有成交后会自动显示分类结构</span>
-          </div>
-        </div>
-      </article>
-    </section>
-
-    <section class="visual-grid lower">
-      <article class="panel">
-        <div class="panel-header">
-          <div class="panel-title">
-            <DataBoard />
-            <h3>近 7 日订单趋势</h3>
-          </div>
-          <span class="panel-meta">{{ todayStats.pendingOrderCount || 0 }} 单待处理</span>
-        </div>
-        <div class="line-chart">
-          <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-            <defs>
-              <linearGradient id="merchant-line-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stop-color="#2d7a61" stop-opacity="0.35" />
-                <stop offset="100%" stop-color="#2d7a61" stop-opacity="0" />
-              </linearGradient>
-            </defs>
-            <path v-if="areaPath" :d="areaPath" fill="url(#merchant-line-gradient)" />
-            <path v-if="linePath" :d="linePath" fill="none" stroke="#1b5e4a" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" />
-            <circle
-              v-for="(point, index) in lineChartPoints"
-              :key="index"
-              :cx="point.x"
-              :cy="point.y"
-              r="1.8"
-              fill="#1b5e4a"
-            />
-          </svg>
-          <div class="line-axis">
-            <div v-for="item in weekStats" :key="item.label" class="axis-item">
-              <span>{{ item.label }}</span>
-              <strong>{{ item.orderCount }}</strong>
-            </div>
-          </div>
-        </div>
-      </article>
-
-      <article class="panel">
-        <div class="panel-header">
-          <div class="panel-title">
-            <Message />
-            <h3>热销菜品排行</h3>
-          </div>
-          <span class="panel-meta">{{ topDishes.length }} 道上榜</span>
-        </div>
-        <div v-if="topDishes.length" class="top-dish-list">
-          <div v-for="(item, index) in topDishes.slice(0, 5)" :key="item.dishName || index" class="top-dish-item">
-            <div class="dish-rank">{{ index + 1 }}</div>
-            <div class="dish-body">
-              <div class="dish-name">{{ item.dishName }}</div>
-              <div class="dish-meta">
-                <span>销量 {{ item.totalQuantity || 0 }}</span>
-                <span>{{ formatCurrency(item.revenue || 0) }}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div v-else class="empty-state">
-          <p>今天还没有热销菜品数据</p>
-          <span>首批订单产生后，这里会自动给出销量排行</span>
-        </div>
-      </article>
-    </section>
+        <div ref="top5Ref" class="top5-chart"></div>
+      </div>
+    </div>
   </div>
 </template>
 
 <style scoped>
-.dashboard {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-  animation: fadeIn 0.28s ease;
+.db {
+  /* 设计令牌已下沉至 src/styles/tokens.scss（--green/--green-ink/--hair 等全局可用） */
+  max-width: 1280px;
+  color: var(--ink);
+  font-size: 14px;
+  animation: fadeIn 0.3s ease;
 }
 
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-.hero-board {
-  display: grid;
-  grid-template-columns: minmax(0, 1.5fr) minmax(320px, 0.9fr);
-  gap: 20px;
+.num { font-variant-numeric: tabular-nums; }
+
+.en {
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--faint);
+  font-weight: 700;
 }
 
-.hero-main,
-.hero-side,
-.panel,
-.metric-card {
-  border-radius: 8px;
+.card {
+  background: #FFFFFF;
+  border: 1px solid var(--hair);
+  border-radius: 10px;
 }
 
-.hero-main {
-  background:
-    radial-gradient(circle at top left, rgba(122, 177, 141, 0.28), transparent 40%),
-    linear-gradient(135deg, #173c30 0%, #204e3e 60%, #2d6b52 100%);
+.btn-green {
+  display: inline-flex;
+  align-items: center;
+  background: var(--green);
   color: #fff;
-  padding: 28px 30px;
-  min-height: 240px;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 8px;
+  padding: 5px 12px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.btn-green.disabled,
+.todo-rej.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.legend {
+  display: flex;
+  gap: 14px;
+  font-size: 11px;
+  color: var(--sub);
+}
+
+.legend i {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  display: inline-block;
+  margin-right: 5px;
+}
+
+/* ---------- 概览主卡 ---------- */
+.hero {
+  display: flex;
+  margin-bottom: 20px;
+}
+
+.hero-left {
+  padding: 26px 28px;
+  width: 340px;
+  flex: none;
+  border-right: 1px solid var(--hair);
+}
+
+.hero-lab {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.hero-date {
+  font-size: 11px;
+  color: var(--faint);
+}
+
+.hero-big {
+  font-size: 40px;
+  font-weight: 800;
+  margin-top: 14px;
+  letter-spacing: -1px;
+}
+
+.hero-big small {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--sub);
+  letter-spacing: 0;
+}
+
+.hero-delta {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--green-deep);
+  background: var(--green-soft);
+  border-radius: 6px;
+  padding: 4px 8px;
+}
+
+.hero-delta.down {
+  color: var(--orange);
+  background: var(--orange-soft);
+}
+
+.hero-vs {
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--faint);
+}
+
+.hero-right {
+  flex: 1;
+  min-width: 0;
+  padding: 20px 24px 12px;
   display: flex;
   flex-direction: column;
+}
+
+.hero-chart-head {
+  display: flex;
   justify-content: space-between;
-  box-shadow: 0 14px 30px rgba(27, 58, 47, 0.18);
+  align-items: baseline;
+  margin-bottom: 4px;
 }
 
-.hero-eyebrow {
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: rgba(255, 255, 255, 0.72);
-  margin-bottom: 12px;
+.spark-chart {
+  flex: 1;
+  min-height: 110px;
 }
 
-.hero-main h2 {
-  font-size: 30px;
-  line-height: 1.22;
-  margin: 0;
-  max-width: 14ch;
+/* ---------- 指标带 ---------- */
+.metrics-band {
+  margin-bottom: 20px;
 }
 
-.hero-copy {
-  max-width: 60ch;
-  margin: 14px 0 0;
-  color: rgba(255, 255, 255, 0.82);
-  line-height: 1.7;
-}
-
-.hero-actions {
-  display: flex;
-  gap: 12px;
-  margin-top: 24px;
-}
-
-.hero-btn {
-  border: none;
-  border-radius: 999px;
-  height: 40px;
-  padding: 0 18px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: transform 0.18s ease, opacity 0.18s ease, background 0.18s ease;
-}
-
-.hero-btn:hover {
-  transform: translateY(-1px);
-}
-
-.hero-btn.primary {
-  background: #f3fbf6;
-  color: #173c30;
-}
-
-.hero-btn.secondary {
-  background: rgba(255, 255, 255, 0.12);
-  color: #fff;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-}
-
-.hero-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 22px;
-}
-
-.hero-tag {
-  background: rgba(255, 255, 255, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  color: rgba(255, 255, 255, 0.86);
-  padding: 7px 12px;
-  border-radius: 999px;
-  font-size: 13px;
-}
-
-.hero-side {
+.metrics-grid {
   display: grid;
-  gap: 14px;
+  grid-template-columns: repeat(4, 1fr);
 }
 
-.priority-card {
-  background: #fff;
-  padding: 18px 18px 16px;
-  border: 1px solid #edf1ee;
-  box-shadow: 0 10px 24px rgba(31, 54, 44, 0.05);
+.metric-cell {
+  padding: 16px 28px;
+  border-right: 1px solid var(--hair);
 }
 
-.priority-card.warning {
-  border-left: 4px solid #d3934a;
-}
-
-.priority-card.danger {
-  border-left: 4px solid #da5f52;
-}
-
-.priority-card.success {
-  border-left: 4px solid #2d7a61;
-}
-
-.priority-card.neutral {
-  border-left: 4px solid #88a89b;
-}
-
-.priority-label {
-  color: var(--bs-text-muted);
-  font-size: 13px;
-}
-
-.priority-value {
-  margin-top: 8px;
-  font-size: 28px;
-  font-weight: 700;
-  color: var(--bs-text-title);
-}
-
-.priority-hint {
-  margin-top: 8px;
-  line-height: 1.6;
-  color: var(--bs-text-body);
-  font-size: 13px;
-}
-
-.metric-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 18px;
-}
-
-.metric-card {
-  background: #fff;
-  padding: 20px;
-  border: 1px solid #edf1ee;
-  box-shadow: 0 8px 24px rgba(28, 46, 39, 0.05);
-}
-
-.metric-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.metric-icon {
-  width: 42px;
-  height: 42px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.metric-icon :deep(svg) {
-  width: 20px;
-  height: 20px;
-}
-
-.metric-card.emerald .metric-icon {
-  background: #ebf7f1;
-  color: #1b5e4a;
-}
-
-.metric-card.forest .metric-icon {
-  background: #edf5f0;
-  color: #2d7a61;
-}
-
-.metric-card.mint .metric-icon {
-  background: #f0faf5;
-  color: #4b9b72;
-}
-
-.metric-card.gold .metric-icon {
-  background: #fff4e6;
-  color: #d3934a;
-}
-
-.metric-note {
-  font-size: 12px;
-  color: var(--bs-text-muted);
-}
-
-.metric-label {
-  margin-top: 18px;
-  font-size: 14px;
-  color: var(--bs-text-body);
+.metric-cell:last-child {
+  border-right: 0;
 }
 
 .metric-value {
-  margin-top: 8px;
-  font-size: 34px;
-  line-height: 1.1;
-  font-weight: 700;
-  color: var(--bs-text-title);
+  font-size: 22px;
+  font-weight: 800;
+  margin-top: 6px;
 }
 
-.insight-grid,
-.visual-grid {
+.metric-value em {
+  font-style: normal;
+  font-size: 11px;
+  color: var(--faint);
+  font-weight: 500;
+  margin-left: 2px;
+}
+
+/* ---------- 三栏区 ---------- */
+.grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 18px;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.side-col {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
 }
 
 .panel {
-  background: #fff;
-  padding: 22px 24px;
-  border: 1px solid #edf1ee;
-  box-shadow: 0 8px 24px rgba(28, 46, 39, 0.05);
+  padding: 20px 22px;
 }
 
-.panel-header {
+.panel-head {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 18px;
+  align-items: baseline;
+  margin-bottom: 14px;
 }
 
 .panel-title {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+  font-size: 15px;
+  font-weight: 800;
 }
 
-.panel-title :deep(svg) {
-  width: 18px;
-  height: 18px;
-  color: #1b5e4a;
-}
-
-.panel-title h3 {
-  margin: 0;
-  font-size: 18px;
-  color: var(--bs-text-title);
-}
-
-.panel-meta {
-  font-size: 12px;
-  color: var(--bs-text-muted);
-}
-
-.signal-list {
-  display: grid;
-  gap: 14px;
-}
-
-.signal-item {
-  display: flex;
-  gap: 14px;
-  padding: 14px;
-  border-radius: 8px;
-  background: #f7faf8;
-}
-
-.signal-icon {
-  width: 38px;
-  height: 38px;
-  border-radius: 10px;
-  background: #e6f2ec;
-  color: #1b5e4a;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.signal-icon :deep(svg) {
-  width: 18px;
-  height: 18px;
-}
-
-.signal-body {
-  min-width: 0;
+.panel-en {
   flex: 1;
+  margin-left: 10px;
 }
 
-.signal-top {
+.panel-link {
+  font-size: 11px;
+  color: var(--green-deep);
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.todo {
   display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  font-size: 14px;
-  color: var(--bs-text-title);
+  align-items: center;
+  gap: 14px;
+  padding: 13px 0;
+  border-top: 1px solid var(--hair);
 }
 
-.signal-top strong {
-  font-size: 18px;
+.todo:first-of-type {
+  border-top: 0;
 }
 
-.signal-body p {
-  margin: 6px 0 0;
-  color: var(--bs-text-muted);
-  line-height: 1.6;
-  font-size: 13px;
+.todo-no {
+  font-size: 10px;
+  color: var(--faint);
+  width: 64px;
+  flex: none;
 }
 
-.spotlight {
-  background:
-    linear-gradient(180deg, rgba(232, 245, 236, 0.9), #ffffff 48%);
-}
-
-.spotlight-content {
-  display: grid;
-  gap: 16px;
-}
-
-.spotlight-block {
-  padding: 16px 18px;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.92);
-  border: 1px solid #e7efe9;
-}
-
-.spotlight-label {
-  display: inline-block;
-  margin-bottom: 8px;
+.todo-no b {
+  display: block;
   font-size: 12px;
-  color: #2d7a61;
+  color: var(--ink);
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.todo-what {
+  flex: 1;
+  min-width: 0;
+}
+
+.todo-what b {
+  font-size: 13px;
+  font-weight: 700;
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.todo-what span {
+  font-size: 11px;
+  color: var(--sub);
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.todo-amt {
+  font-size: 14px;
+  font-weight: 800;
+  width: 72px;
+  text-align: right;
+  flex: none;
+}
+
+.todo-ops {
+  display: flex;
+  gap: 6px;
+  flex: none;
+}
+
+.todo-rej {
+  font-size: 11px;
+  color: var(--sub);
+  border: 1px solid var(--hair);
+  border-radius: 6px;
+  padding: 5px 10px;
+  cursor: pointer;
+  background: #fff;
+  user-select: none;
+}
+
+.empty-line {
+  padding: 18px 0 6px;
+  font-size: 12px;
+  color: var(--faint);
+  text-align: center;
+}
+
+.stock {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 0;
+  border-top: 1px solid var(--hair);
+}
+
+.stock:first-of-type {
+  border-top: 0;
+}
+
+.stock-nm {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
   font-weight: 600;
 }
 
-.spotlight-block p {
-  margin: 0;
-  color: var(--bs-text-body);
-  line-height: 1.7;
+.stock-nm span {
+  display: block;
+  font-size: 10px;
+  color: var(--faint);
+  margin-top: 2px;
+  font-weight: 400;
 }
 
-.bar-chart {
-  display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 12px;
-  align-items: end;
-  min-height: 240px;
+.stock-bar {
+  width: 110px;
+  height: 5px;
+  background: #F0F2EE;
+  border-radius: 3px;
+  overflow: hidden;
+  flex: none;
 }
 
-.bar-item {
+.stock-bar i {
+  display: block;
+  height: 100%;
+  background: var(--orange);
+  border-radius: 3px;
+}
+
+.stock-ct {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--orange);
+  width: 52px;
+  text-align: right;
+  flex: none;
+}
+
+.review {
+  padding: 12px 0;
+  border-top: 1px solid var(--hair);
+}
+
+.review:first-of-type {
+  border-top: 0;
+}
+
+.review-head {
   display: flex;
-  flex-direction: column;
   align-items: center;
   gap: 8px;
+  margin-bottom: 6px;
 }
 
-.bar-track {
-  width: 100%;
-  max-width: 34px;
-  height: 150px;
-  border-radius: 999px;
-  background: #edf3ef;
+.review-ava {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--green-soft);
+  color: var(--green-deep);
+  font-size: 10px;
+  font-weight: 800;
   display: flex;
-  align-items: end;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+
+.review-name {
+  font-size: 12px;
+  font-weight: 700;
+  flex: 1;
+}
+
+.review-stars {
+  color: var(--green);
+  font-size: 11px;
+  letter-spacing: 2px;
+}
+
+.review p {
+  font-size: 12px;
+  color: var(--sub);
+  line-height: 1.6;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
 }
 
-.bar-fill {
-  width: 100%;
-  min-height: 6px;
-  border-radius: 999px;
-  background: linear-gradient(180deg, #5fb386 0%, #1b5e4a 100%);
-}
-
-.bar-label,
-.bar-value {
-  font-size: 12px;
-}
-
-.bar-label {
-  color: var(--bs-text-muted);
-}
-
-.bar-value {
-  color: var(--bs-text-title);
-}
-
-.structure-panel {
-  min-height: 240px;
-  display: flex;
-  align-items: center;
-  gap: 24px;
-}
-
-.donut-wrapper {
-  position: relative;
-  width: 170px;
-  height: 170px;
-  flex-shrink: 0;
-}
-
-.donut {
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-}
-
-.donut-center {
-  position: absolute;
-  inset: 22px;
-  background: #fff;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-  text-align: center;
-  box-shadow: inset 0 0 0 1px #eef2ef;
-}
-
-.donut-center strong {
-  font-size: 20px;
-  color: var(--bs-text-title);
-}
-
-.donut-center span {
-  margin-top: 4px;
-  font-size: 12px;
-  color: var(--bs-text-muted);
-}
-
-.legend-list {
+/* ---------- 图表区 ---------- */
+.charts {
   display: grid;
-  gap: 12px;
-  width: 100%;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 20px;
 }
 
-.legend-item {
-  display: grid;
-  grid-template-columns: 10px minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 10px;
-}
-
-.legend-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-}
-
-.legend-name,
-.legend-percent {
-  font-size: 13px;
-}
-
-.legend-name {
-  color: var(--bs-text-body);
-}
-
-.legend-percent {
-  color: var(--bs-text-title);
-  font-weight: 600;
-}
-
-.line-chart {
-  min-height: 240px;
-  display: flex;
-  flex-direction: column;
-}
-
-.line-chart svg {
-  width: 100%;
-  height: 170px;
-}
-
-.line-axis {
-  display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 8px;
-  margin-top: 10px;
-}
-
-.axis-item {
-  text-align: center;
-}
-
-.axis-item span {
-  display: block;
-  font-size: 12px;
-  color: var(--bs-text-muted);
-}
-
-.axis-item strong {
-  display: block;
-  margin-top: 6px;
-  color: var(--bs-text-title);
-}
-
-.top-dish-list {
-  display: grid;
-  gap: 12px;
-  min-height: 240px;
-}
-
-.top-dish-item {
-  display: flex;
-  gap: 14px;
-  align-items: center;
-  padding: 14px 16px;
-  border-radius: 8px;
-  background: #f8fbf9;
-}
-
-.dish-rank {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: #1b5e4a;
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  flex-shrink: 0;
-}
-
-.dish-body {
+.chart-card {
+  padding: 20px 22px;
   min-width: 0;
-  flex: 1;
 }
 
-.dish-name {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--bs-text-title);
+.trend-chart,
+.top5-chart {
+  height: 260px;
 }
 
-.dish-meta {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  margin-top: 6px;
-  font-size: 13px;
-  color: var(--bs-text-muted);
-}
-
-.empty-state {
-  min-height: 240px;
-  border: 1px dashed #d6e3da;
-  border-radius: 8px;
-  background: #f9fcfa;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-  text-align: center;
-  padding: 20px;
-}
-
-.empty-state.compact {
-  min-height: 180px;
-  flex: 1;
-}
-
-.empty-state p {
-  margin: 0;
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--bs-text-title);
-}
-
-.empty-state span {
-  margin-top: 8px;
-  font-size: 13px;
-  color: var(--bs-text-muted);
-  line-height: 1.6;
-}
-
-@media (max-width: 1440px) {
-  .metric-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 1200px) {
-  .hero-board,
-  .insight-grid,
-  .visual-grid {
+/* ---------- 窄屏适配 ---------- */
+@media (max-width: 1100px) {
+  .grid,
+  .charts {
     grid-template-columns: 1fr;
   }
 
-  .hero-main h2 {
-    max-width: none;
-  }
-}
-
-@media (max-width: 768px) {
-  .metric-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .hero-main,
-  .panel,
-  .metric-card {
-    padding: 18px;
-  }
-
-  .hero-actions,
-  .hero-tags {
+  .hero {
     flex-direction: column;
-    align-items: stretch;
   }
 
-  .bar-chart,
-  .line-axis {
-    gap: 6px;
+  .hero-left {
+    width: 100%;
+    border-right: 0;
+    border-bottom: 1px solid var(--hair);
   }
 
-  .structure-panel {
-    flex-direction: column;
-    align-items: flex-start;
+  .metrics-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 
-  .donut-wrapper {
-    width: 148px;
-    height: 148px;
+  .metric-cell:nth-child(2) {
+    border-right: 0;
+  }
+
+  .metric-cell:nth-child(1),
+  .metric-cell:nth-child(2) {
+    border-bottom: 1px solid var(--hair);
   }
 }
 </style>

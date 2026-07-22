@@ -1,2 +1,149 @@
-@import "../../styles/user-page.scss";
-.map-placeholder { position:relative; height:420rpx; padding:30rpx; box-sizing:border-box; color:#7773E8; background:#E7E9F4; border-radius:24rpx; font-size:22rpx; }.route-dot { position:absolute; width:28rpx; height:28rpx; background:#7773E8; border:8rpx solid #fff; border-radius:50%; }.route-dot.start { left:100rpx; bottom:90rpx; }.route-dot.end { right:100rpx; top:100rpx; background:#E15D45; }.route-path { position:absolute; left:120rpx; bottom:110rpx; width:230rpx; height:170rpx; border-top:6rpx dashed #7773E8; border-right:6rpx dashed #7773E8; border-radius:0 120rpx 0 0; transform:rotate(-24deg); }
+.pg { display: flex; flex-direction: column; height: 100vh; background: var(--bg); }
+
+/* ---------- 自定义导航 ---------- */
+.nav { display: flex; align-items: center; padding: 0 32rpx; flex: none; }
+.nav-back {
+  width: 68rpx;
+  height: 68rpx;
+  border: 1rpx solid var(--hair);
+  border-radius: 20rpx;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.nav-back .chev { font-size: 40rpx; color: var(--ink); line-height: 1; margin-top: -4rpx; }
+.nav-t { font-size: 32rpx; font-weight: 800; margin-left: 24rpx; }
+.nav-ph { width: 68rpx; margin-left: auto; }
+
+.body { flex: 1; padding: 0 32rpx; box-sizing: border-box; }
+
+/* ---------- 状态行 ---------- */
+.st-row { display: flex; align-items: center; justify-content: space-between; padding: 24rpx 8rpx 24rpx; }
+.st-row .pill { font-size: 22rpx; padding: 8rpx 20rpx; }
+.eta { font-size: 24rpx; color: var(--sub); }
+
+/* ---------- 示意路线 ---------- */
+/* 原生地图（有骑手坐标时） */
+.map-real {
+  width: 100%;
+  height: 420rpx;
+  border-radius: 24rpx;
+  margin-top: 24rpx;
+  border: 1rpx solid var(--hair);
+}
+.map-box {
+  position: relative;
+  height: 320rpx;
+  border: 1rpx solid var(--hair);
+  border-radius: 20rpx;
+  background: #EDF2EC;
+  overflow: hidden;
+}
+.route-line {
+  position: absolute;
+  left: 80rpx;
+  right: 80rpx;
+  top: 50%;
+  border-top: 3rpx dashed #B9C6BC;
+}
+.pin { position: absolute; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; align-items: center; gap: 8rpx; }
+.pin text { font-size: 20rpx; color: var(--sub); }
+.pin.shop { left: 48rpx; }
+.pin.home { right: 48rpx; }
+.pin-dot { width: 28rpx; height: 28rpx; border-radius: 50%; border: 4rpx solid #fff; box-shadow: 0 2rpx 8rpx rgba(23, 37, 31, 0.15); }
+.shop-dot { background: var(--green-ink); }
+.home-dot { background: var(--orange); }
+.courier { position: absolute; top: 50%; transform: translate(-50%, -50%); margin-left: -24rpx; transition: left 0.4s ease; }
+.courier-dot {
+  width: 40rpx;
+  height: 40rpx;
+  border-radius: 50%;
+  background: var(--green);
+  border: 6rpx solid #fff;
+  box-shadow: 0 0 0 8rpx var(--green-soft);
+}
+.map-note {
+  position: absolute;
+  left: 24rpx;
+  bottom: 20rpx;
+  font-size: 20rpx;
+  color: var(--sub);
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 8rpx;
+  padding: 6rpx 14rpx;
+}
+
+/* ---------- 骑手卡 ---------- */
+.rider-card { display: flex; gap: 24rpx; align-items: center; padding: 26rpx 28rpx; margin-top: 24rpx; }
+.avt {
+  width: 92rpx;
+  height: 92rpx;
+  border-radius: 50%;
+  background: var(--green-ink);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 34rpx;
+  font-weight: 800;
+  flex: none;
+}
+.rm { flex: 1; }
+.rnm { font-size: 28rpx; font-weight: 800; }
+.rsub { font-size: 20rpx; color: var(--sub); margin-top: 6rpx; }
+.call-btn {
+  width: 76rpx;
+  height: 76rpx;
+  border-radius: 50%;
+  background: var(--green-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+/* CSS 电话图标 */
+.ic-phone {
+  width: 30rpx;
+  height: 30rpx;
+  border: 4rpx solid var(--green-deep);
+  border-radius: 50% 10% 50% 10%;
+  transform: rotate(45deg);
+}
+
+/* ---------- 取餐码 ---------- */
+.pickup-code { text-align: center; padding: 36rpx 0 28rpx; }
+.pickup-code .cd { font-size: 68rpx; font-weight: 800; letter-spacing: 16rpx; font-variant-numeric: tabular-nums; color: var(--green-ink); }
+.pickup-code .lb { font-size: 20rpx; color: var(--sub); letter-spacing: 4rpx; margin-top: 12rpx; }
+
+/* ---------- 时间线 ---------- */
+.tl-card { padding: 28rpx 28rpx 12rpx; }
+.tl-item { display: flex; gap: 24rpx; position: relative; padding: 0 0 36rpx 4rpx; }
+.tl-item:last-child { padding-bottom: 12rpx; }
+.tl-item::before { content: ''; position: absolute; left: 14rpx; top: 32rpx; bottom: 0; width: 1rpx; background: var(--hair); }
+.tl-item:last-child::before { display: none; }
+.tl-dot {
+  width: 26rpx;
+  height: 26rpx;
+  border-radius: 50%;
+  border: 4rpx solid #D5DBD4;
+  background: #fff;
+  flex: none;
+  margin-top: 4rpx;
+  position: relative;
+  z-index: 1;
+}
+.tl-item.done .tl-dot { border-color: var(--green); background: var(--green); }
+.tl-item.now .tl-dot { border-color: var(--green); background: #fff; box-shadow: 0 0 0 8rpx var(--green-soft); }
+.tt b { font-size: 26rpx; font-weight: 700; }
+.tl-item.now .tt b { color: var(--green-deep); }
+.tt span { display: block; font-size: 20rpx; color: var(--faint); margin-top: 6rpx; }
+
+.refresh-btn { margin-top: 32rpx; }
+
+/* ---------- 空态 ---------- */
+.empty { display: flex; flex-direction: column; align-items: center; padding: 120rpx 0 80rpx; }
+.empty .t { font-size: 28rpx; font-weight: 700; color: var(--ink); }
+.empty .s { font-size: 22rpx; color: var(--sub); margin-top: 12rpx; }
+
+.foot-space { height: 40rpx; }

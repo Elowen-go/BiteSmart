@@ -1,1 +1,26 @@
-<view class="setup-page"><view class="setup-kicker">ONE LAST STEP</view><view class="wordmark">Bite<text>Smart</text></view><text class="title">完善你的账号，<br/>让每次登录都更简单。</text><text class="subtitle">微信账号已连接。补充以下信息后，即可同步使用账号密码登录。</text><view class="field"><text>用户名</text><input placeholder="设置一个好记的名字" data-field="username" bindinput="onInput"/></view><view class="field"><text>手机号</text><input type="number" placeholder="用于订单联系" data-field="phone" bindinput="onInput"/></view><view class="field"><text>密码</text><input password placeholder="至少 6 位字符" data-field="password" bindinput="onInput"/></view><button class="submit-button" bindtap="submit" loading="{{loading}}" disabled="{{loading}}">保存并进入 <text>→</text></button><text wx:if="{{errorMessage}}" class="error-message">{{errorMessage}}</text></view>
+<view class="pg" style="padding-top: {{padTop}}px;">
+  <view class="head">
+    <view class="en">ACCOUNT SETUP</view>
+    <view class="t">完善账号信息</view>
+    <view class="s">设置用户名与手机号，便于找回账号与接收配送通知</view>
+  </view>
+
+  <view class="card form-card">
+    <view class="form-row">
+      <view class="f-lab">用户名 <text class="req">*</text></view>
+      <input class="f-input" placeholder="给自己起个名字" placeholder-class="ph-txt" value="{{username}}" data-field="username" bindinput="onInput" />
+    </view>
+    <view class="form-row">
+      <view class="f-lab">手机号 <text class="req">*</text></view>
+      <input class="f-input" type="number" maxlength="11" placeholder="11 位手机号" placeholder-class="ph-txt" value="{{phone}}" data-field="phone" bindinput="onInput" />
+    </view>
+    <view class="form-row">
+      <view class="f-lab">登录密码 <text class="req">*</text></view>
+      <input class="f-input" password placeholder="设置登录密码" placeholder-class="ph-txt" value="{{password}}" data-field="password" bindinput="onInput" />
+    </view>
+  </view>
+
+  <view wx:if="{{errorMessage}}" class="err">{{errorMessage}}</view>
+
+  <view class="btn-ink green submit {{loading ? 'disabled' : ''}}" bindtap="submit" hover-class="tap">{{loading ? '保存中…' : '完成，开始使用'}}</view>
+</view>

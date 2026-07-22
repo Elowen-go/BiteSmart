@@ -9,6 +9,7 @@ import com.ws.bitesmart.dto.order.ComboCustomizationSnapshot;
 import com.ws.bitesmart.entity.dish.Combo;
 import com.ws.bitesmart.entity.dish.ComboDishRel;
 import com.ws.bitesmart.entity.dish.Dish;
+import com.ws.bitesmart.entity.merchant.Merchant;
 import com.ws.bitesmart.entity.order.OrderItem;
 import com.ws.bitesmart.entity.order.Orders;
 import com.ws.bitesmart.entity.order.ShoppingCart;
@@ -16,6 +17,7 @@ import com.ws.bitesmart.exception.BusinessException;
 import com.ws.bitesmart.mapper.dish.ComboDishRelMapper;
 import com.ws.bitesmart.mapper.dish.ComboMapper;
 import com.ws.bitesmart.mapper.dish.DishMapper;
+import com.ws.bitesmart.mapper.merchant.MerchantMapper;
 import com.ws.bitesmart.mapper.order.OrderItemMapper;
 import com.ws.bitesmart.mapper.order.OrdersMapper;
 import com.ws.bitesmart.mapper.order.ShoppingCartMapper;
@@ -63,6 +65,7 @@ public class OrderService {
     private final ComboService comboService;
     private final OperateLogService operateLogService;
     private final DeliveryTaskService deliveryTaskService;
+    private final MerchantMapper merchantMapper;
 
     /** 订单号序列计数器（确保同一毫秒内不重复） */
     private static final AtomicLong ORDER_NO_SEQ = new AtomicLong(0);
@@ -150,6 +153,12 @@ public class OrderService {
     private String createOrderForItems(Long userId, String address, String receiverName,
                                        String receiverPhone, String remark, Long merchantId,
                                        List<ShoppingCart> selectedItems) {
+        // 店铺打烊则拒绝下单（open_status=20）
+        Merchant merchant = merchantMapper.findById(merchantId);
+        if (merchant != null && Integer.valueOf(Merchant.OPEN_STATUS_CLOSED).equals(merchant.getOpenStatus())) {
+            throw new BusinessException("店铺【" + merchant.getShopName() + "】已打烊，暂不接受下单");
+        }
+
         // 锁定库存 + 构建订单明细
         BigDecimal totalAmount = BigDecimal.ZERO;
         List<OrderItem> orderItems = new ArrayList<>();

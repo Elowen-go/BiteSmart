@@ -1,7 +1,7 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿<script setup lang="ts">
+<script setup lang="ts">
 import { computed, ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Refresh, View } from '@element-plus/icons-vue'
+import { Refresh } from '@element-plus/icons-vue'
 import { getOrderList, getOrderDetail, acceptOrder, rejectOrder, prepareOrder, doneOrder } from '../../../api/merchant/orders'
 import type { MerchantOrder } from '../../../api/merchant/orders'
 import { resolveFileUrl } from '../../../utils/fileUrl'
@@ -14,15 +14,6 @@ const size = ref(10)
 const detailVisible = ref(false)
 const detailData = ref<any>(null)
 const activeStatus = ref<number | 'all'>('all')
-
-const statusOptions = [
-  { label: '全部', value: 'all' as const },
-  { label: '待接单', value: 20 },
-  { label: '备餐中', value: 30 },
-  { label: '配送中', value: 40 },
-  { label: '已完成', value: 50 },
-  { label: '已取消', value: 60 }
-]
 
 const statusConfig: Record<number, { label: string; tag: 'success' | 'warning' | 'primary' | 'info' | 'danger'; className: string }> = {
   10: { label: '待支付', tag: 'info', className: 'muted' },
@@ -38,6 +29,8 @@ const filteredOrderList = computed(() => {
   return orderList.value.filter((item) => item.orderStatus === activeStatus.value)
 })
 
+// TODO(P0-统计口径): 以下统计基于当前页数据（size=10），后端暂无按状态聚合接口；
+// 已用"本页"字样弱化误导，后续应换后端聚合统计
 const orderStats = computed(() => {
   const countByStatus = (status: number) => orderList.value.filter((item) => item.orderStatus === status).length
   const amount = orderList.value
@@ -45,10 +38,10 @@ const orderStats = computed(() => {
     .reduce((sum, item) => sum + Number(item.payAmount || 0), 0)
 
   return [
-    { label: '待接单', value: countByStatus(20), status: 20, hint: '需要尽快确认' },
-    { label: '备餐中', value: countByStatus(30), status: 30, hint: '后厨正在处理' },
-    { label: '配送中', value: countByStatus(40), status: 40, hint: '关注配送进度' },
-    { label: '已完成', value: countByStatus(50), status: 50, hint: `本页完成 ¥${amount.toFixed(2)}` }
+    { label: '本页待接单', value: countByStatus(20), status: 20, hint: '需要尽快确认' },
+    { label: '本页备餐中', value: countByStatus(30), status: 30, hint: '后厨正在处理' },
+    { label: '本页配送中', value: countByStatus(40), status: 40, hint: '关注配送进度' },
+    { label: '本页已完成', value: countByStatus(50), status: 50, hint: `本页完成 ¥${amount.toFixed(2)}` }
   ]
 })
 
@@ -161,8 +154,9 @@ const handleSizeChange = (val: number) => {
   fetchList()
 }
 
+// 再次点击当前状态卡恢复“全部”
 const handleStatusChange = (status: number | 'all') => {
-  activeStatus.value = status
+  activeStatus.value = activeStatus.value === status ? 'all' : status
 }
 
 const getStatusTag = (status: number) => {
@@ -214,7 +208,7 @@ onMounted(() => {
 
       <div class="card-panel order-panel">
         <div class="toolbar">
-          <el-segmented v-model="activeStatus" :options="statusOptions" />
+          <span class="toolbar-hint">点击上方状态卡筛选，再次点击恢复全部</span>
           <span class="toolbar-count">当前 {{ filteredOrderList.length }} 单</span>
         </div>
 
@@ -247,13 +241,15 @@ onMounted(() => {
               {{ row.remark || '无' }}
             </template>
           </el-table-column>
-          <el-table-column label="操作" width="250" fixed="right" align="right">
+          <el-table-column label="操作" width="200" fixed="right" align="right">
             <template #default="{ row }">
-              <el-button size="small" :icon="View" @click="handleViewDetail(row)">详情</el-button>
-              <el-button v-if="row.orderStatus === 20" size="small" type="primary" @click="handleAccept(row)">接单</el-button>
-              <el-button v-if="row.orderStatus === 20" size="small" type="danger" plain @click="handleReject(row)">拒绝</el-button>
-              <el-button v-if="row.orderStatus === 30" size="small" @click="handlePrepare(row)">备餐</el-button>
-              <el-button v-if="row.orderStatus === 40" size="small" type="success" @click="handleDone(row)">完成</el-button>
+              <template v-if="row.orderStatus === 20">
+                <el-button size="small" type="primary" @click="handleAccept(row)">接单</el-button>
+                <el-button text size="small" type="danger" @click="handleReject(row)">拒绝</el-button>
+              </template>
+              <el-button v-else-if="row.orderStatus === 30" size="small" type="primary" @click="handlePrepare(row)">备餐</el-button>
+              <el-button v-else-if="row.orderStatus === 40" size="small" type="primary" @click="handleDone(row)">完成</el-button>
+              <el-button text size="small" @click="handleViewDetail(row)">详情</el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -275,7 +271,6 @@ onMounted(() => {
 
     <el-dialog v-model="detailVisible" title="订单详情" width="720px">
       <template v-if="currentOrder">
-        <div class="party-strip"><span>买家：<strong>{{ detailData.buyer?.nickname || detailData.buyer?.username || currentOrder.userId }}</strong></span><span>商家：<strong>{{ detailData.merchant?.shopName || currentOrder.merchantId }}</strong></span></div>
         <el-descriptions :column="2" border>
           <el-descriptions-item label="订单号">{{ currentOrder.orderNo }}</el-descriptions-item>
           <el-descriptions-item label="订单状态">{{ getStatusLabel(currentOrder.orderStatus) }}</el-descriptions-item>
@@ -298,7 +293,7 @@ onMounted(() => {
         <div v-if="currentItems.length" class="detail-section">
           <h4>商品明细</h4>
           <el-table :data="currentItems" size="small">
-            <el-table-column label="商品" min-width="220"><template #default="{ row }"><div class="order-item-cell"><img v-if="row.snapshotImage" :src="imageUrl(row.snapshotImage)" alt="商品图片" /><span v-else class="order-item-placeholder">餐</span><div><strong>{{ row.snapshotName || '订单商品' }}</strong><small>{{ row.itemType === 20 ? '套餐' : '菜品' }}</small></div></div></template></el-table-column>
+            <el-table-column label="商品" min-width="220"><template #default="{ row }"><div class="order-item-cell"><img v-if="row.snapshotImage" :src="imageUrl(row.snapshotImage)" alt="商品图片" /><span v-else class="order-item-placeholder">{{ (row.snapshotName || '餐').charAt(0) }}</span><div><strong>{{ row.snapshotName || '订单商品' }}</strong><small>{{ row.itemType === 20 ? '套餐' : '菜品' }}</small></div></div></template></el-table-column>
             <el-table-column prop="quantity" label="数量" width="90" />
             <el-table-column prop="snapshotPrice" label="单价" width="110">
               <template #default="{ row }">¥{{ formatAmount(row.snapshotPrice) }}</template>
@@ -401,7 +396,7 @@ onMounted(() => {
 }
 
 .summary-item.urgent {
-  border-left: 3px solid #b76e2a;
+  border-left: 3px solid var(--bs-status-warning);
 }
 
 .summary-item.working,
@@ -410,7 +405,7 @@ onMounted(() => {
 }
 
 .summary-item.done {
-  border-left: 3px solid #1b6b4a;
+  border-left: 3px solid var(--bs-status-success);
 }
 
 .card-panel {
@@ -436,6 +431,11 @@ onMounted(() => {
   color: var(--bs-text-muted);
   font-size: 13px;
   white-space: nowrap;
+}
+
+.toolbar-hint {
+  color: var(--bs-text-muted);
+  font-size: 12px;
 }
 
 .order-table {
@@ -490,7 +490,35 @@ onMounted(() => {
     grid-template-columns: 1fr;
   }
 }
-</style>
-<style scoped>
-.party-strip{display:flex;gap:28px;margin-bottom:14px;padding:12px 14px;background:#f5f8f5;color:#87928a;font-size:12px}.party-strip strong{color:#1f2a24}.order-item-cell{display:flex;align-items:center;gap:10px}.order-item-cell img,.order-item-placeholder{width:42px;height:42px;flex:0 0 42px;object-fit:cover}.order-item-placeholder{display:grid;place-items:center;background:#eef4ef;color:#5e8069}.order-item-cell div{display:flex;flex-direction:column;gap:4px}.order-item-cell small{color:#87928a;font-size:11px}
+.order-item-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.order-item-cell img,
+.order-item-placeholder {
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  object-fit: cover;
+}
+
+.order-item-placeholder {
+  display: grid;
+  place-items: center;
+  background: var(--bs-bg-hover);
+  color: var(--bs-text-muted);
+}
+
+.order-item-cell div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.order-item-cell small {
+  color: var(--bs-text-muted);
+  font-size: 11px;
+}
 </style>

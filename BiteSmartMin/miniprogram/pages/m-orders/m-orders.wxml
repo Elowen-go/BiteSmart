@@ -1,0 +1,102 @@
+<view class="pg">
+  <!-- 自定义导航 -->
+  <view class="nav" style="margin-top: {{menuTop}}px; height: {{menuH}}px;">
+    <view class="nav-t">订单管理</view>
+    <view class="nav-right" bindtap="refresh" hover-class="tap">刷新</view>
+  </view>
+
+  <!-- 状态筛选 -->
+  <view class="o-tabs">
+    <view class="o-tab {{tab === item.k ? 'on' : ''}}" wx:for="{{tabs}}" wx:key="k" bindtap="pickTab" data-k="{{item.k}}">
+      {{item.n}}<text class="u" wx:if="{{counts[item.k]}}">{{counts[item.k]}}</text>
+    </view>
+  </view>
+
+  <scroll-view class="body" scroll-y enhanced show-scrollbar="{{false}}">
+    <block wx:if="{{list.length}}">
+      <view class="card m-order" wx:for="{{list}}" wx:key="id" bindtap="openDetail" data-id="{{item.id}}" hover-class="tap">
+        <view class="mo-head">
+          <text class="no">#{{item.orderNo}}</text>
+          <text class="st-tag {{item.statusCls}}">{{item.statusText}}</text>
+        </view>
+        <view class="mo-items">{{item.itemsText}}
+          <view class="mo-meta">{{item.metaText}}</view>
+        </view>
+        <view class="mo-foot">
+          <text class="amt">¥{{item.amount}}</text>
+          <view class="mo-ops">
+            <block wx:if="{{item.status === 20}}">
+              <view class="op ghost" catchtap="reject" data-id="{{item.id}}">拒单</view>
+              <view class="op dark" catchtap="accept" data-id="{{item.id}}">接单</view>
+            </block>
+            <view wx:elif="{{item.status === 30}}" class="op primary" catchtap="done" data-id="{{item.id}}">出餐完成</view>
+            <text wx:elif="{{item.status === 40 && item.deliveryStatus <= 10}}" class="pill orange">等待骑手取餐</text>
+            <text wx:elif="{{item.status === 40}}" class="pill green">骑手履约中</text>
+            <text wx:elif="{{item.status === 50}}" class="pill gray">已完成</text>
+            <text wx:elif="{{item.status === 10}}" class="pill gray">待支付</text>
+            <text wx:else class="pill red">已取消</text>
+          </view>
+        </view>
+      </view>
+    </block>
+    <view wx:else class="empty">
+      <view class="t">该状态下暂无订单</view>
+      <view class="s">用户端下单支付后会实时同步到这里</view>
+    </view>
+    <view style="height: 32rpx;"></view>
+  </scroll-view>
+
+  <!-- 订单详情弹层 -->
+  <view class="mask {{sheetShow ? 'show' : ''}}" bindtap="closeSheet"></view>
+  <view class="sheet {{sheetShow ? 'show' : ''}}">
+    <view class="grab"></view>
+    <view class="s-head">
+      <text class="s-title">订单详情</text>
+      <text class="s-x" bindtap="closeSheet">×</text>
+    </view>
+    <view class="s-body">
+      <view class="kv"><text class="k">订单编号</text><text class="v">{{dNo}}</text></view>
+      <view class="kv"><text class="k">下单时间</text><text class="v">{{dTime}}</text></view>
+      <view class="kv"><text class="k">收货地址</text><text class="v addr">{{dAddr}}</text></view>
+      <view class="kv"><text class="k">备注</text><text class="v">{{dRemark}}</text></view>
+      <view class="d-items">
+        <view class="d-item" wx:for="{{dItems}}" wx:key="index">
+          <text>{{item.name}} ×{{item.qty}}</text>
+          <text class="b">¥{{item.amount}}</text>
+        </view>
+      </view>
+      <view class="d-total"><text>实收</text><text class="b">¥{{dTotal}}</text></view>
+    </view>
+    <view class="s-foot" wx:if="{{dStatus === 20 || dStatus === 30}}">
+      <block wx:if="{{dStatus === 20}}">
+        <view class="btn-ink ghost foot-btn" bindtap="reject" data-id="{{dId}}">拒单</view>
+        <view class="btn-ink foot-btn" bindtap="accept" data-id="{{dId}}">接单</view>
+      </block>
+      <view wx:else class="btn-ink green foot-btn full" bindtap="done" data-id="{{dId}}">出餐完成，呼叫骑手</view>
+    </view>
+  </view>
+
+  <!-- 商家端自定义底栏 -->
+  <view class="m-tabbar">
+    <view class="m-tab {{active === 'home' ? 'on' : ''}}" catchtap="goTab" data-key="home" data-url="/pages/m-home/m-home">
+      <image class="m-tab-ic" src="/assets/tab/m-home{{active === 'home' ? '-on' : ''}}.png" />
+      <text>工作台</text>
+      <view class="dot"></view>
+    </view>
+    <view class="m-tab {{active === 'orders' ? 'on' : ''}}" catchtap="goTab" data-key="orders" data-url="/pages/m-orders/m-orders">
+      <image class="m-tab-ic" src="/assets/tab/m-orders{{active === 'orders' ? '-on' : ''}}.png" />
+      <text>订单</text>
+      <view class="dot"></view>
+    </view>
+    <view class="m-tab {{active === 'dishes' ? 'on' : ''}}" catchtap="goTab" data-key="dishes" data-url="/pages/m-dishes/m-dishes">
+      <image class="m-tab-ic" src="/assets/tab/m-dishes{{active === 'dishes' ? '-on' : ''}}.png" />
+      <text>菜品</text>
+      <view class="dot"></view>
+    </view>
+    <view class="m-tab {{active === 'me' ? 'on' : ''}}" catchtap="goTab" data-key="me" data-url="/pages/m-me/m-me">
+      <image class="m-tab-ic" src="/assets/tab/profile{{active === 'me' ? '-on' : ''}}.png" />
+      <text>我的</text>
+      <view class="dot"></view>
+    </view>
+  </view>
+</view>

@@ -1,2 +1,95 @@
-@import "../../styles/user-page.scss";
-.timeline { position:relative; padding:28rpx 28rpx 28rpx 70rpx; margin-top:24rpx; background:#EEEDFF; border-radius:22rpx; }.timeline-active { position:absolute; left:30rpx; top:32rpx; width:14rpx; height:170rpx; background:#7773E8; border-radius:10rpx; }.timeline view:not(.timeline-active) { margin-bottom:22rpx; }.timeline text { display:block; color:#3A3846; font-size:23rpx; }.timeline text:last-child { color:#9998A6; font-size:18rpx; margin-top:6rpx; }
+.pg { display: flex; flex-direction: column; height: 100vh; background: var(--bg); }
+
+/* ---------- 自定义导航 ---------- */
+.nav { display: flex; align-items: center; padding: 0 32rpx; flex: none; }
+.nav-back {
+  width: 68rpx;
+  height: 68rpx;
+  border: 1rpx solid var(--hair);
+  border-radius: 20rpx;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.nav-back .chev { font-size: 40rpx; color: var(--ink); line-height: 1; margin-top: -4rpx; }
+.nav-t { font-size: 32rpx; font-weight: 800; margin-left: 24rpx; }
+.nav-ph { width: 68rpx; margin-left: auto; }
+
+.body { flex: 1; padding: 0 32rpx; box-sizing: border-box; }
+
+/* ---------- 状态头 ---------- */
+.st-card { display: flex; align-items: center; justify-content: space-between; padding: 36rpx 28rpx; margin-top: 20rpx; }
+.st-t { font-size: 44rpx; font-weight: 800; }
+.st-t.s1 { color: var(--orange); }
+.st-t.s2 { color: var(--green-deep); }
+.st-t.s3 { color: var(--sub); }
+.st-h { font-size: 24rpx; color: var(--sub); margin-top: 12rpx; }
+.st-badge { width: 28rpx; height: 28rpx; border-radius: 50%; flex: none; }
+.st-badge.s1 { background: var(--orange); }
+.st-badge.s2 { background: var(--green); box-shadow: 0 0 0 8rpx var(--green-soft); }
+.st-badge.s3 { background: var(--faint); }
+
+/* ---------- 时间线 ---------- */
+.tl-card { padding: 28rpx 28rpx 12rpx; }
+.tl-item { display: flex; gap: 24rpx; position: relative; padding: 0 0 36rpx 4rpx; }
+.tl-item:last-child { padding-bottom: 12rpx; }
+.tl-item::before { content: ''; position: absolute; left: 14rpx; top: 32rpx; bottom: 0; width: 1rpx; background: var(--hair); }
+.tl-item:last-child::before { display: none; }
+.tl-dot {
+  width: 26rpx;
+  height: 26rpx;
+  border-radius: 50%;
+  border: 4rpx solid #D5DBD4;
+  background: #fff;
+  flex: none;
+  margin-top: 4rpx;
+  position: relative;
+  z-index: 1;
+}
+.tl-item.done .tl-dot { border-color: var(--green); background: var(--green); }
+.tl-item.now .tl-dot { border-color: var(--green); background: #fff; box-shadow: 0 0 0 8rpx var(--green-soft); }
+.tt b { font-size: 26rpx; font-weight: 700; }
+.tl-item.now .tt b { color: var(--green-deep); }
+.tt span { display: block; font-size: 20rpx; color: var(--faint); margin-top: 6rpx; }
+
+/* ---------- 商品明细 ---------- */
+.it-card { padding: 0 28rpx; }
+.it-row { display: flex; align-items: center; gap: 24rpx; padding: 24rpx 0; border-top: 1rpx solid var(--hair); }
+.it-row:first-child { border-top: none; }
+.it-row .ph { width: 104rpx; height: 104rpx; border-radius: 16rpx; background: #DCE5DD; flex: none; }
+.ph-txt { display: flex; align-items: center; justify-content: center; }
+.ph-txt text { font-size: 32rpx; color: var(--green-deep); font-weight: 800; }
+.im { flex: 1; min-width: 0; }
+.inm { font-size: 28rpx; font-weight: 700; }
+.isub { font-size: 20rpx; color: var(--sub); margin-top: 6rpx; }
+.ir { flex: none; }
+.qty { font-size: 22rpx; color: var(--sub); }
+.money-row { display: flex; justify-content: space-between; font-size: 24rpx; padding: 16rpx 0; color: var(--sub); }
+.money-row.big { border-top: 1rpx solid var(--hair); margin-top: 8rpx; padding: 24rpx 0; color: var(--ink); font-weight: 700; align-items: baseline; }
+.money-row.big b { font-size: 40rpx; color: var(--orange); font-weight: 800; font-variant-numeric: tabular-nums; }
+
+/* ---------- 订单信息 ---------- */
+.kv-card { padding: 8rpx 28rpx; }
+.result-kv { display: flex; justify-content: space-between; gap: 24rpx; font-size: 24rpx; padding: 22rpx 0; border-top: 1rpx solid var(--hair); color: var(--sub); }
+.result-kv:first-child { border-top: none; }
+.result-kv b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+.result-kv .addr { text-align: right; max-width: 440rpx; line-height: 1.6; }
+
+/* ---------- 底部操作 ---------- */
+.bbar {
+  flex: none;
+  background: #fff;
+  border-top: 1rpx solid var(--hair);
+  display: flex;
+  gap: 24rpx;
+  padding: 20rpx 40rpx calc(20rpx + env(safe-area-inset-bottom));
+}
+.bbar-btn { flex: 1; }
+
+/* ---------- 空态 ---------- */
+.empty { display: flex; flex-direction: column; align-items: center; padding: 120rpx 0 80rpx; }
+.empty .t { font-size: 28rpx; font-weight: 700; color: var(--ink); }
+.empty .s { font-size: 22rpx; color: var(--sub); margin-top: 12rpx; }
+
+.foot-space { height: 40rpx; }

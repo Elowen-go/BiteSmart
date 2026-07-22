@@ -1,0 +1,84 @@
+.pg { display: flex; flex-direction: column; height: 100vh; background: var(--bg); }
+
+/* ---------- 自定义导航 ---------- */
+.nav { display: flex; align-items: center; padding: 0 32rpx; flex: none; }
+.nav-back {
+  width: 68rpx;
+  height: 68rpx;
+  border: 1rpx solid var(--hair);
+  border-radius: 20rpx;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.nav-back .chev { font-size: 40rpx; color: var(--ink); line-height: 1; margin-top: -4rpx; }
+.nav-t { font-size: 32rpx; font-weight: 800; margin-left: 24rpx; }
+
+.body { flex: 1; padding: 16rpx 32rpx 0; box-sizing: border-box; }
+
+/* ---------- 评价卡（复刻原型 pgMReviews） ---------- */
+.r-card { margin-top: 24rpx; padding: 28rpx 32rpx; }
+.r-head { display: flex; justify-content: space-between; font-size: 24rpx; }
+.r-head .b { font-weight: 800; }
+.r-head .t { color: var(--faint); font-size: 20rpx; }
+.r-rating { font-size: 22rpx; color: var(--orange); margin-top: 12rpx; }
+.r-content { font-size: 24rpx; color: var(--sub); margin-top: 16rpx; line-height: 1.8; }
+.r-reply {
+  margin-top: 16rpx;
+  padding: 16rpx 20rpx;
+  background: #FBFCFA;
+  border: 1rpx dashed var(--hair);
+  border-radius: 12rpx;
+  font-size: 22rpx;
+  color: var(--sub);
+  display: flex;
+  gap: 12rpx;
+}
+.r-reply .lab { color: var(--green-deep); font-weight: 700; flex: none; }
+
+/* ---------- 回复交互 ---------- */
+.reply-btn {
+  margin-top: 20rpx;
+  display: inline-block;
+  padding: 10rpx 32rpx;
+  border: 1rpx solid var(--hair);
+  border-radius: 999rpx;
+  font-size: 22rpx;
+  color: var(--ink);
+  background: #fff;
+}
+.reply-box {
+  margin-top: 20rpx;
+  border: 1rpx solid var(--hair);
+  border-radius: 12rpx;
+  background: #FBFCFA;
+  padding: 20rpx;
+}
+.reply-input { width: 100%; min-height: 96rpx; font-size: 24rpx; line-height: 1.6; color: var(--ink); }
+.ph-txt { color: var(--faint); }
+.reply-ops { display: flex; align-items: center; gap: 24rpx; margin-top: 16rpx; }
+.reply-ops .cnt { flex: 1; font-size: 20rpx; color: var(--faint); }
+.op-cancel { font-size: 24rpx; color: var(--sub); }
+.op-submit {
+  padding: 10rpx 28rpx;
+  border-radius: 999rpx;
+  background: var(--ink);
+  color: #fff;
+  font-size: 22rpx;
+  font-weight: 700;
+}
+.op-submit.disabled { opacity: 0.6; }
+
+/* ---------- 空态（复刻原型 wip） ---------- */
+.wip { display: flex; flex-direction: column; align-items: center; padding: 160rpx 0 80rpx; text-align: center; }
+.wip .star-outline {
+  width: 120rpx;
+  height: 120rpx;
+  transform: rotate(45deg);
+  border: 3rpx solid #C7D0C9;
+  border-radius: 16rpx;
+  margin-bottom: 32rpx;
+}
+.wip .t { font-size: 28rpx; font-weight: 700; color: var(--ink); }
+.wip .s { font-size: 22rpx; color: var(--sub); margin-top: 12rpx; white-space: pre-line; }

@@ -1,0 +1,107 @@
+<view class="pg">
+  <!-- 自定义导航 -->
+  <view class="nav" style="margin-top: {{menuTop}}px; height: {{menuH}}px;">
+    <view class="nav-back" bindtap="goBack" hover-class="tap"><text class="chev">‹</text></view>
+    <view class="nav-t">{{editId ? '编辑菜品' : '新增菜品'}}</view>
+  </view>
+
+  <scroll-view class="body" scroll-y enhanced show-scrollbar="{{false}}">
+    <!-- 基本信息 -->
+    <view class="sec">
+      <text class="en">BASIC</text>
+      <text class="cn">基本信息</text>
+      <view class="line"></view>
+    </view>
+    <view class="card form-card">
+      <view class="form-row">
+        <view class="f-lab">菜品名称 <text class="req">*</text></view>
+        <input class="f-input" placeholder="如：牛油果鸡胸肉沙拉" placeholder-class="ph-txt" value="{{dishName}}" data-field="dishName" bindinput="onInput" />
+      </view>
+      <view class="form-row">
+        <view class="f-lab">分类</view>
+        <picker wx:if="{{catNames.length}}" class="f-input picker" range="{{catNames}}" value="{{catIndex}}" bindchange="onCatChange">
+          <view class="picker-t {{catIndex < 0 ? 'ph-txt' : ''}}">{{catIndex >= 0 ? catNames[catIndex] : '选择分类'}}</view>
+        </picker>
+        <view wx:else class="f-input picker"><view class="picker-t ph-txt">暂无分类，可先在分类管理中添加</view></view>
+      </view>
+      <view class="form-grid">
+        <view class="form-row">
+          <view class="f-lab">价格（元） <text class="req">*</text></view>
+          <input class="f-input" type="digit" placeholder="0.00" placeholder-class="ph-txt" value="{{price}}" data-field="price" bindinput="onInput" />
+        </view>
+        <view class="form-row">
+          <view class="f-lab">库存</view>
+          <input class="f-input" type="number" placeholder="0" placeholder-class="ph-txt" value="{{stock}}" data-field="stock" bindinput="onInput" />
+        </view>
+      </view>
+    </view>
+
+    <!-- 营养信息 -->
+    <view class="sec">
+      <text class="en">NUTRITION</text>
+      <text class="cn">营养信息</text>
+      <view class="line"></view>
+    </view>
+    <view class="card form-card">
+      <view class="form-grid">
+        <view class="form-row">
+          <view class="f-lab">热量（kcal）</view>
+          <input class="f-input" type="number" placeholder="≥ 0" placeholder-class="ph-txt" value="{{calories}}" data-field="calories" bindinput="onInput" />
+        </view>
+        <view class="form-row">
+          <view class="f-lab">蛋白质（g）</view>
+          <input class="f-input" type="digit" placeholder="≥ 0" placeholder-class="ph-txt" value="{{protein}}" data-field="protein" bindinput="onInput" />
+        </view>
+      </view>
+      <view class="form-grid">
+        <view class="form-row">
+          <view class="f-lab">脂肪（g）</view>
+          <input class="f-input" type="digit" placeholder="≥ 0" placeholder-class="ph-txt" value="{{fat}}" data-field="fat" bindinput="onInput" />
+        </view>
+        <view class="form-row">
+          <view class="f-lab">碳水（g）</view>
+          <input class="f-input" type="digit" placeholder="≥ 0" placeholder-class="ph-txt" value="{{carbs}}" data-field="carbs" bindinput="onInput" />
+        </view>
+      </view>
+    </view>
+
+    <!-- 展示信息 -->
+    <view class="sec">
+      <text class="en">DISPLAY</text>
+      <text class="cn">展示信息</text>
+      <view class="line"></view>
+    </view>
+    <view class="card form-card">
+      <view class="form-row">
+        <view class="f-lab">图片 URL</view>
+        <input class="f-input" placeholder="https://…" placeholder-class="ph-txt" value="{{image}}" data-field="image" bindinput="onInput" />
+        <view wx:if="{{image && !imgError}}" class="img-preview"><image src="{{image}}" mode="aspectFill" binderror="onImgError" /></view>
+        <view wx:elif="{{image && imgError}}" class="img-preview img-broken">图片加载失败，请检查 URL</view>
+      </view>
+      <view class="form-row">
+        <view class="f-lab">适宜人群</view>
+        <input class="f-input" placeholder="如：健身人群、控糖人群" placeholder-class="ph-txt" value="{{suitableFor}}" data-field="suitableFor" bindinput="onInput" />
+      </view>
+      <view class="form-row">
+        <view class="f-lab">口味标签（逗号分隔）</view>
+        <input class="f-input" placeholder="如：低脂，高蛋白，微辣" placeholder-class="ph-txt" value="{{tagsText}}" data-field="tagsText" bindinput="onInput" />
+      </view>
+      <view class="form-row">
+        <view class="f-lab">AI 点评</view>
+        <textarea class="f-input f-textarea" placeholder="展示在用户端菜品详情的 AI 点评文案" placeholder-class="ph-txt" value="{{aiComment}}" data-field="aiComment" bindinput="onInput" maxlength="200" />
+      </view>
+      <view class="form-row sale-row">
+        <view class="f-lab sale-lab">立即上架</view>
+        <view class="switch {{onSale ? 'on' : ''}}" bindtap="toggleSale" hover-class="tap"></view>
+      </view>
+    </view>
+
+    <view wx:if="{{err}}" class="form-err">{{err}}</view>
+    <view style="height: 160rpx;"></view>
+  </scroll-view>
+
+  <!-- 底部提交 -->
+  <view class="bbar">
+    <view class="btn-ink green bbar-btn {{submitting ? 'disabled' : ''}}" bindtap="submit" hover-class="tap">{{submitting ? '提交中…' : '保存菜品'}}</view>
+  </view>
+</view>

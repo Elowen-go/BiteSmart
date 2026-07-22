@@ -17,25 +17,81 @@
     "pages/order-detail/order-detail",
     "pages/delivery/delivery",
     "pages/health/health",
+    "pages/assessment/assessment",
+    "pages/plan/plan",
+    "pages/exercise/exercise",
     "pages/member/member",
     "pages/review/review",
     "pages/address/address",
     "pages/notice/notice",
     "pages/settings/settings",
     "pages/complaint/complaint",
-    "pages/pay-result/pay-result"
+    "pages/pay-result/pay-result",
+    "pages/m-home/m-home",
+    "pages/m-orders/m-orders",
+    "pages/m-dishes/m-dishes",
+    "pages/m-me/m-me",
+    "pages/m-stats/m-stats",
+    "pages/m-reviews/m-reviews",
+    "pages/m-dish-edit/m-dish-edit",
+    "pages/m-shop-edit/m-shop-edit",
+    "pages/m-combos/m-combos",
+    "pages/m-combo-edit/m-combo-edit",
+    "pages/r-tasks/r-tasks",
+    "pages/r-task/r-task",
+    "pages/r-exception/r-exception",
+    "pages/r-stats/r-stats",
+    "pages/r-me/r-me",
+    "pages/r-reviews/r-reviews",
+    "pages/r-profile/r-profile"
   ],
+  "permission": {
+    "scope.userLocation": {
+      "desc": "用于配送定位与轨迹展示"
+    }
+  },
   "window": {
     "navigationBarTextStyle": "black",
     "navigationStyle": "custom",
-    "backgroundColor": "#F3F0E9"
+    "backgroundColor": "#F7F7F3"
+  },
+  "tabBar": {
+    "color": "#9AA5A0",
+    "selectedColor": "#1E9E62",
+    "backgroundColor": "#FFFFFF",
+    "borderStyle": "white",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "首页",
+        "iconPath": "assets/tab/home.png",
+        "selectedIconPath": "assets/tab/home-on.png"
+      },
+      {
+        "pagePath": "pages/food/food",
+        "text": "商城",
+        "iconPath": "assets/tab/store.png",
+        "selectedIconPath": "assets/tab/store-on.png"
+      },
+      {
+        "pagePath": "pages/ai/ai",
+        "text": "AI助手",
+        "iconPath": "assets/tab/ai.png",
+        "selectedIconPath": "assets/tab/ai-on.png"
+      },
+      {
+        "pagePath": "pages/profile/profile",
+        "text": "我的",
+        "iconPath": "assets/tab/profile.png",
+        "selectedIconPath": "assets/tab/profile-on.png"
+      }
+    ]
   },
   "style": "v2",
   "rendererOptions": {
     "skyline": {
       "defaultDisplayBlock": true,
       "defaultContentBox": true,
-      "tagNameStyleIsolation": "legacy",
       "disableABTest": true,
       "sdkVersionBegin": "3.0.0",
       "sdkVersionEnd": "15.255.255"

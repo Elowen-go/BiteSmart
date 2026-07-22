@@ -46,11 +46,14 @@ public class DietRecord {
     /** 碳水（g） */
     private BigDecimal carbs;
 
-    /** 来源：10-平台订单自动 20-用户手动添加 */
+    /** 来源：10-平台订单自动 20-用户手动添加 30-专属计划打卡 */
     private Integer sourceType;
 
     /** 关联订单明细ID */
     private Long orderItemId;
+
+    /** 关联计划餐ID（source_type=30 时），取消打卡按此删除 */
+    private Long planMealId;
 
     private LocalDateTime createTime;
     private LocalDateTime updateTime;

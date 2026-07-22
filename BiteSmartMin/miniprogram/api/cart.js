@@ -4,7 +4,7 @@ exports.deleteCartItem = exports.selectCartItem = exports.updateCartQuantity = e
 const request_1 = require("../utils/request");
 const getCart = () => (0, request_1.request)({ url: '/cart' });
 exports.getCart = getCart;
-const addToCart = (itemType, id, quantity = 1) => (0, request_1.request)({ url: '/cart', method: 'POST', data: { itemType, ...(itemType === 10 ? { dishId: id } : { comboId: id }), quantity }, contentType: 'form' });
+const addToCart = (itemType, id, quantity = 1) => (0, request_1.request)({ url: '/cart', method: 'POST', data: Object.assign(Object.assign({ itemType }, (itemType === 10 ? { dishId: id } : { comboId: id })), { quantity }), contentType: 'form' });
 exports.addToCart = addToCart;
 const updateCartQuantity = (id, quantity) => (0, request_1.request)({ url: `/cart/${id}`, method: 'PUT', data: { quantity }, contentType: 'form' });
 exports.updateCartQuantity = updateCartQuantity;

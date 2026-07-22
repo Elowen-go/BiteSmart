@@ -1,0 +1,44 @@
+.pg { display: flex; flex-direction: column; height: 100vh; background: var(--bg); }
+
+/* ---------- 自定义导航 ---------- */
+.nav { display: flex; align-items: center; padding: 0 32rpx; flex: none; }
+.nav-back {
+  width: 68rpx;
+  height: 68rpx;
+  border: 1rpx solid var(--hair);
+  border-radius: 20rpx;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.nav-back .chev { font-size: 40rpx; color: var(--ink); line-height: 1; margin-top: -4rpx; }
+.nav-t { font-size: 32rpx; font-weight: 800; margin-left: 24rpx; }
+
+.body { flex: 1; padding: 16rpx 32rpx 0; box-sizing: border-box; }
+
+/* ---------- 柱状图（复刻原型 chart-box / bar-chart） ---------- */
+.chart-box {
+  border: 1rpx solid var(--hair);
+  border-radius: 20rpx;
+  background: #fff;
+  padding: 32rpx;
+  box-shadow: 0 4rpx 20rpx rgba(23, 37, 31, 0.05);
+  margin-top: 8rpx;
+}
+.chart-title { font-size: 22rpx; color: var(--sub); margin-bottom: 24rpx; }
+.bar-chart { display: flex; align-items: flex-end; gap: 20rpx; height: 220rpx; padding: 0 8rpx; }
+.bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 12rpx; height: 100%; justify-content: flex-end; }
+.bar-col .bar { width: 100%; max-width: 52rpx; border-radius: 6rpx 6rpx 0 0; background: var(--green-soft); }
+.bar-col .bar.hot { background: var(--green); }
+.bar-col .bl { font-size: 18rpx; color: var(--faint); }
+.bar-col .bv { font-size: 18rpx; color: var(--sub); font-weight: 700; }
+
+/* ---------- 热销排行（复刻原型 h-record） ---------- */
+.top-card { padding: 0 32rpx; }
+.h-record { display: flex; align-items: center; gap: 20rpx; padding: 24rpx 0; border-top: 1rpx solid var(--hair); font-size: 24rpx; }
+.h-record:first-child { border-top: none; }
+.h-record .rank { width: 40rpx; font-weight: 800; color: var(--faint); }
+.h-record .rank.hot { color: var(--orange); }
+.h-record .tname { flex: 1; font-weight: 700; }
+.h-record .tv { font-size: 24rpx; font-weight: 700; font-variant-numeric: tabular-nums; }

@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -49,6 +50,22 @@ public class DeliveryTrackingController {
         result.put("deliverTime", task.getDeliverTime());
         result.put("currentLat", task.getCurrentLat());
         result.put("currentLng", task.getCurrentLng());
+        result.put("orderRemark", task.getOrderRemark());
+
+        // 骑手实时位置与轨迹（GCJ-02 坐标系，高德/腾讯地图直接用）
+        result.put("riderLat", task.getCurrentLat());
+        result.put("riderLng", task.getCurrentLng());
+        result.put("locTime", task.getLocationUpdateTime());
+        List<Map<String, Object>> path = deliveryTaskService.getTaskLocations(task.getId()).stream()
+                .map(p -> {
+                    Map<String, Object> point = new HashMap<>();
+                    point.put("latitude", p.getLatitude());
+                    point.put("longitude", p.getLongitude());
+                    point.put("time", p.getCreatedTime());
+                    return point;
+                })
+                .toList();
+        result.put("path", path);
 
         // 如果有配送员，返回配送员位置
         if (task.getDriverId() != null) {

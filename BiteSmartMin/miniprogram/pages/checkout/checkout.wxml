@@ -1,1 +1,78 @@
-<view class="user-page"><view class="back-row"><text class="back" bindtap="back">‹</text><text>确认订单</text><text></text></view><text class="eyebrow">ONE LAST CHECK</text><text class="title">今天送到哪里？</text><view class="panel address"><text class="panel-title">收货地址</text><text>安之 · 138****2026</text><text class="panel-note">滨江创意园 A 座 3 楼</text><text class="accent">更换地址 〉</text></view><view class="panel"><text class="panel-title">订单内容</text><view class="row"><view class="row-main"><text>青柠香煎鸡胸 × 1</text><text>高蛋白 · 426 kcal</text></view><text>¥29</text></view><view class="row"><view class="row-main"><text>南瓜藜麦暖沙拉 × 1</text><text>膳食纤维 · 318 kcal</text></view><text>¥25</text></view></view><view class="panel"><view class="row"><text>配送方式</text><text class="accent">准时达 〉</text></view><view class="row"><text>订单备注</text><text class="panel-note">给商家留言 〉</text></view></view><view class="total"><text>应付金额</text><text>¥54</text></view><button class="primary" bindtap="submit" loading="{{loading}}" disabled="{{loading}}">提交订单</button></view>
+<view class="pg">
+  <!-- 自定义导航 -->
+  <view class="nav" style="margin-top: {{menuTop}}px; height: {{menuH}}px;">
+    <view class="nav-back" bindtap="back" hover-class="tap"><text class="chev">‹</text></view>
+    <view class="nav-t">确认订单</view>
+    <view class="nav-ph"></view>
+  </view>
+
+  <scroll-view class="body" scroll-y enhanced show-scrollbar="{{false}}">
+    <!-- 收货地址 -->
+    <view class="card co-addr" bindtap="chooseAddress" hover-class="tap">
+      <view class="pin"><view class="ic-pin"></view></view>
+      <view class="addr-main" wx:if="{{address}}">
+        <view class="who">{{address.receiverName}}<text>{{address.receiverPhone}}</text></view>
+        <view class="where">{{address.province}}{{address.city}}{{address.district}}{{address.detailAddress}}</view>
+      </view>
+      <view class="addr-main" wx:else>
+        <view class="who">请选择收货地址</view>
+        <view class="where">外卖配送需要填写收货地址</view>
+      </view>
+      <text class="go">›</text>
+    </view>
+
+    <!-- 商品清单 -->
+    <view class="sec"><text class="en">ITEMS</text><text class="cn">商品清单</text><view class="line"></view><text class="more">{{items.length}} 件</text></view>
+    <view class="card co-list">
+      <view class="meal" wx:for="{{items}}" wx:key="id">
+        <image class="ph" src="{{item.dishImage || item.comboImage}}" mode="aspectFill" lazy-load="true" />
+        <view class="mm">
+          <view class="mn">{{item.dishName || item.comboName}}</view>
+          <view class="ms">¥{{item.price}} / 份</view>
+        </view>
+        <view class="mr">
+          <view class="qty">×{{item.quantity}}</view>
+          <view class="amt">¥{{item.price * item.quantity}}</view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 配送与备注 -->
+    <view class="sec"><text class="en">DELIVERY</text><text class="cn">配送与备注</text><view class="line"></view></view>
+    <view class="card co-block">
+      <view class="co-line">
+        <text class="lab">配送方式</text>
+        <view class="seg">
+          <text class="seg-i {{delivery === 0 ? 'on' : ''}}" bindtap="setDelivery" data-v="0">外卖配送</text>
+          <text class="seg-i {{delivery === 1 ? 'on' : ''}}" bindtap="setDelivery" data-v="1">到店自取</text>
+        </view>
+      </view>
+      <view class="co-line">
+        <text class="lab">期望时间</text>
+        <text class="val">{{delivery === 0 ? '尽快送达（约 40 分钟）' : '门店营业时间内自取'}}</text>
+      </view>
+      <view class="co-remark">
+        <textarea class="remark-input" placeholder="备注口味偏好、过敏原等（选填）" placeholder-class="ph-txt" value="{{remark}}" bindinput="onRemarkInput" maxlength="100" auto-height="true" />
+      </view>
+    </view>
+
+    <!-- 费用明细 -->
+    <view class="sec"><text class="en">PAYMENT</text><text class="cn">费用明细</text><view class="line"></view></view>
+    <view class="card co-block money">
+      <view class="money-row"><text>商品金额</text><b>¥{{subtotal}}</b></view>
+      <view class="money-row"><text>配送费</text><b>{{fee === 0 ? '免配送费' : '¥' + fee}}</b></view>
+      <view class="money-row big"><text>实付</text><b>¥{{pay}}</b></view>
+    </view>
+
+    <view class="foot-space"></view>
+  </scroll-view>
+
+  <!-- 底部提交条 -->
+  <view class="bbar">
+    <view class="total">
+      <text class="lab">实付 </text>
+      <text class="amt">¥{{pay}}</text>
+    </view>
+    <view class="pay-btn {{loading ? 'disabled' : ''}}" bindtap="submit" hover-class="tap">{{loading ? '提交中…' : '提交订单'}}</view>
+  </view>
+</view>

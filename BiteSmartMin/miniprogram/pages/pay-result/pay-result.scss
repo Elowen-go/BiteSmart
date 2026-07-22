@@ -1,2 +1,23 @@
-@import "../../styles/user-page.scss";
-.pay-page { text-align:center; padding-top:160rpx; }.success-mark { width:120rpx; height:120rpx; line-height:120rpx; margin:0 auto 32rpx; color:#fff; background:#7773E8; border-radius:50%; font-size:72rpx; }.pay-page .title { font-size:42rpx; }.pay-page .panel { text-align:left; margin-top:44rpx; }.pay-page .outline { margin-top:18rpx; }
+.pg { min-height: 100vh; background: var(--bg); padding-left: 40rpx; padding-right: 40rpx; box-sizing: border-box; }
+
+.top { text-align: center; padding: 80rpx 0 48rpx; }
+.result-icon {
+  width: 152rpx;
+  height: 152rpx;
+  border-radius: 50%;
+  background: var(--green-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+}
+.result-icon .ok { font-size: 72rpx; color: var(--green); font-weight: 700; }
+.top .t { font-size: 42rpx; font-weight: 800; margin-top: 32rpx; }
+.top .s { font-size: 24rpx; color: var(--sub); margin-top: 12rpx; }
+
+.kv-card { padding: 8rpx 28rpx; }
+.result-kv { display: flex; justify-content: space-between; font-size: 24rpx; padding: 22rpx 0; border-top: 1rpx solid var(--hair); color: var(--sub); }
+.result-kv:first-child { border-top: none; }
+.result-kv b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+
+.ops { margin-top: 48rpx; display: flex; flex-direction: column; gap: 20rpx; }

@@ -1,23 +1,111 @@
-<view wx:if="{{role}}" class="page-shell">
-  <view class="topbar" style="{{topbarStyle}}"><view class="wordmark">Bite<text>Smart</text></view></view>
-  <scroll-view class="content" scroll-y="true" enhanced="true" show-scrollbar="false">
-    <block wx:if="{{role.type === 10 && currentTab === 0}}">
-      <view class="date-row"><view><text class="eyebrow">{{role.greeting}}</text><text class="date-title">2026-07-16 <text class="today">今天</text></text></view><view class="profile-avatar">{{initials}}</view></view>
-      <view class="summary-card"><view class="summary-top"><text>今日健康概览</text><text class="summary-date">目标进度 〉</text></view><view class="summary-metrics"><view><text class="metric-value">0</text><text>运动 kcal</text></view><view><text class="metric-value">0</text><text>步数</text></view><view><text class="metric-value">1500</text><text>饮水 ml</text></view></view><view class="progress-track"><view class="progress-value"></view></view><text class="progress-copy">今天还可以更靠近目标一点</text></view>
-      <view class="member-banner"><view><text class="banner-kicker">BiteSmart MEMBER</text><text class="banner-title">免费体验会员</text><text class="banner-sub">解锁 AI 热量计算和个性化食谱</text></view><text class="banner-arrow">〉</text></view>
-      <view class="section-head"><text>今日记录</text><text class="section-link">查看全部 〉</text></view>
-      <view class="record-grid"><view class="record-card exercise"><text class="record-icon">⌁</text><text class="record-title">运动组合</text><text class="record-sub">还没有记录</text><text class="record-action" data-label="开始运动" bindtap="action">开始记录 〉</text></view><view class="record-card water"><text class="record-icon">滴</text><text class="record-title">饮水</text><text class="record-value">0 <text>ml</text></text><text class="record-action" data-label="记录饮水" bindtap="action">+ 记录一杯</text></view></view>
-      <view class="section-head"><text>我的身体</text><text class="section-link">完善资料 〉</text></view>
-      <view class="body-card"><view><text class="body-label">体重</text><text class="body-value">60.0 <text>kg</text></text></view><view class="body-chart" wx:if="{{hasWeightHistory}}"><view class="chart-line"></view><text>近 7 天趋势</text></view><view class="body-empty" wx:else data-label="记录体重" bindtap="action"><text>暂无体重记录</text><text>去记录 〉</text></view><view><text class="body-label">目标体重</text><text class="body-value">59.0 <text>kg</text></text></view></view>
-    </block>
-    <block wx:elif="{{role.type === 10 && currentTab === 1}}"><view class="page-title"><text class="eyebrow">YOUR HEALTH COMPANION</text><text class="title">AI 助手</text></view><view class="chat-card"><view class="chat-avatar">小</view><view><text class="chat-name">小卡</text><text class="chat-note">你的专属健康搭子</text></view><text class="online-dot">在线</text></view><view class="chat-bubble assistant">你好，今天想从饮食、运动还是作息开始？</view><view class="suggestion-row"><button data-label="帮我定一份午餐" bindtap="action">定一份午餐</button><button data-label="看看今日运动" bindtap="action">今日运动</button></view><button class="chat-input" data-label="打开 AI 对话" bindtap="action">输入你想问的问题 <text>⌕</text></button></block>
-    <block wx:elif="{{role.type === 10 && currentTab === 2}}"><view class="page-title"><text class="eyebrow">EAT WITH INTENTION</text><text class="title">饮食计划</text></view><view class="meal-tabs"><text class="{{mealTab === 0 ? 'active' : ''}}" data-index="0" bindtap="selectMeal">早餐</text><text class="{{mealTab === 1 ? 'active' : ''}}" data-index="1" bindtap="selectMeal">午餐</text><text class="{{mealTab === 2 ? 'active' : ''}}" data-index="2" bindtap="selectMeal">晚餐</text><text class="{{mealTab === 3 ? 'active' : ''}}" data-index="3" bindtap="selectMeal">加餐</text></view><view class="recipe-hero"><image src="{{images.bowl}}" mode="aspectFill"/><view><text>{{mealTab === 0 ? '轻盈早餐' : mealTab === 1 ? '轻松午餐' : mealTab === 2 ? '安心晚餐' : '健康加餐'}}</text><text>7 天食谱计划</text></view></view><view class="recipe-meta"><text>今日目标 <text>508 kcal</text></text><text>高蛋白 · 低脂 · 现做</text></view><view class="ingredient-row"><image src="{{images.salad}}" mode="aspectFill"/><view><text>青柠香煎鸡胸</text><text>蛋白质 32g · 脂肪 12g</text></view><text class="dish-price">¥29</text></view><button class="primary-button recipe-plan-action" data-label="设置我的食谱计划" bindtap="action">设置我的食谱计划</button></block>
-    <block wx:elif="{{role.type === 10 && currentTab === 3}}"><view class="page-title"><text class="eyebrow">LIGHT &amp; STEADY</text><text class="title">轻断食</text></view><view class="fasting-card"><text class="fasting-label">当前计划</text><text class="fasting-value">16 : 8</text><text class="fasting-copy">还有 03:24:18 进入进食时间</text><view class="fasting-ring"><text>68%</text></view></view><view class="fasting-tip"><text>今天的建议</text><text>保持充足饮水，下一餐选择高蛋白食物。</text></view><button class="primary-button fasting-plan-action" data-label="调整轻断食计划" bindtap="action">调整计划</button></block>
-    <block wx:elif="{{role.type === 10 && currentTab === 4}}"><view class="profile-hero"><view class="profile-avatar large">{{initials}}</view><text class="hello">{{user.nickname || user.username}}</text><text class="profile-sub">把健康吃进日常</text></view><view class="profile-menu"><view data-label="健康档案" bindtap="action"><text>健康档案</text><text>记录身体的变化 〉</text></view><view data-label="会员权益" bindtap="action"><text>会员权益</text><text>本月还剩 2 张券 〉</text></view><view bindtap="logout"><text>退出当前账号</text><text>〉</text></view></view></block>
+<view class="pg">
+  <view class="status-pad" style="height: {{padTop}}px;"></view>
 
-    <block wx:elif="{{role.type === 20}}"><view class="page-title"><text class="eyebrow">{{role.greeting}}</text><text class="title">{{currentTab === 0 ? '今天，门店状态不错' : role.tabs[currentTab]}}</text></view><view wx:if="{{currentTab === 0}}" class="stat-grid"><block wx:for="{{merchantStats}}" wx:key="label"><view class="stat-card {{item.tone}}"><text>{{item.label}}</text><text class="stat-value">{{item.value}}</text><text class="stat-hint">较昨日 +8.4% 〉</text></view></block></view><view wx:if="{{currentTab === 0}}" class="work-card"><view class="card-head"><text>订单流转</text><text class="section-link">实时更新</text></view><view class="process"><view><text class="process-num hot-text">5</text><text>待接单</text></view><view><text class="process-num">4</text><text>制作中</text></view><view><text class="process-num">3</text><text>待配送</text></view></view></view><view wx:if="{{currentTab !== 0}}" class="empty-panel"><text class="empty-title">{{role.tabs[currentTab]}}正在准备中</text><text>这个角色的核心接口已经预留，下一步可直接接入真实数据。</text></view><view class="quick-actions"><button data-label="查看订单" bindtap="action">订单处理 <text>→</text></button><button data-label="管理菜品" bindtap="action">菜品管理 <text>→</text></button></view></block>
-    <block wx:elif="{{role.type === 30}}"><view class="page-title"><text class="eyebrow">{{role.greeting}}</text><text class="title">{{currentTab === 0 ? '今天有 2 个任务' : role.tabs[currentTab]}}</text></view><view wx:if="{{currentTab === 0}}" class="delivery-summary"><text>在线接单中</text><switch checked color="#3C7A8B"/><text class="summary-note">今日已完成 6 单</text></view><view wx:if="{{currentTab === 0 || currentTab === 1}}" class="task-list"><block wx:for="{{deliveryTasks}}" wx:key="id"><view class="task-card"><view class="task-head"><text class="task-state">{{item.state}}</text><text>{{item.id}}</text></view><text class="task-shop">{{item.shop}}</text><view class="task-route"><text class="pin"></text><view><text>{{item.address}}</text><text class="task-meta">{{item.distance}} · {{item.time}}</text></view></view><button class="primary-small" data-label="{{item.state === '待取餐' ? '接单并导航' : '更新配送状态'}}" bindtap="action">{{item.state === '待取餐' ? '接单并导航' : '更新状态'}}</button></view></block></view><view wx:if="{{currentTab === 2}}" class="empty-panel"><text class="empty-title">本周收益</text><text class="earning">¥486.00</text><text>完成 24 单 · 平均每单 ¥20.25</text></view></block>
+  <!-- 日期行 -->
+  <view class="h-date">{{dateLine}}</view>
+
+  <!-- 问候行 + 铃铛 -->
+  <view class="h-top">
+    <view class="h-hello">{{greeting}}，{{nickname}}<text class="sub">继续加油</text></view>
+    <view class="icon-btn" bindtap="goNotice" hover-class="tap">
+      <view class="ic-bell"><view class="dome"></view><view class="bar"></view><view class="clap"></view></view>
+      <view class="unread"></view>
+    </view>
+  </view>
+
+  <!-- 今日热量卡 -->
+  <view class="health card" bindtap="goHealth" hover-class="tap">
+    <view class="health-head">
+      <text class="lab">今日热量 TODAY</text>
+      <text class="rest">还可摄入 {{rest}} kcal</text>
+    </view>
+    <view class="health-mid">
+      <view class="ring-css" style="background: conic-gradient(#1E9E62 {{ringDeg}}deg, #EFF1EC 0deg);">
+        <view class="ring-css-inner">
+          <text class="num">{{eaten}}</text>
+          <text class="unit">/ {{target}} kcal</text>
+        </view>
+      </view>
+      <view class="macros">
+        <view class="macro" wx:for="{{macros}}" wx:key="key">
+          <view class="m-top">
+            <text class="m-lab">{{item.label}} {{item.en}}</text>
+            <text class="m-val">{{item.cur}} / {{item.goal}}g</text>
+          </view>
+          <view class="track"><view class="fill" style="width: {{item.pct}}%; background: {{item.color}};"></view></view>
+        </view>
+      </view>
+    </view>
+    <view class="health-foot">
+      <text>早餐 <text class="b">{{breakfast}}</text></text>
+      <text>午餐 <text class="b">{{lunch}}</text></text>
+      <text>加餐 <text class="b">{{snack}}</text></text>
+      <text class="burn">运动消耗 <text class="b">-{{exerciseBurn}}</text></text>
+    </view>
+  </view>
+
+  <!-- AI 今日餐单 -->
+  <view class="card plan">
+    <view class="plan-head" bindtap="goAi" hover-class="tap">
+      <view class="spark-box"><view class="ic-spark"></view></view>
+      <view class="plan-t">
+        <view class="t">AI 今日餐单</view>
+        <view class="s">{{planSub}}</view>
+      </view>
+      <view class="go" catchtap="goAssessment">定制</view>
+    </view>
+    <view class="meal {{item.hot ? 'hot' : ''}}" wx:for="{{meals}}" wx:key="when" bindtap="goPlan" hover-class="tap">
+      <view class="when">
+        <text class="w">{{item.when}}</text>
+        <text class="e">{{item.en}}</text>
+      </view>
+      <view class="what">
+        <view class="n">{{item.name}}</view>
+        <view class="s">{{item.status}}</view>
+      </view>
+      <text class="kcal">{{item.kcal}} kcal</text>
+    </view>
+  </view>
+
+  <!-- 为你推荐 -->
+  <view class="sec">
+    <text class="en">RECOMMENDED</text>
+    <text class="cn">为你推荐</text>
+    <view class="line"></view>
+    <text class="more" bindtap="goMall">全部</text>
+  </view>
+  <scroll-view class="rec-row" scroll-x enhanced show-scrollbar="{{false}}">
+    <view class="rec-card" wx:for="{{recs}}" wx:key="id">
+      <view class="ph" bindtap="openDish" data-id="{{item.id}}" hover-class="tap">
+        <image src="{{item.image}}" mode="aspectFill" lazy-load />
+        <view class="badge"><view class="flame"></view>{{item.kcal}} kcal</view>
+      </view>
+      <view class="nm" bindtap="openDish" data-id="{{item.id}}">{{item.name}}</view>
+      <view class="sub">{{item.tags}}</view>
+      <view class="row">
+        <view class="price"><text class="cur">¥</text>{{item.price}}</view>
+        <view class="addbtn" catchtap="addDish" data-id="{{item.id}}"></view>
+      </view>
+    </view>
   </scroll-view>
-  <view class="bottom-nav"><block wx:for="{{role.tabs}}" wx:key="*this"><view class="nav-item {{currentTab === index ? 'active' : ''}}" data-index="{{index}}" bindtap="selectTab"><text class="nav-mark">{{index === 0 ? '●' : index === 1 ? '◆' : index === 2 ? '▣' : index === 3 ? '◒' : '○'}}</text><text>{{item}}</text></view></block></view>
-  <button wx:if="{{role.type === 10 && currentTab !== 1 && currentTab !== 2 && currentTab !== 3}}" class="floating-add" data-label="新建记录" bindtap="action">+</button>
+
+  <!-- 健康套餐 -->
+  <view class="sec">
+    <text class="en">WEEKLY PLAN</text>
+    <text class="cn">健康套餐</text>
+    <view class="line"></view>
+    <text class="more" bindtap="goMall">全部</text>
+  </view>
+  <view class="combo-hero" bindtap="openCombo" hover-class="tap">
+    <image src="{{combo.image}}" mode="aspectFill" lazy-load />
+    <view class="mask"></view>
+    <view class="txt">
+      <text class="en">{{combo.en}}</text>
+      <text class="t">{{combo.name}}</text>
+      <text class="d">{{combo.desc}}</text>
+      <text class="lk">查看套餐 ¥{{combo.price}}</text>
+    </view>
+  </view>
+
+  <view style="height: 32rpx;"></view>
 </view>

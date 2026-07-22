@@ -1,2 +1,64 @@
-@import "../../styles/user-page.scss";
-.type-row { display:flex; gap:10rpx; margin:22rpx 0; }.type-row text { padding:12rpx 14rpx; color:#9A99A8; background:#F7F7FB; border-radius:12rpx; font-size:18rpx; }.type-row text.active { color:#7773E8; background:#EEEDFF; }textarea { width:100%; min-height:180rpx; padding:20rpx; box-sizing:border-box; background:#F7F7FB; border-radius:14rpx; font-size:21rpx; }.section-note { color:#9A99A8; font-size:19rpx; text-align:center; margin-top:24rpx; }
+.pg { display: flex; flex-direction: column; height: 100vh; background: var(--bg); }
+
+/* ---------- 自定义导航 ---------- */
+.nav { display: flex; align-items: center; padding: 0 32rpx; flex: none; }
+.nav-back {
+  width: 68rpx;
+  height: 68rpx;
+  border: 1rpx solid var(--hair);
+  border-radius: 20rpx;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.nav-back .chev { font-size: 40rpx; color: var(--ink); line-height: 1; margin-top: -4rpx; }
+.nav-t { font-size: 32rpx; font-weight: 800; margin-left: 24rpx; }
+.nav-ph { width: 68rpx; margin-left: auto; }
+
+.body { flex: 1; padding: 0 32rpx; box-sizing: border-box; }
+
+/* ---------- 表单卡 ---------- */
+.form-card { padding: 32rpx 28rpx 12rpx; margin-top: 20rpx; }
+.form-row { margin-bottom: 28rpx; }
+.f-lab { font-size: 22rpx; color: var(--sub); margin-bottom: 14rpx; font-weight: 600; }
+.f-lab .req { color: var(--orange); }
+
+.chips { display: flex; flex-wrap: wrap; gap: 16rpx; }
+.chip {
+  border: 1rpx solid var(--hair);
+  background: #fff;
+  color: var(--sub);
+  font-size: 22rpx;
+  border-radius: 12rpx;
+  padding: 14rpx 24rpx;
+}
+.chip.on { border-color: var(--green); background: var(--green-soft); color: var(--green-deep); font-weight: 700; }
+
+.ta {
+  width: 100%;
+  min-height: 200rpx;
+  border: 1rpx solid var(--hair);
+  border-radius: 12rpx;
+  padding: 20rpx 24rpx;
+  font-size: 24rpx;
+  background: #FBFCFA;
+  color: var(--ink);
+  box-sizing: border-box;
+}
+.ph-txt { color: var(--faint); }
+.count { text-align: right; font-size: 20rpx; color: var(--faint); margin-top: 12rpx; }
+
+.tip { font-size: 20rpx; color: var(--faint); text-align: center; margin-top: 24rpx; }
+
+/* ---------- 提交 ---------- */
+.bbar {
+  flex: none;
+  background: #fff;
+  border-top: 1rpx solid var(--hair);
+  padding: 20rpx 40rpx calc(20rpx + env(safe-area-inset-bottom));
+}
+.bbar-btn { width: 100%; }
+.bbar-btn.disabled { background: #E4E8E3; color: var(--faint); }
+
+.foot-space { height: 40rpx; }

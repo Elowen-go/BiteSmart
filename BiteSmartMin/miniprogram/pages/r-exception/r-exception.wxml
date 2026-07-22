@@ -1,0 +1,26 @@
+<view class="pg">
+  <!-- 自定义导航 -->
+  <view class="nav" style="margin-top: {{menuTop}}px; height: {{menuH}}px;">
+    <view class="nav-back" bindtap="goBack" hover-class="tap"><text class="chev">‹</text></view>
+    <view class="nav-t">异常上报</view>
+  </view>
+
+  <scroll-view class="body" scroll-y enhanced show-scrollbar="{{false}}">
+    <view class="card form-card">
+      <view class="form-row">
+        <view class="f-lab">异常类型 <text class="req">*</text></view>
+        <picker mode="selector" range="{{types}}" value="{{typeIndex}}" bindchange="pickType">
+          <view class="f-picker">{{types[typeIndex]}}<text class="chev-down">›</text></view>
+        </picker>
+      </view>
+      <view class="form-row">
+        <view class="f-lab">情况说明 <text class="req">*</text></view>
+        <textarea class="ta" rows="4" placeholder="请描述现场情况，平台客服将介入处理" value="{{text}}" bindinput="onText" />
+        <view class="f-err" wx:if="{{err}}">请填写情况说明</view>
+      </view>
+    </view>
+
+    <view class="btn-ink green submit" bindtap="submit" hover-class="tap">{{saving ? '提交中…' : '提交异常'}}</view>
+    <view style="height: 32rpx;"></view>
+  </scroll-view>
+</view>

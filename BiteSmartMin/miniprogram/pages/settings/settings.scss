@@ -1,2 +1,37 @@
-@import "../../styles/user-page.scss";
-.outline { color:#B9483D; background:#FFF1EE; }
+.pg { display: flex; flex-direction: column; height: 100vh; background: var(--bg); }
+
+/* ---------- 自定义导航 ---------- */
+.nav { display: flex; align-items: center; padding: 0 32rpx; flex: none; }
+.nav-back {
+  width: 68rpx;
+  height: 68rpx;
+  border: 1rpx solid var(--hair);
+  border-radius: 20rpx;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.nav-back .chev { font-size: 40rpx; color: var(--ink); line-height: 1; margin-top: -4rpx; }
+.nav-t { font-size: 32rpx; font-weight: 800; margin-left: 24rpx; }
+.nav-ph { width: 68rpx; margin-left: auto; }
+
+.body { flex: 1; padding: 0 32rpx; box-sizing: border-box; }
+
+/* ---------- 设置行 ---------- */
+.set-card { padding: 0 28rpx; margin-top: 20rpx; }
+.set-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 32rpx 8rpx;
+  border-top: 1rpx solid var(--hair);
+  font-size: 26rpx;
+  font-weight: 600;
+}
+.set-row:first-child { border-top: none; }
+.set-row .v { color: var(--sub); font-size: 22rpx; font-weight: 400; }
+.logout-card { margin-top: 28rpx; }
+.set-row.logout { justify-content: center; color: var(--red); }
+
+.foot-space { height: 40rpx; }

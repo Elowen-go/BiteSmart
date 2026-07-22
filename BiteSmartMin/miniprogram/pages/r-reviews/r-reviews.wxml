@@ -1,0 +1,32 @@
+<view class="pg">
+  <!-- 自定义导航 -->
+  <view class="nav" style="margin-top: {{menuTop}}px; height: {{menuH}}px;">
+    <view class="nav-back" bindtap="goBack" hover-class="tap"><text class="chev">‹</text></view>
+    <view class="nav-t">服务评价</view>
+  </view>
+
+  <scroll-view class="body" scroll-y enhanced show-scrollbar="{{false}}">
+    <!-- 评分总览 -->
+    <view class="score-box">
+      <view class="score-num">{{rating}}</view>
+      <view class="score-lb">配送评分</view>
+    </view>
+
+    <block wx:if="{{list.length}}">
+      <view class="card r-card" wx:for="{{list}}" wx:key="id">
+        <view class="r-head">
+          <text class="b">{{item.name}}</text>
+          <text class="t">{{item.time}}</text>
+        </view>
+        <view class="r-rating">{{item.ratingText}}</view>
+        <view class="r-content">{{item.content}}</view>
+      </view>
+    </block>
+    <view wx:else class="wip">
+      <view class="star-outline"></view>
+      <view class="t">暂无配送评价</view>
+      <view class="s">完成配送并获用户评价后展示在这里</view>
+    </view>
+    <view style="height: 32rpx;"></view>
+  </scroll-view>
+</view>

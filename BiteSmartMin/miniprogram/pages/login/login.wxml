@@ -1,8 +1,41 @@
-<view class="login-page">
-  <view class="login-image"><image src="https://images.unsplash.com/photo-1498837167922-ddd27525d352?w=1200&q=80" mode="aspectFill"/><view class="image-label">EAT WITH INTENTION</view></view>
-  <view class="login-content"><view class="wordmark">Bite<text>Smart</text></view><text class="title">好好吃饭，<br/>也好好照顾自己。</text><text class="subtitle">按角色进入你的专属空间</text>
-    <view class="role-list"><button class="role-button {{roleType === 10 ? 'active' : ''}}" data-role="10" bindtap="selectRole"><text>用户</text><text>选餐 · 订单 · 健康</text></button><button class="role-button {{roleType === 20 ? 'active' : ''}}" data-role="20" bindtap="selectRole"><text>商家</text><text>门店 · 出餐 · 经营</text></button><button class="role-button {{roleType === 30 ? 'active' : ''}}" data-role="30" bindtap="selectRole"><text>配送</text><text>接单 · 路线 · 履约</text></button></view>
-    <block wx:if="{{mode === 'account'}}"><input class="login-input" placeholder="用户名或手机号" value="{{username}}" bindinput="onUsernameInput"/><input class="login-input" password placeholder="登录密码" value="{{password}}" bindinput="onPasswordInput"/></block>
-    <button class="login-button" bindtap="login" loading="{{loading}}" disabled="{{loading}}">{{mode === 'wechat' ? '微信授权登录' : '账号密码登录'}} <text>→</text></button><button class="switch-button" bindtap="switchMode">{{mode === 'wechat' ? '使用账号密码登录' : '返回微信授权登录'}}</button><text wx:if="{{errorMessage}}" class="error-message">{{errorMessage}}</text>
+<view class="login-wrap">
+  <view class="deco deco-a"></view>
+  <view class="deco deco-b"></view>
+
+  <!-- 品牌区 -->
+  <view class="login-brand" style="margin-top: {{padTop + 24}}px;">
+    <view class="en">BITESMART · EAT SMART</view>
+    <view class="h1">吃得聪明<br />从 <text class="em">BiteSmart</text> 开始</view>
+    <view class="intro">AI 营养师为你规划每一餐，健康膳食 40 分钟送达。</view>
+  </view>
+
+  <!-- 大图 -->
+  <view class="login-img">
+    <image src="https://images.unsplash.com/photo-1493770348161-369560ae357d?w=800&q=80" mode="aspectFill" />
+    <view class="tag">今日推荐 · 彩虹藜麦能量碗</view>
+  </view>
+
+  <!-- 操作区 -->
+  <view class="login-actions">
+    <block wx:if="{{mode === 'account'}}">
+      <input class="f-input" placeholder="用户名或手机号" placeholder-class="ph-txt" value="{{username}}" bindinput="onUsernameInput" />
+      <input class="f-input" password placeholder="密码" placeholder-class="ph-txt" value="{{password}}" bindinput="onPasswordInput" />
+    </block>
+
+    <view class="wx-btn {{loading ? 'disabled' : ''}}" bindtap="login" hover-class="tap">
+      {{loading ? '登录中…' : (mode === 'wechat' ? '微信一键登录' : '账号密码登录')}}
+    </view>
+
+    <view class="login-other">
+      <text>选择登录身份</text>
+      <view class="roles">
+        <view class="role {{roleType === 10 ? 'on' : ''}}" data-role="10" bindtap="selectRole" hover-class="tap">用户端</view>
+        <view class="role {{roleType === 20 ? 'on' : ''}}" data-role="20" bindtap="selectRole" hover-class="tap">商家端</view>
+        <view class="role {{roleType === 30 ? 'on' : ''}}" data-role="30" bindtap="selectRole" hover-class="tap">骑手端</view>
+      </view>
+    </view>
+
+    <view class="switch-mode" bindtap="switchMode">{{mode === 'wechat' ? '账号密码登录 ›' : '返回微信登录 ›'}}</view>
+    <view wx:if="{{errorMessage}}" class="err">{{errorMessage}}</view>
   </view>
 </view>

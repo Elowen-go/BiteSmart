@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { Upload, Delete } from '@element-plus/icons-vue'
 import { getProfile, updateProfile, uploadFile } from '../../../api/merchant/profile'
 import { useUserStore } from '../../../stores/user'
@@ -8,12 +8,22 @@ import { setUserInfo } from '../../../utils/auth'
 import { resolveFileUrl } from '../../../utils/fileUrl'
 
 const loading = ref(false)
+const formRef = ref()
 const form = ref({
   nickname: '',
   avatar: '',
   phone: '',
   email: ''
 })
+
+const formRules = {
+  nickname: [
+    { required: true, message: '请输入昵称', trigger: 'blur' },
+    { max: 20, message: '昵称不超过 20 个字符', trigger: 'blur' }
+  ],
+  phone: [{ pattern: /^1[3-9]\d{9}$/, message: '手机号格式不正确', trigger: 'blur' }],
+  email: [{ type: 'email' as const, message: '邮箱格式不正确', trigger: 'blur' }]
+}
 
 const imageUrl = ref('')
 const userStore = useUserStore()
@@ -62,12 +72,35 @@ const handleAvatarUpload = async (file: any) => {
   return false
 }
 
+// 与“上传即生效”对齐：移除也即时生效
 const handleRemoveAvatar = () => {
-  form.value.avatar = ''
-  imageUrl.value = ''
+  ElMessageBox.confirm('确定要移除当前头像吗？移除后立即生效。', '移除头像', {
+    confirmButtonText: '移除',
+    cancelButtonText: '取消',
+    type: 'warning'
+  }).then(async () => {
+    try {
+      const res = await updateProfile({ avatar: null } as any)
+      if (res.code === 200) {
+        form.value.avatar = ''
+        imageUrl.value = ''
+        if (userStore.userInfo) {
+          userStore.userInfo.avatar = ''
+          setUserInfo(userStore.userInfo)
+        }
+        ElMessage.success('头像已移除')
+      } else {
+        ElMessage.error(res.message || '移除失败')
+      }
+    } catch (e) {
+      ElMessage.error('移除失败')
+    }
+  }).catch(() => {})
 }
 
 const handleSave = async () => {
+  const valid = await formRef.value?.validate().catch(() => false)
+  if (!valid) return
   loading.value = true
   try {
     const submitData = { ...form.value } as Record<string, any>
@@ -102,16 +135,35 @@ onMounted(() => {
 
 <template>
   <div class="page-container">
-    <div class="card-panel">
-      <div class="card-header">
-        <h3>个人信息</h3>
-        <button class="btn btn-primary" @click="handleSave">保存修改</button>
+    <div class="profile-page">
+      <div class="page-head">
+        <div>
+          <div class="en">PROFILE</div>
+          <h2>我的</h2>
+          <p>维护商家账号的个人资料与联系方式</p>
+        </div>
+        <el-button type="primary" :loading="loading" @click="handleSave">保存修改</el-button>
       </div>
-      <div style="padding-top: 20px;">
-        <el-form :model="form" label-width="120px" v-loading="loading">
+
+      <el-form ref="formRef" :model="form" :rules="formRules" label-width="100px" v-loading="loading" class="profile-form">
+        <!-- 个人信息 -->
+        <div class="card-panel form-card">
+          <div class="section-head">
+            <div>
+              <div class="en">BASIC</div>
+              <h3>个人信息</h3>
+            </div>
+          </div>
           <el-form-item label="头像">
             <div class="logo-preview">
-              <img v-if="imageUrl" :src="imageUrl" alt="头像" class="logo-image" />
+              <el-image
+                v-if="imageUrl"
+                :src="imageUrl"
+                fit="cover"
+                class="logo-image"
+                :preview-src-list="[imageUrl]"
+                preview-teleported
+              />
               <div v-else class="avatar-placeholder">
                 {{ (form.nickname || '用')[0] }}
               </div>
@@ -129,18 +181,30 @@ onMounted(() => {
                 </div>
               </el-upload>
             </div>
+            <div class="avatar-tip">点击头像上传新图片，即时生效；支持 JPG / PNG / GIF</div>
           </el-form-item>
-          <el-form-item label="昵称">
-            <el-input v-model="form.nickname" placeholder="请输入昵称" />
+          <el-form-item label="昵称" prop="nickname">
+            <el-input v-model="form.nickname" placeholder="请输入昵称" maxlength="20" show-word-limit />
           </el-form-item>
-          <el-form-item label="手机号">
-            <el-input v-model="form.phone" placeholder="请输入手机号" />
+        </div>
+
+        <!-- 账号安全 -->
+        <div class="card-panel form-card">
+          <div class="section-head">
+            <div>
+              <div class="en">ACCOUNT</div>
+              <h3>账号安全</h3>
+            </div>
+            <span class="section-tip">手机号与邮箱用于登录验证和找回账号</span>
+          </div>
+          <el-form-item label="手机号" prop="phone">
+            <el-input v-model="form.phone" placeholder="请输入手机号" maxlength="11" />
           </el-form-item>
-          <el-form-item label="邮箱">
+          <el-form-item label="邮箱" prop="email">
             <el-input v-model="form.email" placeholder="请输入邮箱" />
           </el-form-item>
-        </el-form>
-      </div>
+        </div>
+      </el-form>
     </div>
   </div>
 </template>
@@ -155,6 +219,45 @@ onMounted(() => {
   to { opacity: 1; transform: translateY(0); }
 }
 
+.profile-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.page-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.page-head h2 {
+  margin: 0;
+  color: var(--bs-text-title);
+  font-size: 20px;
+  font-weight: 650;
+}
+
+.page-head .en {
+  color: var(--faint);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
+}
+
+.page-head p {
+  margin-top: 4px;
+  color: var(--bs-text-muted);
+  font-size: 13px;
+}
+
+.profile-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
 .card-panel {
   background: var(--bs-card-bg);
   border-radius: var(--bs-radius-md);
@@ -162,39 +265,33 @@ onMounted(() => {
   padding: var(--bs-spacing-lg);
 }
 
-.card-header {
+.section-head {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: var(--bs-spacing-lg);
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--bs-border-light);
 }
 
-.card-header h3 {
+.section-head h3 {
+  margin: 0;
   font-size: var(--bs-font-size-lg);
   font-weight: 600;
   color: var(--bs-text-title);
 }
 
-.btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: var(--bs-spacing-sm) 20px;
-  border-radius: var(--bs-radius-md);
-  font-size: var(--bs-font-size-base);
-  font-weight: 500;
-  border: 1px solid transparent;
-  cursor: pointer;
-  transition: 0.15s;
+.section-head .en {
+  color: var(--faint);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
 }
 
-.btn-primary {
-  background: var(--bs-primary);
-  color: #FFFFFF;
-}
-
-.btn-primary:hover {
-  background: var(--bs-primary-hover);
+.section-tip {
+  color: var(--bs-text-muted);
+  font-size: 12px;
 }
 
 .logo-preview {
@@ -206,23 +303,29 @@ onMounted(() => {
 .logo-image {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  display: block;
   border-radius: 50%;
-  border: 2px solid var(--bs-border-color);
+  border: 1px solid var(--bs-border-light);
 }
 
 .avatar-placeholder {
   width: 100%;
   height: 100%;
   border-radius: 50%;
-  background: #1B3A2F;
-  color: #FFFFFF;
+  background: var(--green-soft);
+  color: var(--green-deep);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 48px;
-  font-weight: 600;
-  border: 2px solid var(--bs-border-color);
+  font-size: 40px;
+  font-weight: 700;
+  border: 1px solid var(--bs-border-light);
+}
+
+.avatar-tip {
+  margin-top: 8px;
+  color: var(--bs-text-muted);
+  font-size: 12px;
 }
 
 .remove-btn {
@@ -231,7 +334,7 @@ onMounted(() => {
   right: -8px;
   width: 24px;
   height: 24px;
-  background: #D9534F;
+  background: var(--bs-status-danger);
   color: #FFFFFF;
   border: none;
   border-radius: 50%;
@@ -244,7 +347,7 @@ onMounted(() => {
 }
 
 .remove-btn:hover {
-  background: #c9302c;
+  background: var(--danger-brand);
 }
 
 .avatar-uploader {
@@ -275,5 +378,12 @@ onMounted(() => {
 .avatar-uploader:hover .upload-overlay {
   background: rgba(0, 0, 0, 0.3);
   color: #FFFFFF;
+}
+
+@media (max-width: 720px) {
+  .page-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
 }
 </style>

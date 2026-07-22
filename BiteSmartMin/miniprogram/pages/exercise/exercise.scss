@@ -1,0 +1,207 @@
+.pg { display: flex; flex-direction: column; height: 100vh; }
+
+.status-pad { width: 100%; flex: none; }
+.tap { opacity: 0.72; }
+
+/* ---------- 自定义导航 ---------- */
+.nav { display: flex; align-items: center; padding: 0 32rpx; flex: none; }
+.nav-back {
+  width: 68rpx;
+  height: 68rpx;
+  border: 1rpx solid var(--hair);
+  border-radius: 20rpx;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.nav-back .chev { font-size: 40rpx; color: var(--ink); line-height: 1; margin-top: -4rpx; }
+.nav-t { font-size: 32rpx; font-weight: 800; margin-left: 24rpx; }
+.nav-w {
+  margin-left: auto;
+  font-size: 22rpx;
+  color: var(--sub);
+  border: 1rpx solid var(--hair);
+  border-radius: 12rpx;
+  padding: 8rpx 16rpx;
+  background: #fff;
+}
+
+/* ---------- 搜索框 ---------- */
+.search-wrap { padding: 16rpx 32rpx 24rpx; flex: none; }
+.searchbox {
+  display: flex;
+  align-items: center;
+  border: 1rpx solid var(--hair);
+  background: #fff;
+  border-radius: 20rpx;
+  padding: 0 28rpx;
+  height: 84rpx;
+}
+.search-ph { font-size: 26rpx; color: var(--faint); margin-left: 16rpx; }
+
+/* ---------- 分类 + 列表 ---------- */
+.exlib { flex: 1; display: flex; overflow: hidden; border-top: 1rpx solid var(--hair); }
+.exlib-side { width: 152rpx; flex: none; background: #F2F4F0; }
+.exlib-side .c {
+  padding: 30rpx 0;
+  text-align: center;
+  font-size: 24rpx;
+  color: var(--sub);
+  border-left: 4rpx solid transparent;
+}
+.exlib-side .c.on { background: var(--bg); color: var(--ink); font-weight: 800; border-left-color: var(--green); }
+.exlib-main { flex: 1; padding: 24rpx 28rpx 0; box-sizing: border-box; }
+
+.ex-card {
+  display: flex;
+  align-items: center;
+  background: #fff;
+  border: 1rpx solid var(--hair);
+  border-radius: 20rpx;
+  padding: 20rpx;
+  margin-bottom: 20rpx;
+  box-shadow: 0 4rpx 20rpx rgba(23, 37, 31, 0.05);
+}
+.ex-card .ph { width: 112rpx; height: 112rpx; border-radius: 12rpx; flex: none; background: #DCE5DD; }
+.ex-main { flex: 1; min-width: 0; margin-left: 24rpx; }
+.ex-card .nm { font-size: 26rpx; font-weight: 700; }
+.ex-card .std { font-size: 20rpx; color: var(--orange); font-weight: 700; margin-top: 8rpx; }
+.add {
+  width: 52rpx;
+  height: 52rpx;
+  border-radius: 12rpx;
+  background: var(--ink);
+  position: relative;
+  flex: none;
+  margin-left: 16rpx;
+}
+.add::before,
+.add::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  background: #fff;
+  border-radius: 2rpx;
+}
+.add::before { width: 22rpx; height: 4rpx; margin: -2rpx 0 0 -11rpx; }
+.add::after { width: 4rpx; height: 22rpx; margin: -11rpx 0 0 -2rpx; }
+
+.empty-s { text-align: center; font-size: 22rpx; color: var(--faint); padding: 60rpx 0; }
+
+/* ---------- 底部按钮 ---------- */
+.exlib-foot {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  padding: 24rpx 40rpx 48rpx;
+  background: linear-gradient(transparent, #fff 30%);
+}
+.exlib-foot .btn-ink { height: 96rpx; }
+
+/* ---------- 底部弹层 ---------- */
+.mask {
+  position: fixed;
+  left: 0; right: 0; top: 0; bottom: 0;
+  background: rgba(15, 25, 20, 0.45);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s;
+  z-index: 50;
+}
+.mask.show { opacity: 1; pointer-events: auto; }
+.sheet {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  background: #fff;
+  border-radius: 28rpx 28rpx 0 0;
+  transform: translateY(100%);
+  transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.3, 1);
+  z-index: 51;
+}
+.sheet.show { transform: translateY(0); }
+.grab { width: 72rpx; height: 8rpx; border-radius: 4rpx; background: #E0E4DE; margin: 20rpx auto 8rpx; }
+.s-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20rpx 40rpx 28rpx;
+  border-bottom: 1rpx solid var(--hair);
+}
+.s-title { font-size: 30rpx; font-weight: 800; }
+.s-x { color: var(--faint); font-size: 40rpx; line-height: 1; padding: 8rpx; }
+.s-body { padding: 32rpx 40rpx; }
+.s-foot { padding: 24rpx 40rpx 48rpx; border-top: 1rpx solid var(--hair); }
+.s-save { height: 92rpx; }
+
+/* ---------- 参数弹层内容 ---------- */
+.ex-info { display: flex; align-items: center; margin-bottom: 16rpx; }
+.ex-info .ph { width: 112rpx; height: 112rpx; border-radius: 12rpx; flex: none; background: #DCE5DD; }
+.ex-info-main { flex: 1; min-width: 0; margin-left: 24rpx; }
+.ex-info .nm { font-size: 30rpx; font-weight: 800; }
+.ex-info .std { font-size: 22rpx; color: var(--orange); font-weight: 700; margin-top: 8rpx; }
+.tag-row { display: flex; flex-wrap: wrap; margin-bottom: 8rpx; }
+.g-tag {
+  font-size: 18rpx;
+  color: var(--sub);
+  border: 1rpx solid var(--hair);
+  border-radius: 8rpx;
+  padding: 4rpx 12rpx;
+  background: #fff;
+  margin: 0 12rpx 12rpx 0;
+}
+.param-title { font-size: 24rpx; font-weight: 800; margin: 16rpx 0 4rpx; }
+.param-sub { font-weight: 400; color: var(--sub); font-size: 20rpx; margin-left: 12rpx; }
+.param-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 28rpx 0;
+  border-top: 1rpx solid var(--hair);
+  font-size: 26rpx;
+}
+.kcal-row { border-bottom: 1rpx solid var(--hair); }
+.p-lab { color: var(--ink); }
+.p-ctrl { display: flex; align-items: center; }
+.unit { font-size: 22rpx; color: var(--sub); margin-left: 12rpx; }
+.p-kcal { font-size: 34rpx; font-weight: 800; color: var(--orange); font-variant-numeric: tabular-nums; }
+
+.stepper { display: flex; align-items: center; border: 1rpx solid var(--hair); border-radius: 12rpx; background: #fff; }
+.stepper .st-btn {
+  width: 68rpx;
+  height: 64rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink);
+  font-size: 32rpx;
+}
+.stepper .st-btn.plus { color: var(--green); font-weight: 700; }
+.stepper .st-val {
+  width: 104rpx;
+  text-align: center;
+  font-size: 28rpx;
+  font-weight: 700;
+  border-left: 1rpx solid var(--hair);
+  border-right: 1rpx solid var(--hair);
+  height: 64rpx;
+  line-height: 64rpx;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- 表单 ---------- */
+.form-row { margin-bottom: 28rpx; }
+.f-lab { font-size: 22rpx; color: var(--sub); margin-bottom: 14rpx; font-weight: 600; }
+.f-lab .req { color: var(--orange); }
+.f-input {
+  width: 100%;
+  height: 88rpx;
+  line-height: 88rpx;
+  border: 1rpx solid var(--hair);
+  border-radius: 12rpx;
+  padding: 0 24rpx;
+  font-size: 26rpx;
+  background: #fff;
+  box-sizing: border-box;
+}
+.f-err { font-size: 20rpx; color: var(--red); margin-top: 10rpx; }

@@ -1,0 +1,58 @@
+<view class="pg">
+  <scroll-view class="body" scroll-y enhanced show-scrollbar="{{false}}">
+    <view style="height: {{padTop}}px;"></view>
+
+    <view class="sec">
+      <text class="en">EARNINGS</text>
+      <text class="cn">收入统计</text>
+      <view class="line"></view>
+    </view>
+
+    <!-- 今日概览 -->
+    <view class="stat-strip">
+      <view class="stat-cell"><view class="b">{{todayAmount}}</view><view class="s">今日收入（元）</view></view>
+      <view class="stat-cell"><view class="b">{{todayCount}}</view><view class="s">今日单量</view></view>
+      <view class="stat-cell"><view class="b">{{rating}}</view><view class="s">服务评分</view></view>
+    </view>
+
+    <!-- 周期汇总 -->
+    <view class="stat-strip" style="margin-top: 24rpx;">
+      <view class="stat-cell"><view class="b">{{weekAmount}}</view><view class="s">本周收入（元）</view></view>
+      <view class="stat-cell"><view class="b">{{monthAmount}}</view><view class="s">本月收入（元）</view></view>
+      <view class="stat-cell"><view class="b">{{monthCount}}</view><view class="s">本月单量</view></view>
+    </view>
+
+    <!-- 近 7 日配送收入柱状图 -->
+    <view class="chart-box">
+      <view class="chart-title">近 7 日配送收入（元）</view>
+      <view class="bar-chart">
+        <view class="bar-col" wx:for="{{bars}}" wx:key="label">
+          <text class="bv">{{item.value}}</text>
+          <view class="bar {{item.hot ? 'hot' : ''}}" style="height: {{item.height}}rpx;"></view>
+          <text class="bl">{{item.label}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view style="height: 32rpx;"></view>
+  </scroll-view>
+
+  <!-- 骑手端自定义底栏 -->
+  <view class="m-tabbar">
+    <view class="m-tab {{active === 'tasks' ? 'on' : ''}}" catchtap="goTab" data-key="tasks" data-url="/pages/r-tasks/r-tasks">
+      <image class="m-tab-ic" src="/assets/tab/r-tasks{{active === 'tasks' ? '-on' : ''}}.png" />
+      <text>任务</text>
+      <view class="dot"></view>
+    </view>
+    <view class="m-tab {{active === 'stats' ? 'on' : ''}}" catchtap="goTab" data-key="stats" data-url="/pages/r-stats/r-stats">
+      <image class="m-tab-ic" src="/assets/tab/r-stats{{active === 'stats' ? '-on' : ''}}.png" />
+      <text>统计</text>
+      <view class="dot"></view>
+    </view>
+    <view class="m-tab {{active === 'me' ? 'on' : ''}}" catchtap="goTab" data-key="me" data-url="/pages/r-me/r-me">
+      <image class="m-tab-ic" src="/assets/tab/profile{{active === 'me' ? '-on' : ''}}.png" />
+      <text>我的</text>
+      <view class="dot"></view>
+    </view>
+  </view>
+</view>

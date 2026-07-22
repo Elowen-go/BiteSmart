@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿<script setup lang="ts">
+<script setup lang="ts">
 import { computed, ref, onMounted } from 'vue'
 import { Refresh } from '@element-plus/icons-vue'
 import { getDeliveryTasks } from '../../../api/merchant/delivery'
@@ -7,17 +7,6 @@ import type { DeliveryTask } from '../../../api/merchant/delivery'
 const loading = ref(false)
 const taskList = ref<DeliveryTask[]>([])
 const activeStatus = ref<number | 'all'>('all')
-
-const statusOptions = [
-  { label: '全部', value: 'all' as const },
-  { label: '待接单', value: 10 },
-  { label: '待取餐', value: 20 },
-  { label: '已取餐', value: 30 },
-  { label: '配送中', value: 40 },
-  { label: '已送达', value: 50 },
-  { label: '异常', value: 60 },
-  { label: '已取消', value: 70 }
-]
 
 const statusConfig: Record<number, { label: string; tag: 'success' | 'warning' | 'primary' | 'info' | 'danger'; className: string }> = {
   10: { label: '待接单', tag: 'info', className: 'muted' },
@@ -40,7 +29,7 @@ const taskStats = computed(() => {
     { label: '待取餐', value: countByStatus(20), status: 20, hint: '出餐后等待骑手' },
     { label: '配送中', value: countByStatus(40), status: 40, hint: '关注送达进度' },
     { label: '异常', value: countByStatus(60), status: 60, hint: '需要及时处理' },
-    { label: '已送达', value: countByStatus(50), status: 50, hint: '今日完成配送' }
+    { label: '已送达', value: countByStatus(50), status: 50, hint: '累计完成配送' }
   ]
 })
 
@@ -70,8 +59,17 @@ const getStatusClass = (status: number) => {
   return statusConfig[status]?.className || 'muted'
 }
 
+// 再次点击当前状态卡恢复“全部”
 const handleStatusChange = (status: number | 'all') => {
-  activeStatus.value = status
+  activeStatus.value = activeStatus.value === status ? 'all' : status
+}
+
+const detailVisible = ref(false)
+const currentTask = ref<DeliveryTask | null>(null)
+
+const openDetail = (task: any) => {
+  currentTask.value = task as DeliveryTask
+  detailVisible.value = true
 }
 
 const formatText = (value?: string) => {
@@ -110,7 +108,7 @@ onMounted(() => {
 
       <div class="card-panel delivery-panel">
         <div class="toolbar">
-          <el-segmented v-model="activeStatus" :options="statusOptions" />
+          <span class="toolbar-hint">点击上方状态卡筛选，再次点击恢复全部</span>
           <span class="toolbar-count">当前 {{ filteredTaskList.length }} 条配送任务</span>
         </div>
 
@@ -129,7 +127,7 @@ onMounted(() => {
           </el-table-column>
           <el-table-column prop="taskStatus" label="配送状态" width="120">
             <template #default="{ row }">
-              <el-tag :type="getTaskStatusTag(row.taskStatus)">{{ getTaskStatusLabel(row.taskStatus) }}</el-tag>
+              <el-tag :type="getTaskStatusTag(row.taskStatus)" :effect="row.taskStatus === 60 ? 'dark' : 'plain'">{{ getTaskStatusLabel(row.taskStatus) }}</el-tag>
             </template>
           </el-table-column>
           <el-table-column prop="pickupCode" label="取餐码" width="120" />
@@ -142,8 +140,62 @@ onMounted(() => {
           <el-table-column prop="deliverTime" label="送达时间" min-width="170">
             <template #default="{ row }">{{ formatText(row.deliverTime) }}</template>
           </el-table-column>
+          <el-table-column label="操作" width="80" fixed="right">
+            <template #default="{ row }">
+              <el-button text type="primary" size="small" @click="openDetail(row)">详情</el-button>
+            </template>
+          </el-table-column>
         </el-table>
       </div>
+
+      <el-dialog v-model="detailVisible" title="配送任务详情" width="480px">
+        <div v-if="currentTask" class="task-detail">
+          <div class="detail-row">
+            <span>订单编号</span>
+            <strong>{{ currentTask.orderNo }}</strong>
+          </div>
+          <div class="detail-row">
+            <span>配送状态</span>
+            <el-tag :type="getTaskStatusTag(currentTask.taskStatus)" :effect="currentTask.taskStatus === 60 ? 'dark' : 'plain'" size="small">
+              {{ getTaskStatusLabel(currentTask.taskStatus) }}
+            </el-tag>
+          </div>
+          <div class="detail-row">
+            <span>取餐码</span>
+            <strong>{{ formatText(currentTask.pickupCode) }}</strong>
+          </div>
+          <div class="detail-row">
+            <span>配送员</span>
+            <strong>{{ formatText(currentTask.driverName) }}</strong>
+          </div>
+          <div class="detail-row">
+            <span>联系电话</span>
+            <a v-if="currentTask.driverPhone" class="phone-link" :href="`tel:${currentTask.driverPhone}`">{{ currentTask.driverPhone }}</a>
+            <strong v-else>-</strong>
+          </div>
+          <div class="detail-row">
+            <span>预计送达</span>
+            <strong>{{ formatText(currentTask.estimatedDeliveryTime) }}</strong>
+          </div>
+          <div class="detail-row">
+            <span>取餐时间</span>
+            <strong>{{ formatText(currentTask.pickupTime) }}</strong>
+          </div>
+          <div class="detail-row">
+            <span>送达时间</span>
+            <strong>{{ formatText(currentTask.deliverTime) }}</strong>
+          </div>
+          <div class="detail-row">
+            <span>创建时间</span>
+            <strong>{{ formatText(currentTask.createTime) }}</strong>
+          </div>
+        </div>
+        <p v-if="currentTask?.taskStatus === 60" class="detail-tip">异常任务暂无线上处理入口，请电话联系骑手核实情况后协调处理。</p>
+        <template #footer>
+          <el-button @click="detailVisible = false">关闭</el-button>
+          <el-button v-if="currentTask?.driverPhone" type="primary" tag="a" :href="`tel:${currentTask.driverPhone}`">联系骑手</el-button>
+        </template>
+      </el-dialog>
     </div>
   </div>
 </template>
@@ -229,7 +281,7 @@ onMounted(() => {
 }
 
 .summary-item.delivery {
-  border-left: 3px solid #b76e2a;
+  border-left: 3px solid var(--bs-status-warning);
 }
 
 .summary-item.danger {
@@ -237,7 +289,7 @@ onMounted(() => {
 }
 
 .summary-item.done {
-  border-left: 3px solid #1b6b4a;
+  border-left: 3px solid var(--bs-status-success);
 }
 
 .card-panel {
@@ -263,6 +315,56 @@ onMounted(() => {
   color: var(--bs-text-muted);
   font-size: 13px;
   white-space: nowrap;
+}
+
+.toolbar-hint {
+  color: var(--bs-text-muted);
+  font-size: 12px;
+}
+
+.task-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.detail-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  font-size: 13px;
+}
+
+.detail-row span {
+  flex-shrink: 0;
+  color: var(--bs-text-muted);
+}
+
+.detail-row strong {
+  color: var(--bs-text-title);
+  font-weight: 600;
+  text-align: right;
+}
+
+.phone-link {
+  color: var(--green);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.phone-link:hover {
+  text-decoration: underline;
+}
+
+.detail-tip {
+  margin: 14px 0 0;
+  padding: 8px 10px;
+  background: var(--orange-soft);
+  border-radius: var(--bs-radius-sm);
+  color: var(--danger-brand);
+  font-size: 12px;
+  line-height: 1.6;
 }
 
 .delivery-table {

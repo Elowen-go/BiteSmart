@@ -18,10 +18,11 @@ const normalizeUser = (stored) => {
         return null;
     const value = stored;
     const role = value.role;
-    const roleType = Number(value.roleType ?? role?.roleType ?? role?.type);
+    const roleTypeValue = value.roleType !== undefined && value.roleType !== null ? value.roleType : (role && role.roleType !== undefined && role.roleType !== null ? role.roleType : role && role.type);
+    const roleType = Number(roleTypeValue);
     if (![10, 20, 30].includes(roleType))
         return null;
-    return { ...value, roleType };
+    return Object.assign(Object.assign({}, value), { roleType });
 };
 const getToken = () => wx.getStorageSync(TOKEN_KEY) || '';
 exports.getToken = getToken;

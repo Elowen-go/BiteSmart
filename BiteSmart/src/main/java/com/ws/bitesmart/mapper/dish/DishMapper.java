@@ -28,6 +28,9 @@ public interface DishMapper {
     /** 查询上架且在售的菜品（status=10 且 stock>0） */
     List<Dish> findAvailable();
 
+    /** 计划菜品池：上架且有库存，按 id 升序保证轮换偏移稳定 */
+    List<Dish> findPlanPool();
+
     List<Dish> findAvailableFiltered(@Param("keyword") String keyword,
                                      @Param("categoryId") Long categoryId,
                                      @Param("sort") String sort);

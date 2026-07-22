@@ -1,4 +1,4 @@
-import { getToken } from './auth'
+import { clearAuth, getToken } from './auth'
 
 const BASE_URL = 'http://localhost:8080/api'
 
@@ -15,6 +15,19 @@ interface RequestOptions {
   data?: Record<string, unknown> | unknown
   needAuth?: boolean
   contentType?: 'json' | 'form'
+}
+
+let kickingOff = false
+
+/** 401 统一处理：清登录态并回登录页（防止多请求并发时重复跳转） */
+const kickToLogin = (): void => {
+  if (kickingOff) return
+  kickingOff = true
+  clearAuth()
+  wx.reLaunch({
+    url: '/pages/login/login',
+    complete: () => { kickingOff = false }
+  })
 }
 
 export const request = <T>(options: RequestOptions): Promise<T> => {
@@ -38,6 +51,11 @@ export const request = <T>(options: RequestOptions): Promise<T> => {
         const result = response.data
         if (!result || typeof result.code !== 'number') {
           reject(new Error('服务响应异常，请稍后重试'))
+          return
+        }
+        if (result.code === 401) {
+          kickToLogin()
+          reject(new Error(result.message || '登录已过期，请重新登录'))
           return
         }
         if (result.code >= 400) {

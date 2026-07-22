@@ -1,13 +1,14 @@
 import request from '../../utils/request'
 
+// 后端 Long id 序列化为 string，id 字段统一 number | string
 export interface Order {
-  id: number
+  id: number | string
   orderNo: string
-  merchantId: number
+  merchantId: number | string
   totalAmount: number
   discountAmount: number
   payAmount: number
-  couponId?: number
+  couponId?: number | string
   couponDiscount?: number
   platformSubsidy?: number
   payMethod: number
@@ -18,7 +19,7 @@ export interface Order {
   receiverName: string
   receiverPhone: string
   remark: string
-  refundId?: number
+  refundId?: number | string
   lockStockTime?: string
   autoCancelTime?: string
   channel?: string
@@ -30,10 +31,10 @@ export interface Order {
 }
 
 export interface OrderItem {
-  id: number
-  orderId: number
-  dishId: number
-  comboId: number
+  id: number | string
+  orderId: number | string
+  dishId: number | string
+  comboId: number | string
   name: string
   price: number
   quantity: number
@@ -44,7 +45,7 @@ export const createOrder = (address: string, receiverName: string, receiverPhone
 }
 
 export interface MerchantOrderRemark {
-  merchantId: number
+  merchantId: number | string
   remark?: string
 }
 
@@ -61,14 +62,14 @@ export const getOrderList = (params?: { page?: number; size?: number }): Promise
   return request.get('/orders', { params })
 }
 
-export const getOrderDetail = (id: number): Promise<any> => {
+export const getOrderDetail = (id: number | string): Promise<any> => {
   return request.get(`/orders/${id}`)
 }
 
-export const cancelOrder = (id: number, reason?: string): Promise<any> => {
+export const cancelOrder = (id: number | string, reason?: string): Promise<any> => {
   return request.post(`/orders/${id}/cancel`, null, { params: { reason } })
 }
 
-export const payOrder = (id: number, payMethod: number): Promise<any> => {
+export const payOrder = (id: number | string, payMethod: number): Promise<any> => {
   return request.post(`/orders/${id}/pay`, null, { params: { payMethod } })
 }

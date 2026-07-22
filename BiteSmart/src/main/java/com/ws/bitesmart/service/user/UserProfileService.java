@@ -47,6 +47,7 @@ public class UserProfileService {
         profile.setDietPreference(normalizeJsonArray(profile.getDietPreference()));
         profile.setAllergyInfo(normalizeJsonArray(profile.getAllergyInfo()));
         profile.setDiseaseHistory(normalizeJsonArray(profile.getDiseaseHistory()));
+        profile.setFocusParts(normalizeJsonArray(profile.getFocusParts()));
 
         if (exist != null) {
             profile.setId(exist.getId());

@@ -6,9 +6,18 @@
         id, merchant_id, category_id, dish_name, dish_image,
         price, original_price, stock, lock_stock, min_stock_warning,
         sales_count, sales_real, unit, description, suitable_for,
+        tags, ai_comment, fit_scenes, cautions,
         calories, protein, fat, carbs, status,
         create_time, update_time, deleted
     </sql>
+
+    <!-- 计划菜品池：上架且有库存，按 id 升序保证轮换偏移稳定 -->
+    <select id="findPlanPool" resultType="com.ws.bitesmart.entity.dish.Dish">
+        SELECT <include refid="BaseColumns"/>
+        FROM dish
+        WHERE status = 10 AND stock &gt; 0 AND (deleted = 0 OR deleted IS NULL)
+        ORDER BY id ASC
+    </select>
 
     <!-- 查某商家的全部菜品 -->
     <select id="findByMerchantId" resultType="com.ws.bitesmart.entity.dish.Dish">
@@ -96,6 +105,10 @@
             <if test="unit != null">unit = #{unit},</if>
             <if test="description != null">description = #{description},</if>
             <if test="suitableFor != null">suitable_for = #{suitableFor},</if>
+            <if test="tags != null">tags = #{tags},</if>
+            <if test="aiComment != null">ai_comment = #{aiComment},</if>
+            <if test="fitScenes != null">fit_scenes = #{fitScenes},</if>
+            <if test="cautions != null">cautions = #{cautions},</if>
             <if test="calories != null">calories = #{calories},</if>
             <if test="protein != null">protein = #{protein},</if>
             <if test="fat != null">fat = #{fat},</if>

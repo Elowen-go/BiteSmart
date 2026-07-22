@@ -7,14 +7,25 @@
         delivery_address, receiver_name, receiver_phone, pickup_code, task_status,
         current_lat, current_lng, location_update_time,
         pickup_time, deliver_time, estimated_delivery_time, route_json,
-        exception_reason, create_time, update_time, deleted
+        exception_reason, reject_reason, order_remark, create_time, update_time, deleted
     </sql>
 
-    <!-- 按订单ID查 -->
+    <!-- 带 t. 别名的列，用于联查 delivery_driver 的查询 -->
+    <sql id="AliasedColumns">
+        t.id, t.order_id, t.order_no, t.driver_id, t.merchant_id, t.merchant_address, t.merchant_phone,
+        t.delivery_address, t.receiver_name, t.receiver_phone, t.pickup_code, t.task_status,
+        t.current_lat, t.current_lng, t.location_update_time,
+        t.pickup_time, t.deliver_time, t.estimated_delivery_time, t.route_json,
+        t.exception_reason, t.reject_reason, t.order_remark, t.create_time, t.update_time, t.deleted,
+        d.real_name AS driver_name, d.phone AS driver_phone
+    </sql>
+
+    <!-- 按订单ID查（联表带出骑手姓名/电话） -->
     <select id="findByOrderId" resultType="com.ws.bitesmart.entity.delivery.DeliveryTask">
-        SELECT <include refid="BaseColumns"/>
-        FROM delivery_task
-        WHERE order_id = #{orderId} AND deleted = 0
+        SELECT <include refid="AliasedColumns"/>
+        FROM delivery_task t
+        LEFT JOIN delivery_driver d ON d.id = t.driver_id
+        WHERE t.order_id = #{orderId} AND t.deleted = 0
     </select>
 
     <!-- 按ID查 -->
@@ -39,12 +50,13 @@
         ORDER BY create_time ASC
     </select>
 
-    <!-- 按商家ID查配送任务 -->
+    <!-- 按商家ID查配送任务（联表带出骑手姓名/电话，商家端配送管理页展示用） -->
     <select id="findByMerchantId" resultType="com.ws.bitesmart.entity.delivery.DeliveryTask">
-        SELECT <include refid="BaseColumns"/>
-        FROM delivery_task
-        WHERE merchant_id = #{merchantId} AND deleted = 0
-        ORDER BY create_time DESC
+        SELECT <include refid="AliasedColumns"/>
+        FROM delivery_task t
+        LEFT JOIN delivery_driver d ON d.id = t.driver_id
+        WHERE t.merchant_id = #{merchantId} AND t.deleted = 0
+        ORDER BY t.create_time DESC
     </select>
 
     <select id="findAllAdmin" resultType="com.ws.bitesmart.entity.delivery.DeliveryTask">
@@ -61,16 +73,29 @@
                                    delivery_address, receiver_name, receiver_phone,
                                    pickup_code, task_status,
                                    current_lat, current_lng,
-                                   estimated_delivery_time,
+                                   estimated_delivery_time, order_remark,
                                    create_time, update_time)
         VALUES (#{id}, #{orderId}, #{orderNo}, #{driverId}, #{merchantId},
                 #{merchantAddress}, #{merchantPhone},
                 #{deliveryAddress}, #{receiverName}, #{receiverPhone},
                 #{pickupCode}, #{taskStatus},
                 #{currentLat}, #{currentLng},
-                #{estimatedDeliveryTime},
+                #{estimatedDeliveryTime}, #{orderRemark},
                 NOW(), NOW())
     </insert>
+
+    <!-- 骑手拒单：回待接单池。仅当任务仍属于该骑手且状态为待取餐(20)时生效 -->
+    <update id="rejectTask">
+        UPDATE delivery_task
+        SET task_status = 10,
+            driver_id = NULL,
+            reject_reason = #{reason},
+            update_time = NOW()
+        WHERE id = #{id}
+          AND driver_id = #{driverId}
+          AND task_status = 20
+          AND deleted = 0
+    </update>
 
     <!-- 更新配送任务状态（动态更新状态+时间） -->
     <update id="updateStatus">

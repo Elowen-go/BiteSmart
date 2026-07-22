@@ -1,1 +1,70 @@
-<view class="user-page"><view class="back-row"><text class="back" bindtap="back">‹</text><text>配送进度</text><text class="accent">刷新</text></view><view class="map-placeholder"><text>配送路线</text><view class="route-dot start"></view><view class="route-dot end"></view><view class="route-path"></view></view><view class="panel"><view class="row"><view class="row-main"><text>配送员 小林</text><text>正在从禾下厨房赶来</text></view><text class="accent">联系骑手</text></view><view class="row"><text>预计送达</text><text class="accent">18:42</text></view><view class="row"><text>订单状态</text><text>配送中</text></view></view></view>
+<view class="pg">
+  <!-- 自定义导航 -->
+  <view class="nav" style="margin-top: {{menuTop}}px; height: {{menuH}}px;">
+    <view class="nav-back" bindtap="back" hover-class="tap"><text class="chev">‹</text></view>
+    <view class="nav-t">配送进度</view>
+    <view class="nav-ph"></view>
+  </view>
+
+  <scroll-view class="body" scroll-y enhanced show-scrollbar="{{false}}">
+    <block wx:if="{{view}}">
+      <!-- 状态行 -->
+      <view class="st-row">
+        <text class="pill green">{{view.statusText}}</text>
+        <text class="eta" wx:if="{{view.eta}}">预计 {{view.eta}} 送达</text>
+      </view>
+
+      <!-- 有骑手坐标：原生 map 实时轨迹；无坐标：CSS 示意路线 -->
+      <map wx:if="{{view.hasLocation}}" id="deliveryMap" class="map-real"
+        latitude="{{view.mapLat}}" longitude="{{view.mapLng}}" scale="14"
+        markers="{{view.markers}}" polyline="{{view.polylines}}"
+        show-compass="false" enable-zoom="true" enable-scroll="true" />
+      <view wx:else class="map-box">
+        <view class="route-line"></view>
+        <view class="pin shop"><view class="pin-dot shop-dot"></view><text>门店</text></view>
+        <view class="pin home"><view class="pin-dot home-dot"></view><text>你</text></view>
+        <view class="courier" style="left: {{view.progress}}%;"><view class="courier-dot"></view></view>
+        <view class="map-note">示意图 · 位置每 30 秒更新</view>
+      </view>
+
+      <!-- 骑手卡 -->
+      <view class="card rider-card" wx:if="{{view.hasDriver}}">
+        <view class="avt">{{view.driverInitial}}</view>
+        <view class="rm">
+          <view class="rnm">{{view.driverName}} 骑手</view>
+          <view class="rsub">{{view.vehicle}} · 准时率 98%</view>
+        </view>
+        <view class="call-btn" bindtap="callDriver" hover-class="tap"><view class="ic-phone"></view></view>
+      </view>
+
+      <!-- 取餐码 -->
+      <view class="card" wx:if="{{view.pickupCode}}">
+        <view class="pickup-code">
+          <view class="cd">{{view.pickupCode}}</view>
+          <view class="lb">取餐码 · 到店出示</view>
+        </view>
+      </view>
+
+      <!-- 进度时间线 -->
+      <view class="sec"><text class="en">PROGRESS</text><text class="cn">配送节点</text><view class="line"></view></view>
+      <view class="card tl-card">
+        <view class="tl-item {{item.cls}}" wx:for="{{view.steps}}" wx:key="text">
+          <view class="tl-dot"></view>
+          <view class="tt">
+            <b>{{item.text}}</b>
+            <span wx:if="{{item.time}}">{{item.time}}</span>
+          </view>
+        </view>
+      </view>
+
+      <view class="btn-ink ghost refresh-btn" bindtap="refresh" hover-class="tap">刷新配送状态</view>
+    </block>
+
+    <view class="empty" wx:if="{{!loading && !view}}">
+      <view class="t">暂无配送信息</view>
+      <view class="s">骑手接单后即可查看实时进度</view>
+    </view>
+
+    <view class="foot-space"></view>
+  </scroll-view>
+</view>

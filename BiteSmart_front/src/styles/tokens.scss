@@ -63,6 +63,23 @@ $status-secondary: #6C757D;
 $status-secondary-bg: #F1F3F5;
 $status-danger: #D9534F;
 
+/* ============================================================
+ * BiteSmart 基准设计令牌（源自商家端 Dashboard 设计定稿）
+ * 牛油果绿点缀 + 墨绿 + hairline 卡片 + 米白底
+ * ============================================================ */
+$accent: #1E9E62;
+$accent-deep: #14704A;
+$ink-green: #123326;
+$accent-soft: #E4F3EA;
+$ink: #17251F;
+$sub: #6B7A72;
+$faint: #9AA5A0;
+$hairline: #E4E8E3;
+$bg-warm: #F5F6F3;
+$orange: #D97B2B;
+$orange-soft: #FBF1E4;
+$danger-brand: #C05A4B;
+
 :root {
   --bs-sidebar-bg: #{$sidebar-bg};
   --bs-sidebar-text: #{$sidebar-text};
@@ -128,4 +145,26 @@ $status-danger: #D9534F;
   --bs-status-secondary: #{$status-secondary};
   --bs-status-secondary-bg: #{$status-secondary-bg};
   --bs-status-danger: #{$status-danger};
+
+  /* 基准设计令牌（Dashboard 同款命名，全端可复用） */
+  --green: #{$accent};
+  --green-deep: #{$accent-deep};
+  --green-ink: #{$ink-green};
+  --green-soft: #{$accent-soft};
+  --ink: #{$ink};
+  --sub: #{$sub};
+  --faint: #{$faint};
+  --hair: #{$hairline};
+  --bg: #{$bg-warm};
+  --orange: #{$orange};
+  --orange-soft: #{$orange-soft};
+  --danger-brand: #{$danger-brand};
+
+  /* 兼容别名：历史脚手架样式（DishList/ShopInfo/Profile 及部分用户端页面）
+   * 引用过以下变量但从未定义，导致声明静默失效。
+   * 这里统一映射到真实令牌；新代码请直接使用右侧真实变量。 */
+  --bs-border-color: var(--bs-border-light);
+  --bs-text-primary: var(--bs-text-title);
+  --bs-text-secondary: var(--bs-text-muted);
+  --bs-bg-secondary: var(--bs-bg-hover);
 }

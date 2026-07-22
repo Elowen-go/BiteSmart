@@ -1,63 +1,111 @@
 @use './tokens.scss' as *;
 
 :root {
-  --el-color-primary: #{$primary};
-  --el-color-primary-light-3: #{$primary-light};
-  --el-color-primary-light-5: rgba(27, 58, 47, 0.1);
-  --el-color-primary-light-7: rgba(27, 58, 47, 0.05);
-  --el-color-primary-dark-2: #{$primary-hover};
-  
+  /* primary：品牌牛油果绿（与 Dashboard 基准一致） */
+  --el-color-primary: #{$accent};
+  --el-color-primary-light-3: #52B988;
+  --el-color-primary-light-5: #8ECFB1;
+  --el-color-primary-light-7: #C9E8D6;
+  --el-color-primary-light-8: #DBEFE3;
+  --el-color-primary-light-9: #EDF7F1;
+  --el-color-primary-dark-2: #{$accent-deep};
+
+  /* success：同品牌绿（不再使用 Element 默认亮绿 #67C23A） */
+  --el-color-success: #{$accent};
+  --el-color-success-light-3: #52B988;
+  --el-color-success-light-5: #8ECFB1;
+  --el-color-success-light-7: #C9E8D6;
+  --el-color-success-light-8: #DBEFE3;
+  --el-color-success-light-9: #EDF7F1;
+  --el-color-success-dark-2: #{$accent-deep};
+
+  /* warning：基准橙（库存预警等同款） */
+  --el-color-warning: #{$orange};
+  --el-color-warning-light-3: #E39C62;
+  --el-color-warning-light-5: #ECBD95;
+  --el-color-warning-light-7: #F4D8BC;
+  --el-color-warning-light-8: #F8E4D0;
+  --el-color-warning-light-9: #{$orange-soft};
+  --el-color-warning-dark-2: #B26520;
+
+  /* danger / error：品牌收敛红（不再使用 Element 默认红 #F56C6C） */
+  --el-color-danger: #{$danger-brand};
+  --el-color-danger-light-3: #D08475;
+  --el-color-danger-light-5: #E0ADA5;
+  --el-color-danger-light-7: #EBC9C4;
+  --el-color-danger-light-8: #F1D9D5;
+  --el-color-danger-light-9: #F7EAE8;
+  --el-color-danger-dark-2: #A34A3D;
+  --el-color-error: #{$danger-brand};
+  --el-color-error-light-3: #D08475;
+  --el-color-error-light-5: #E0ADA5;
+  --el-color-error-light-7: #EBC9C4;
+  --el-color-error-light-8: #F1D9D5;
+  --el-color-error-light-9: #F7EAE8;
+  --el-color-error-dark-2: #A34A3D;
+
+  /* info：中性灰 */
+  --el-color-info: #{$text-muted};
+  --el-color-info-light-3: #A4ABB2;
+  --el-color-info-light-5: #C3C7CB;
+  --el-color-info-light-7: #DBDEE1;
+  --el-color-info-light-8: #E7E9EB;
+  --el-color-info-light-9: #F3F4F5;
+  --el-color-info-dark-2: #6C757D;
+
   --el-text-color-primary: #{$text-title};
   --el-text-color-regular: #{$text-body};
   --el-text-color-secondary: #{$text-muted};
   --el-text-color-placeholder: #{$text-muted};
-  
+
   --el-bg-color-page: #{$bg-page};
   --el-bg-color: #{$bg-card};
-  --el-bg-color-overlay: rgba(0, 0, 0, 0.5);
-  
+  /* 弹层面板底色（dropdown/dialog 面板），不是遮罩；遮罩变量是 --el-overlay-color-lighter */
+  --el-bg-color-overlay: #{$bg-card};
+
   --el-border-color: #{$border-light};
   --el-border-color-light: #{$border-card};
   --el-border-color-lighter: #{$border-card};
-  
+
   --el-radius-sm: #{$radius-sm};
   --el-radius-md: #{$radius-md};
+  /* 有意把 lg 压回 md：全端圆角收敛到 4/8px 两档 */
   --el-radius-lg: #{$radius-md};
   --el-radius-circle: 50%;
-  
+
   --el-font-size-xs: #{$font-size-xs};
   --el-font-size-sm: #{$font-size-sm};
   --el-font-size-base: #{$font-size-base};
   --el-font-size-md: #{$font-size-md};
   --el-font-size-lg: #{$font-size-lg};
-  
+
   --el-shadow-sm: #{$shadow-sm};
   --el-shadow-md: #{$shadow-md};
   --el-shadow-lg: #{$shadow-lg};
   --el-shadow: #{$shadow-md};
-  
-  --el-button-primary-bg-color: #{$primary};
-  --el-button-primary-hover-bg-color: #{$primary-hover};
-  --el-button-primary-active-bg-color: #{$primary-hover};
-  
+
+  --el-button-primary-bg-color: #{$accent};
+  --el-button-primary-hover-bg-color: #{$accent-deep};
+  --el-button-primary-active-bg-color: #{$accent-deep};
+
   --el-button-text-color: #{$text-body};
   --el-button-text-hover-color: #{$text-title};
   --el-button-text-border-color: #{$border-light};
-  
+
   --el-input-bg-color: #{$bg-page};
   --el-input-border-color: #{$border-light};
-  --el-input-focus-border-color: #{$primary};
-  
+  --el-input-focus-border-color: #{$accent};
+
   --el-table-header-bg-color: #{$bg-page};
   --el-table-row-hover-bg-color: #{$bg-hover};
   --el-table-row-bg-color: #{$bg-card};
-  
+
   --el-card-bg-color: #{$bg-card};
   --el-card-border-color: #{$border-light};
-  
+
   --el-select-dropdown-bg-color: #{$bg-card};
   --el-select-dropdown-item-hover-bg-color: #{$bg-hover};
-  
+
   --el-menu-bg-color: #{$sidebar-bg};
   --el-menu-text-color: #{$sidebar-text-muted};
   --el-menu-active-color: #{$sidebar-text};

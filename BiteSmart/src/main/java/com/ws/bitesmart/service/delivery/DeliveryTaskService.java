@@ -4,12 +4,16 @@ import com.ws.bitesmart.common.enums.ResultCodeEnum;
 import com.ws.bitesmart.common.util.SnowflakeUtil;
 import com.ws.bitesmart.entity.delivery.DeliveryDriver;
 import com.ws.bitesmart.entity.delivery.DeliveryTask;
+import com.ws.bitesmart.entity.delivery.RiderLocation;
+import com.ws.bitesmart.entity.merchant.Merchant;
 import com.ws.bitesmart.entity.order.Orders;
 import com.ws.bitesmart.exception.BusinessException;
 import com.ws.bitesmart.service.health.HealthRecordService;
 import com.ws.bitesmart.service.merchant.MerchantFinanceService;
 import com.ws.bitesmart.mapper.delivery.DeliveryDriverMapper;
 import com.ws.bitesmart.mapper.delivery.DeliveryTaskMapper;
+import com.ws.bitesmart.mapper.delivery.RiderLocationMapper;
+import com.ws.bitesmart.mapper.merchant.MerchantMapper;
 import com.ws.bitesmart.mapper.order.OrdersMapper;
 import com.ws.bitesmart.mapper.order.OrderItemMapper;
 import lombok.RequiredArgsConstructor;
@@ -35,8 +39,10 @@ public class DeliveryTaskService {
     private final DeliveryDriverMapper deliveryDriverMapper;
     private final OrdersMapper ordersMapper;
     private final OrderItemMapper orderItemMapper;
+    private final MerchantMapper merchantMapper;
     private final HealthRecordService healthRecordService;
     private final MerchantFinanceService merchantFinanceService;
+    private final RiderLocationMapper riderLocationMapper;
 
     /**
      * 创建配送任务（商家出餐后调用）
@@ -57,9 +63,17 @@ public class DeliveryTaskService {
         task.setOrderId(order.getId());
         task.setOrderNo(order.getOrderNo());
         task.setMerchantId(order.getMerchantId());
+        // 快照商家取货点信息（骑手端任务大厅/详情展示、电话联系用）
+        Merchant merchant = merchantMapper.findById(order.getMerchantId());
+        if (merchant != null) {
+            task.setMerchantAddress(merchant.getShopAddress());
+            task.setMerchantPhone(merchant.getContactPhone());
+        }
         task.setDeliveryAddress(order.getDeliveryAddress());
         task.setReceiverName(order.getReceiverName());
         task.setReceiverPhone(order.getReceiverPhone());
+        // 快照订单备注（骑手端任务详情展示）
+        task.setOrderRemark(order.getRemark());
         // 生成4位随机取餐码
         task.setPickupCode(String.valueOf((int) ((Math.random() * 9000) + 1000)));
         task.setTaskStatus(10); // 待接单
@@ -236,6 +250,82 @@ public class DeliveryTaskService {
 
         deliveryTaskMapper.reportException(taskId, reason);
         log.info("配送异常上报: taskId={}, driverId={}, reason={}", taskId, driverId, reason);
+    }
+
+    /**
+     * 骑手拒单：任务回待接单池（task_status 20→10，driver_id 清空），
+     * 记录拒单原因，并回退骑手当前配送单数。
+     *
+     * @param userId 骑手用户ID
+     * @param taskId 配送任务ID
+     * @param reason 拒单原因
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public void rejectTask(Long userId, Long taskId, String reason) {
+        DeliveryTask task = deliveryTaskMapper.findById(taskId);
+        if (task == null) {
+            throw new BusinessException(ResultCodeEnum.NOT_FOUND, "配送任务不存在");
+        }
+        DeliveryDriver driver = deliveryDriverMapper.findByUserId(userId);
+        if (driver == null) {
+            throw new BusinessException(ResultCodeEnum.NOT_FOUND, "配送员信息不存在");
+        }
+        if (!driver.getId().equals(task.getDriverId())) {
+            throw new BusinessException(ResultCodeEnum.BAD_REQUEST, "该任务不属于当前配送员");
+        }
+        if (!Integer.valueOf(20).equals(task.getTaskStatus())) {
+            throw new BusinessException(ResultCodeEnum.BAD_REQUEST, "只有已接单未取餐的任务才能拒单");
+        }
+
+        int affected = deliveryTaskMapper.rejectTask(taskId, driver.getId(), reason);
+        if (affected == 0) {
+            throw new BusinessException(ResultCodeEnum.ORDER_STATUS_ERROR, "任务状态已变更，拒单失败");
+        }
+        deliveryDriverMapper.decrementOrdersForReject(driver.getId());
+        log.info("配送员拒单，任务回待接单池: taskId={}, driverId={}, reason={}", taskId, driver.getId(), reason);
+    }
+
+    /**
+     * 上传配送轨迹点（坐标系：GCJ-02）。
+     * 校验任务属于当前骑手且处于配送途中（30-已取餐 / 40-配送中），
+     * 写入 rider_location 并同步任务当前位置。
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public void uploadTaskLocation(Long userId, Long taskId, BigDecimal latitude, BigDecimal longitude) {
+        DeliveryTask task = deliveryTaskMapper.findById(taskId);
+        if (task == null) {
+            throw new BusinessException(ResultCodeEnum.NOT_FOUND, "配送任务不存在");
+        }
+        DeliveryDriver driver = deliveryDriverMapper.findByUserId(userId);
+        if (driver == null) {
+            throw new BusinessException(ResultCodeEnum.NOT_FOUND, "配送员信息不存在");
+        }
+        if (!driver.getId().equals(task.getDriverId())) {
+            throw new BusinessException(ResultCodeEnum.BAD_REQUEST, "该任务不属于当前配送员");
+        }
+        if (!Integer.valueOf(30).equals(task.getTaskStatus()) && !Integer.valueOf(40).equals(task.getTaskStatus())) {
+            throw new BusinessException(ResultCodeEnum.BAD_REQUEST, "只有配送途中的任务才能上传轨迹");
+        }
+
+        RiderLocation point = new RiderLocation();
+        point.setId(SnowflakeUtil.generate());
+        point.setTaskId(taskId);
+        point.setDriverId(driver.getId());
+        point.setLatitude(latitude);
+        point.setLongitude(longitude);
+        riderLocationMapper.insert(point);
+
+        // 同步任务当前位置与骑手当前位置
+        deliveryTaskMapper.updateLocation(taskId, latitude, longitude, null);
+        deliveryDriverMapper.updateLocation(driver.getId(), latitude, longitude);
+        log.debug("轨迹点上传: taskId={}, lat={}, lng={}", taskId, latitude, longitude);
+    }
+
+    /**
+     * 查任务的轨迹点（按上报时间升序）
+     */
+    public List<RiderLocation> getTaskLocations(Long taskId) {
+        return riderLocationMapper.findByTaskId(taskId);
     }
 
     /**

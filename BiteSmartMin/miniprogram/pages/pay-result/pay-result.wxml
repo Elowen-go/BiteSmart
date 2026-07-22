@@ -1,1 +1,19 @@
-<view class="user-page pay-page"><view class="success-mark">✓</view><text class="title">支付完成</text><text class="subtitle">你的订单已经进入制作流程。</text><view class="panel"><view class="row"><text>订单编号</text><text>BS26071608</text></view><view class="row"><text>支付金额</text><text class="accent">¥54</text></view><view class="row"><text>预计送达</text><text>18:42</text></view></view><button class="primary" bindtap="viewOrder">查看订单</button><button class="outline" bindtap="backHome">回到首页</button></view>
+<view class="pg" style="padding-top: {{padTop}}px;">
+  <view class="top">
+    <view class="result-icon"><text class="ok">✓</text></view>
+    <view class="t">支付完成</view>
+    <view class="s">厨师已收到你的订单，正在备餐</view>
+  </view>
+
+  <view class="card kv-card">
+    <view class="result-kv" wx:if="{{orderNo}}"><text>订单编号</text><b>{{orderNo}}</b></view>
+    <view class="result-kv" wx:if="{{totalAmount}}"><text>实付金额</text><b>¥{{totalAmount}}</b></view>
+    <view class="result-kv" wx:if="{{eta}}"><text>预计送达</text><b>{{eta}}</b></view>
+    <view class="result-kv" wx:if="{{!orderNo && !totalAmount && !eta}}"><text>订单详情</text><b>加载中…</b></view>
+  </view>
+
+  <view class="ops">
+    <view class="btn-ink green" bindtap="viewOrder" hover-class="tap">查看订单</view>
+    <view class="btn-ink ghost" bindtap="backHome" hover-class="tap">返回首页</view>
+  </view>
+</view>

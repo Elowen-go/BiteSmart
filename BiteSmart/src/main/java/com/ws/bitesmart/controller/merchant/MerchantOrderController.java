@@ -6,6 +6,7 @@ import com.ws.bitesmart.entity.order.OrderItem;
 import com.ws.bitesmart.entity.order.Orders;
 import com.ws.bitesmart.security.LoginUser;
 import com.ws.bitesmart.service.order.OrderService;
+import com.ws.bitesmart.service.merchant.MerchantService;
 import com.ws.bitesmart.mapper.merchant.MerchantMapper;
 import com.ws.bitesmart.mapper.user.SysUserMapper;
 import com.ws.bitesmart.mapper.order.OrderStatusLogMapper;
@@ -27,7 +28,7 @@ import java.util.Map;
  * 商家端 - 订单管理接口
  *
  * 商家查看收到的订单、接单、拒单、备餐、出餐等操作。
- * 商家 ID = 登录用户的 userId（sys_user 中 role_type=20）。
+ * 商家ID取 merchant.id（通过登录用户 userId 映射），与套餐/菜品管理接口保持一致。
  */
 @Slf4j
 @RestController
@@ -39,6 +40,12 @@ public class MerchantOrderController {
     private final SysUserMapper sysUserMapper;
     private final MerchantMapper merchantMapper;
     private final OrderStatusLogMapper orderStatusLogMapper;
+    private final MerchantService merchantService;
+
+    /** 商家ID取 merchant.id（不是 userId），与套餐/菜品管理接口保持一致 */
+    private Long getMerchantId(LoginUser loginUser) {
+        return merchantService.getMerchantId(loginUser.getUserId());
+    }
 
     /** 商家收到的订单列表 */
     @GetMapping
@@ -46,10 +53,11 @@ public class MerchantOrderController {
                             @RequestParam(required = false) Integer page,
                             @RequestParam(defaultValue = "10") int size) {
         if (loginUser == null) return ResultVO.error(401, "未登录");
+        Long merchantId = getMerchantId(loginUser);
         if (page != null) {
-            return ResultVO.success(PageResultVO.success(orderService.getOrdersByMerchant(loginUser.getUserId(), page, size)));
+            return ResultVO.success(PageResultVO.success(orderService.getOrdersByMerchant(merchantId, page, size)));
         }
-        return ResultVO.success(orderService.getOrdersByMerchant(loginUser.getUserId()));
+        return ResultVO.success(orderService.getOrdersByMerchant(merchantId));
     }
 
     /** 订单详情（含明细） */
@@ -57,7 +65,7 @@ public class MerchantOrderController {
     public ResultVO<Map<String, Object>> detail(@AuthenticationPrincipal LoginUser loginUser,
                                                  @PathVariable Long id) {
         if (loginUser == null) return ResultVO.error(401, "未登录");
-        Orders order = orderService.getOrderDetailForMerchant(id, loginUser.getUserId());
+        Orders order = orderService.getOrderDetailForMerchant(id, getMerchantId(loginUser));
         List<OrderItem> items = orderService.getOrderItems(id);
         Map<String, Object> result = new HashMap<>();
         result.put("order", order);
@@ -73,7 +81,7 @@ public class MerchantOrderController {
     public ResultVO<Void> accept(@AuthenticationPrincipal LoginUser loginUser,
                                   @PathVariable Long id) {
         if (loginUser == null) return ResultVO.error(401, "未登录");
-        orderService.acceptOrder(id, loginUser.getUserId());
+        orderService.acceptOrder(id, getMerchantId(loginUser));
         return ResultVO.ok("已接单");
     }
 
@@ -83,7 +91,7 @@ public class MerchantOrderController {
                                   @PathVariable Long id,
                                   @RequestParam String reason) {
         if (loginUser == null) return ResultVO.error(401, "未登录");
-        orderService.rejectOrder(id, loginUser.getUserId(), reason);
+        orderService.rejectOrder(id, getMerchantId(loginUser), reason);
         return ResultVO.ok("已拒单");
     }
 
@@ -92,7 +100,7 @@ public class MerchantOrderController {
     public ResultVO<Void> prepare(@AuthenticationPrincipal LoginUser loginUser,
                                    @PathVariable Long id) {
         if (loginUser == null) return ResultVO.error(401, "未登录");
-        orderService.prepareOrder(id, loginUser.getUserId());
+        orderService.prepareOrder(id, getMerchantId(loginUser));
         return ResultVO.ok("已开始备餐");
     }
 
@@ -101,7 +109,7 @@ public class MerchantOrderController {
     public ResultVO<Void> done(@AuthenticationPrincipal LoginUser loginUser,
                                 @PathVariable Long id) {
         if (loginUser == null) return ResultVO.error(401, "未登录");
-        orderService.finishPreparing(id, loginUser.getUserId());
+        orderService.finishPreparing(id, getMerchantId(loginUser));
         return ResultVO.ok("出餐完成");
     }
 }

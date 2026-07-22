@@ -51,7 +51,7 @@ const save = async () => {
       const dishItemsText = String(form.value.dishItems || '').trim()
       const { dishItems: _dishItems, ...combo } = form.value
       const data: any = { combo }
-      if (dishItemsText) data.dishItems = dishItemsText.split(',').map((id: string) => Number(id.trim())).filter(Boolean).map((dishId: number) => ({ dishId, quantity: 1, isFixed: 1 }))
+      if (dishItemsText) data.dishItems = dishItemsText.split(',').map((id: string) => id.trim()).filter(Boolean).map((dishId: string) => ({ dishId, quantity: 1, isFixed: 1 }))
       res = editingId.value ? await updateAdminCombo(editingId.value, data) : await addAdminCombo(data)
     } else res = editingId.value ? await updateAdminDish(editingId.value, form.value) : await addAdminDish(form.value)
     if (res.code !== 200) throw new Error(res.message)

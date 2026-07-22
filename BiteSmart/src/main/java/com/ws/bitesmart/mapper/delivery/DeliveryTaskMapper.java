@@ -51,4 +51,10 @@ public interface DeliveryTaskMapper {
 
     /** 上报异常：更新任务状态为60，记录异常原因 */
     int reportException(@Param("id") Long id, @Param("reason") String reason);
+
+    /**
+     * 骑手拒单（乐观锁）：仅当任务属于该骑手且状态=20(待取餐)时，
+     * 状态回 10(待接单)、清空 driver_id、记录拒单原因。返回0表示状态已不符。
+     */
+    int rejectTask(@Param("id") Long id, @Param("driverId") Long driverId, @Param("reason") String reason);
 }

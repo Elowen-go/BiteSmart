@@ -1,1 +1,53 @@
-<view class="user-page"><view class="back-row"><text class="back" bindtap="back">‹</text><text>健康档案</text><text></text></view><text class="eyebrow">YOUR HEALTH PROFILE</text><text class="title">认识自己，<br/>才能更好地照顾自己。</text><text class="subtitle">你的饮食建议会根据这里的信息持续调整。</text><view class="panel"><text class="panel-title">基础信息</text><view class="row"><view class="row-main"><text>身高</text><text>记录你的身体数据</text></view><text class="accent">{{profile.height}} cm</text></view><view class="row"><view class="row-main"><text>体重</text><text>最近一次记录</text></view><text class="accent">{{profile.weight}} kg</text></view><view class="row"><view class="row-main"><text>健康目标</text><text>用于生成个性化计划</text></view><text class="accent">{{profile.goal}}</text></view></view><view class="panel"><text class="panel-title">饮食偏好</text><block wx:for="{{profile.tags}}" wx:key="*this"><text class="tag">{{item}}</text></block><button class="outline" data-label="编辑饮食偏好" bindtap="action">编辑偏好</button></view><view class="panel links"><view data-label="收货地址" bindtap="goAddress"><text>收货地址</text><text>管理常用地址 〉</text></view><view data-label="公告与消息" bindtap="goNotice"><text>公告与消息</text><text>查看最新动态 〉</text></view><view data-label="设置" bindtap="goSettings"><text>设置</text><text>偏好与账号管理 〉</text></view><view data-label="投诉与反馈" bindtap="goComplaint"><text>投诉与反馈</text><text>告诉我们你的想法 〉</text></view></view><button class="primary" data-label="保存健康档案" bindtap="action">保存健康档案</button></view>
+<view class="pg">
+  <view class="status-pad" style="height: {{padTop}}px;"></view>
+
+  <!-- 用户信息区 -->
+  <view class="me-top">
+    <view class="avatar">{{initial}}</view>
+    <view class="me-info">
+      <view class="nm">
+        {{nickname}}
+        <text class="vip" bindtap="goMember">{{isVip ? 'PRO 会员' : '开通会员'}}</text>
+      </view>
+      <view class="goal">
+        <view class="goal-dot"></view>
+        目标：{{goal}}
+      </view>
+    </view>
+  </view>
+
+  <!-- 数据速览 -->
+  <view class="me-nums">
+    <view class="me-num" wx:for="{{stats}}" wx:key="label">
+      <view class="v">{{item.num}}<text class="u">{{item.unit}}</text></view>
+      <view class="l">{{item.label}}</view>
+    </view>
+  </view>
+
+  <!-- 功能列表 -->
+  <view class="sec">
+    <text class="en">SERVICES</text>
+    <text class="cn">功能服务</text>
+    <view class="line"></view>
+  </view>
+  <view class="card m-group">
+    <view
+      class="m-row"
+      wx:for="{{menus}}"
+      wx:key="key"
+      data-url="{{item.url}}"
+      bindtap="openMenu"
+      hover-class="tap"
+    >
+      <view class="m-ic"><view class="{{item.icon}}"></view></view>
+      <text class="m-label">{{item.label}}</text>
+      <text wx:if="{{item.hint}}" class="hint">{{item.hint}}</text>
+      <text class="arrow">›</text>
+    </view>
+  </view>
+
+  <!-- 退出登录 -->
+  <view class="logout" bindtap="logout" hover-class="tap">退出登录</view>
+
+  <view style="height: 48rpx;"></view>
+</view>

@@ -1,1 +1,86 @@
-<view class="user-page"><view class="back-row"><text class="back" bindtap="back">‹</text><text>套餐详情</text><text></text></view><image class="combo-cover" src="{{combo.image}}" mode="aspectFill"/><text class="eyebrow">{{combo.kcal}}</text><text class="title">{{combo.name}}</text><text class="subtitle">{{combo.desc}}</text><view class="panel"><text class="panel-title">套餐内容</text><view class="row"><view class="row-main"><text>早餐 · 高蛋白组合</text><text>鸡蛋、全麦面包、时令水果</text></view><text class="accent">替换</text></view><view class="row"><view class="row-main"><text>午餐 · 谷物能量碗</text><text>鸡胸肉、藜麦、绿色蔬菜</text></view><text class="accent">替换</text></view><view class="row"><view class="row-main"><text>晚餐 · 暖沙拉</text><text>低脂、饱腹、轻负担</text></view><text class="accent">替换</text></view></view><view class="bottom-action"><text class="price">¥{{combo.price}}</text><button bindtap="add">加入购物车</button></view></view>
+<view class="pg">
+  <scroll-view class="body" scroll-y enhanced show-scrollbar="{{false}}">
+    <!-- 顶格 hero -->
+    <view class="hero">
+      <image src="{{combo.image}}" mode="aspectFill" lazy-load="true" />
+    </view>
+
+    <!-- 上移叠卡 -->
+    <view class="sheet">
+      <view class="t-row">
+        <view class="t-main">
+          <view class="nm">{{combo.name}}</view>
+          <view class="en" wx:if="{{combo.en}}">{{combo.en}}</view>
+          <view class="ds">{{combo.desc}}</view>
+        </view>
+        <view class="t-side">
+          <view class="price"><text class="cur">¥</text>{{combo.price}}<text class="org" wx:if="{{combo.org}}">¥{{combo.org}}</text></view>
+          <view class="per">{{combo.days}} 天 · {{combo.meals}} 餐</view>
+        </view>
+      </view>
+
+      <!-- 四格汇总 -->
+      <view class="sum card">
+        <view class="cell"><b>{{combo.kcal}}</b><span>日热量 kcal</span></view>
+        <view class="cell"><b>{{combo.protein}}</b><span>日蛋白 g</span></view>
+        <view class="cell"><b>{{combo.meals}}</b><span>总餐数</span></view>
+        <view class="cell"><b>{{combo.days}}</b><span>天数</span></view>
+      </view>
+
+      <!-- 每日餐单 -->
+      <block wx:if="{{dayMeals.length}}">
+        <view class="sec"><text class="en">DAILY MENU</text><text class="cn">每日餐单</text><view class="line"></view></view>
+        <view class="card day-card" wx:for="{{dayMeals}}" wx:key="day" wx:for-item="day" wx:for-index="di">
+          <view class="day-h">{{day.day}}</view>
+          <view class="meal" wx:for="{{day.items}}" wx:for-item="meal" wx:for-index="mi" wx:key="slot">
+            <image class="ph" src="{{meal.img}}" mode="aspectFill" lazy-load="true" />
+            <view class="mm">
+              <view class="mn">{{meal.name}}</view>
+              <view class="ms">{{meal.slot}} · {{meal.kcal}} kcal</view>
+            </view>
+            <view class="chg" catchtap="openSwap" data-day="{{di}}" data-slot="{{mi}}" hover-class="tap">更换</view>
+          </view>
+        </view>
+      </block>
+
+      <!-- AI 套餐点评 -->
+      <view class="quote">
+        <view class="q-head"><view class="ic-spark"></view><text>AI 套餐点评</text></view>
+        <view class="q-p">{{combo.ai}}</view>
+      </view>
+
+      <view class="foot-space"></view>
+    </view>
+  </scroll-view>
+
+  <!-- 浮动返回 -->
+  <view class="nav-back hero-back" style="top: {{menuTop}}px;" bindtap="back" hover-class="tap"><text class="chev">‹</text></view>
+
+  <!-- 底部操作条 -->
+  <view class="bbar">
+    <view wx:if="{{swapSummary}}" class="swap-sum">{{swapSummary}}</view>
+    <view class="bbar-row">
+      <view class="btn-ink ghost bbar-btn" bindtap="add" hover-class="tap">加入购物袋</view>
+      <view class="btn-ink green bbar-btn" bindtap="buyNow" hover-class="tap">立即购买</view>
+    </view>
+  </view>
+
+  <!-- 换菜弹层 -->
+  <view class="mask" wx:if="{{swapVisible}}" bindtap="closeSwap"></view>
+  <view class="pop {{swapVisible ? 'on' : ''}}">
+    <view class="pop-h">
+      <text class="pop-t">更换本餐</text>
+      <text class="pop-x" bindtap="closeSwap">×</text>
+    </view>
+    <scroll-view class="pop-list" scroll-y enhanced show-scrollbar="{{false}}">
+      <view class="sp-item" wx:for="{{swapCandidates}}" wx:key="dishId" bindtap="doSwap" data-day="{{swapDay}}" data-slot="{{swapSlot}}" data-id="{{item.dishId}}" hover-class="tap">
+        <image class="ph" src="{{item.img}}" mode="aspectFill" lazy-load="true" />
+        <view class="mm">
+          <view class="mn">{{item.name}}</view>
+          <view class="ms">{{item.kcal}} kcal</view>
+        </view>
+        <text class="go">›</text>
+      </view>
+    </scroll-view>
+  </view>
+</view>

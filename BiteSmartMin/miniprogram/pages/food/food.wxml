@@ -1,66 +1,70 @@
-<view class="store-page" style="{{topStyle}}">
-  <view class="store-top">
-    <text class="back" bindtap="back">‹</text>
-    <view class="store-heading">
-      <text class="store-title">商城</text>
-      <text class="store-subtitle">吃得好，也吃得明白</text>
+<view class="pg">
+  <view class="status-pad" style="height: {{padTop}}px;"></view>
+
+  <!-- 搜索行 -->
+  <view class="searchrow">
+    <view class="searchbox">
+      <view class="ic-search"></view>
+      <input class="kw" placeholder="搜索菜品、套餐、食材" placeholder-class="ph-cls" value="{{keyword}}" bindinput="onSearch" confirm-type="search" />
+      <view wx:if="{{keyword}}" class="clr" bindtap="clearSearch">×</view>
+    </view>
+    <view class="filterbtn" hover-class="tap">
+      <view class="f-lines"><view class="l1"></view><view class="l2"></view><view class="l3"></view></view>
     </view>
   </view>
 
-  <view class="store-hero">
-    <image src="https://images.unsplash.com/photo-1498837167922-ddd27525d352?w=1000&q=80" mode="aspectFill" />
-    <view class="hero-copy">
-      <text class="hero-kicker">BITESMART MARKET</text>
-      <text class="hero-title">今天的好营养，<br />现在就选。</text>
-      <text class="hero-link" bindtap="openCombos">看健康套餐 →</text>
-    </view>
-  </view>
-
-  <view class="store-tabs">
-    <text class="active">菜品</text>
-    <text bindtap="openCombos">套餐</text>
-  </view>
-  <input class="store-search" placeholder="搜索菜品、套餐或营养目标" bindinput="search" />
-  <scroll-view class="category-row" scroll-x="true" show-scrollbar="false">
-    <text class="category active">全部</text>
-    <text class="category">高蛋白</text>
-    <text class="category">低脂</text>
-    <text class="category">轻断食</text>
-    <text class="category">低糖</text>
+  <!-- 分类 tab -->
+  <scroll-view class="cats" scroll-x enhanced show-scrollbar="{{false}}">
+    <view
+      wx:for="{{cats}}"
+      wx:key="k"
+      class="cat {{cat === item.k ? 'on' : ''}}"
+      data-k="{{item.k}}"
+      bindtap="setCat"
+    >{{item.t}}</view>
   </scroll-view>
 
-  <view class="store-section-head">
-    <text>今日推荐</text>
-    <text>{{items.length}} 款可选</text>
+  <!-- 排序行 -->
+  <view class="sortrow">
+    <text class="{{sort === 'default' ? 'on' : ''}}" data-k="default" bindtap="setSort">综合</text>
+    <text class="{{sort === 'sales' ? 'on' : ''}}" data-k="sales" bindtap="setSort">销量</text>
+    <text class="{{sort === 'priceAsc' || sort === 'priceDesc' ? 'on' : ''}}" data-k="price" bindtap="setSort">价格 {{sort === 'priceAsc' ? '↑' : (sort === 'priceDesc' ? '↓' : '↕')}}</text>
   </view>
-  <view class="food-list">
-    <block wx:for="{{items}}" wx:key="name">
-      <view class="food-card" data-index="{{index}}" bindtap="openDetail">
-        <image src="{{item.image}}" mode="aspectFill" />
-        <view class="food-card-content">
-          <view>
-            <text class="food-name">{{item.name}}</text>
-            <text class="food-desc">{{item.desc}}</text>
-          </view>
-          <view class="food-bottom">
-            <view>
-              <text class="food-price">¥{{item.price}}</text>
-              <text class="food-kcal">{{item.kcal}}</text>
-            </view>
-            <button class="food-add" data-index="{{index}}" catchtap="addDish">+</button>
-          </view>
-        </view>
+
+  <!-- 空状态 -->
+  <view wx:if="{{!filtered.length}}" class="empty">
+    <view class="e-circle"><view class="ic-search big"></view></view>
+    <view class="e-t">没有找到相关商品</view>
+    <view class="e-s">换个关键词试试，比如「鸡胸」「低卡」</view>
+  </view>
+
+  <!-- 双列瀑布卡 -->
+  <view wx:else class="grid2">
+    <view class="g-item" wx:for="{{filtered}}" wx:key="id">
+      <view class="ph" data-index="{{index}}" bindtap="openItem" hover-class="tap">
+        <image src="{{item.image}}" mode="aspectFill" lazy-load />
+        <view class="badge">{{item.badge}}</view>
+        <view wx:if="{{item.kind === 'dish' && item.stock === 0}}" class="soldout">已售罄</view>
       </view>
-    </block>
+      <view class="nm" data-index="{{index}}" bindtap="openItem">{{item.name}}</view>
+      <view class="tags">
+        <text class="g-tag" wx:for="{{item.tags}}" wx:for-item="tag" wx:key="*this">{{tag}}</text>
+      </view>
+      <view class="row">
+        <view class="price">
+          <text class="cur">¥</text>{{item.price}}
+          <text wx:if="{{item.org}}" class="org">¥{{item.org}}</text>
+        </view>
+        <view wx:if="{{item.kind === 'dish' && item.stock === 0}}" class="pill gray">售罄</view>
+        <view wx:else class="addbtn" data-index="{{index}}" catchtap="addItem"></view>
+      </view>
+    </view>
   </view>
-  <view class="floating-cart" bindtap="openCart">
-    <view class="floating-cart-info">
-      <text class="floating-cart-title">购物车</text>
-      <text class="floating-cart-note">已选 {{cartCount}} 件商品</text>
-    </view>
-    <view class="floating-cart-action">
-      <text>查看购物车</text>
-      <text class="floating-cart-arrow">›</text>
-    </view>
+
+  <view style="height: 120rpx;"></view>
+
+  <!-- 购物车悬浮按钮 -->
+  <view class="cart-fab" bindtap="openCart" hover-class="tap">
+    <view class="ic-bag"><view class="handle"></view><view class="body"></view></view>
   </view>
 </view>

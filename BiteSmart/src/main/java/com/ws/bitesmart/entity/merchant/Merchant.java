@@ -54,6 +54,13 @@ public class Merchant {
     /** 状态：10-待审核 20-审核通过 30-审核驳回 40-已关闭 */
     private Integer status;
 
+    /** 营业状态：10-营业中 20-打烊 */
+    public static final int OPEN_STATUS_OPEN = 10;
+    public static final int OPEN_STATUS_CLOSED = 20;
+
+    /** 营业状态：10-营业中 20-打烊 */
+    private Integer openStatus;
+
     /** 审核备注 */
     private String auditRemark;
 

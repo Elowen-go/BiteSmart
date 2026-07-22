@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted, nextTick } from 'vue'
-import { aiChat, getChatHistory } from '../../../api/user/ai'
+import { aiChat } from '../../../api/user/ai'
 import { ElMessage } from 'element-plus'
+import { ChatDotRound } from '@element-plus/icons-vue'
 
 const loading = ref(false)
 const messages = ref<{ role: string; content: string }[]>([])
@@ -66,7 +67,7 @@ onMounted(() => {
       </div>
       <div ref="chatContainer" style="flex: 1; overflow-y: auto; padding: 16px 0; display: flex; flex-direction: column; gap: 12px;">
         <div v-if="messages.length === 0" style="text-align: center; padding: 60px 20px;">
-          <div style="font-size: 48px; margin-bottom: 16px;">🤖</div>
+          <div class="ai-avatar"><el-icon :size="30"><ChatDotRound /></el-icon></div>
           <div style="font-size: 18px; font-weight: 600; color: var(--bs-text-title);">智能助手</div>
           <div style="font-size: 14px; color: var(--bs-text-muted); margin-top: 8px;">有什么饮食问题可以问我</div>
         </div>
@@ -76,7 +77,7 @@ onMounted(() => {
               maxWidth: '75%',
               padding: '10px 16px',
               borderRadius: msg.role === 'user' ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
-              background: msg.role === 'user' ? 'var(--bs-primary)' : 'var(--bs-card-bg)',
+              background: msg.role === 'user' ? 'var(--green)' : 'var(--bs-card-bg)',
               color: msg.role === 'user' ? '#fff' : 'var(--bs-text-title)',
               boxShadow: 'var(--bs-card-shadow)',
               lineHeight: '1.6',
@@ -133,5 +134,16 @@ onMounted(() => {
   font-size: var(--bs-font-size-lg);
   font-weight: 600;
   color: var(--bs-text-title);
+}
+
+.ai-avatar {
+  display: inline-grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  margin-bottom: 16px;
+  border-radius: 50%;
+  background: var(--green-soft);
+  color: var(--green);
 }
 </style>

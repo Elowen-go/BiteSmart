@@ -1,6 +1,8 @@
 package com.ws.bitesmart.controller.delivery;
 
 import com.ws.bitesmart.common.ResultVO;
+import com.ws.bitesmart.dto.request.RiderLocationRequest;
+import com.ws.bitesmart.entity.delivery.DeliveryDriver;
 import com.ws.bitesmart.entity.delivery.DeliveryTask;
 import com.ws.bitesmart.entity.delivery.DriverSettlement;
 import com.ws.bitesmart.entity.review.Review;
@@ -14,11 +16,12 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
@@ -65,15 +68,47 @@ public class DeliveryDriverController {
     }
 
     /**
-     * 上传当前位置
+     * 上传配送轨迹点
+     *
+     * body: {"taskId": 任务ID, "latitude": 纬度, "longitude": 经度}
+     * 坐标系约定：GCJ-02（高德/腾讯地图坐标系），
+     * 小程序端用 wx.getLocation({ type: 'gcj02' }) 获取或自行转换后上传。
+     * 仅允许任务属于当前骑手且处于配送途中（30-已取餐 / 40-配送中）时上传。
      */
     @PostMapping("/location")
     public ResultVO<Void> updateLocation(@AuthenticationPrincipal LoginUser loginUser,
-                                          @RequestParam BigDecimal lat,
-                                          @RequestParam BigDecimal lng) {
+                                          @RequestBody RiderLocationRequest request) {
         if (loginUser == null) return ResultVO.error(401, "未登录");
-        deliveryDriverService.updateLocation(loginUser.getUserId(), lat, lng);
+        if (request.getTaskId() == null || request.getLatitude() == null || request.getLongitude() == null) {
+            return ResultVO.error(400, "taskId、latitude、longitude 不能为空");
+        }
+        deliveryTaskService.uploadTaskLocation(loginUser.getUserId(), request.getTaskId(),
+                request.getLatitude(), request.getLongitude());
         return ResultVO.ok("位置更新成功");
+    }
+
+    // ==================== 个人信息 ====================
+
+    /**
+     * 获取当前骑手个人信息
+     */
+    @GetMapping("/profile")
+    public ResultVO<DeliveryDriver> getProfile(@AuthenticationPrincipal LoginUser loginUser) {
+        if (loginUser == null) return ResultVO.error(401, "未登录");
+        return ResultVO.success(deliveryDriverService.getProfile(loginUser.getUserId()));
+    }
+
+    /**
+     * 更新骑手个人信息
+     * body 字段：realName / phone / vehicleType(10-电动车 20-自行车 30-汽车) / serviceArea(JSON字符串)
+     * 只传要改的字段即可
+     */
+    @PutMapping("/profile")
+    public ResultVO<Void> updateProfile(@AuthenticationPrincipal LoginUser loginUser,
+                                         @RequestBody DeliveryDriver request) {
+        if (loginUser == null) return ResultVO.error(401, "未登录");
+        deliveryDriverService.updateProfile(loginUser.getUserId(), request);
+        return ResultVO.ok("资料更新成功");
     }
 
     /**
@@ -83,6 +118,15 @@ public class DeliveryDriverController {
     public ResultVO<List<DeliveryTask>> tasks(@AuthenticationPrincipal LoginUser loginUser) {
         if (loginUser == null) return ResultVO.error(401, "未登录");
         return ResultVO.success(deliveryTaskService.getDriverTasks(loginUser.getUserId()));
+    }
+
+    /**
+     * 任务大厅：待接单任务列表（task_status=10，所有配送员可见，抢单制）
+     */
+    @GetMapping("/tasks/pending")
+    public ResultVO<List<DeliveryTask>> pendingTasks(@AuthenticationPrincipal LoginUser loginUser) {
+        if (loginUser == null) return ResultVO.error(401, "未登录");
+        return ResultVO.success(deliveryTaskService.getPendingTasks());
     }
 
     /**
@@ -105,6 +149,21 @@ public class DeliveryDriverController {
         if (loginUser == null) return ResultVO.error(401, "未登录");
         deliveryTaskService.pickupTask(id, loginUser.getUserId());
         return ResultVO.ok("取餐成功");
+    }
+
+    /**
+     * 骑手拒单：任务回待接单池（taskStatus 20→10），记录拒单原因
+     *
+     * @param id     配送任务ID
+     * @param reason 拒单原因（可选）
+     */
+    @PostMapping("/tasks/{id}/reject")
+    public ResultVO<Void> rejectTask(@AuthenticationPrincipal LoginUser loginUser,
+                                      @PathVariable Long id,
+                                      @RequestParam(required = false) String reason) {
+        if (loginUser == null) return ResultVO.error(401, "未登录");
+        deliveryTaskService.rejectTask(loginUser.getUserId(), id, reason);
+        return ResultVO.ok("已拒单，任务返回待接单池");
     }
 
     /**
