@@ -15,9 +15,7 @@
           <view class="date-picker-main">
             <view class="calendar-icon"></view>
             <view class="d-cur">
-              <view class="date-picker-label">选择日期</view>
               <view class="d-main">{{dateMain}}</view>
-              <view class="d-sub">{{dateSub}}</view>
             </view>
           </view>
         </picker>

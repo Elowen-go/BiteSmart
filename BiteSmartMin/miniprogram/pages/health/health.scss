@@ -11,16 +11,29 @@
   flex: none;
 }
 .nav-back {
-  width: 68rpx;
-  height: 68rpx;
-  border: 1rpx solid #E2D7C6;
-  border-radius: 20rpx;
-  background: #fff;
+  position: relative;
+  width: 72rpx;
+  height: 72rpx;
+  border: 1rpx solid #285D40;
+  border-radius: 24rpx;
+  background: #2F6C49;
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 8rpx 16rpx rgba(47, 108, 73, 0.2);
 }
-.nav-back .chev { font-size: 34rpx; color: var(--ink); line-height: 1; margin-top: -2rpx; }
+.nav-back .chev {
+  display: block;
+  width: 20rpx;
+  height: 20rpx;
+  font-size: 0;
+  line-height: 0;
+  margin-left: 7rpx;
+  border-left: 4rpx solid #FFF7E8;
+  border-bottom: 4rpx solid #FFF7E8;
+  box-sizing: border-box;
+  transform: rotate(45deg);
+}
 .nav-t { font-size: 32rpx; font-weight: 800; margin-left: 24rpx; }
 .nav-ph { width: 68rpx; margin-left: auto; }
 
@@ -31,22 +44,22 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 10rpx 0 24rpx;
+  padding: 4rpx 0 10rpx;
 }
 .date-picker {
   display: flex;
   align-items: center;
-  width: 420rpx;
-  height: 104rpx;
+  width: 460rpx;
+  height: 88rpx;
   padding: 0 12rpx;
   box-sizing: border-box;
   border: 1rpx solid #E2D7C6;
-  border-radius: 30rpx;
+  border-radius: 28rpx;
   background: #F4EEE2;
 }
 .date-step {
-  width: 72rpx;
-  height: 72rpx;
+  width: 68rpx;
+  height: 68rpx;
   border: 1rpx solid #E2D7C6;
   border-radius: 50%;
   background: #FFFDF8;
@@ -55,14 +68,14 @@
   justify-content: center;
 }
 .date-step.dim { opacity: 0.3; }
-.d-chev { font-size: 38rpx; color: #7C6A51; line-height: 1; margin-top: -4rpx; }
+.d-chev { font-size: 34rpx; color: #7C6A51; line-height: 1; margin-top: -4rpx; }
 .date-picker-trigger { flex: 1; min-width: 0; height: 100%; display: flex; align-items: center; justify-content: center; }
 .date-picker-main { flex: 1; display: flex; align-items: center; justify-content: center; min-width: 0; }
 .calendar-icon {
   position: relative;
-  width: 38rpx;
-  height: 36rpx;
-  margin-right: 16rpx;
+  width: 34rpx;
+  height: 32rpx;
+  margin-right: 14rpx;
   border: 2rpx solid #5F8669;
   border-radius: 7rpx;
   box-sizing: border-box;
@@ -72,24 +85,22 @@
   position: absolute;
   left: -2rpx;
   right: -2rpx;
-  top: 9rpx;
+  top: 8rpx;
   border-top: 2rpx solid #5F8669;
 }
 .calendar-icon::after {
   content: '';
   position: absolute;
-  left: 8rpx;
-  top: -10rpx;
+  left: 7rpx;
+  top: -9rpx;
   width: 5rpx;
-  height: 10rpx;
+  height: 9rpx;
   border-radius: 5rpx;
   background: #5F8669;
-  box-shadow: 15rpx 0 0 #5F8669;
+  box-shadow: 14rpx 0 0 #5F8669;
 }
 .d-cur { text-align: center; }
-.date-picker-label { color: #5F8669; font-size: 18rpx; line-height: 1; text-align: left; }
-.d-main { font-size: 30rpx; font-weight: 800; line-height: 1.2; }
-.d-sub { font-size: 18rpx; color: var(--faint); letter-spacing: 3rpx; margin-top: 3rpx; }
+.d-main { font-size: 28rpx; font-weight: 800; line-height: 1.15; }
 
 /* ---------- 总览卡 ---------- */
 .sum {

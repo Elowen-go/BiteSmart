@@ -161,7 +161,7 @@ Page({
     const sa = getSafeArea()
     this.setData({
       statusBarHeight: sa.statusBarH,
-      menuTop: sa.menuTop,
+      menuTop: sa.menuTop + 8,
       menuH: sa.menuH,
       chartW: rpx2px(606),
       chartH: rpx2px(240),

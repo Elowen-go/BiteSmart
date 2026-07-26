@@ -21,17 +21,19 @@
     <view class="btn-ink green empty-btn" bindtap="goAssessment" hover-class="tap">去定制我的食谱</view>
   </view>
 
-  <!-- 结果页 -->
-  <scroll-view wx:if="{{state === 'result'}}" class="body" scroll-y enhanced show-scrollbar="{{false}}">
-    <!-- hero（顶部留出胶囊安全区） -->
-    <view class="plan-hero" style="padding-top: {{padTop}}px;">
+    <!-- 结果页 -->
+    <scroll-view wx:if="{{state === 'result'}}" class="body" scroll-y enhanced show-scrollbar="{{false}}">
+      <!-- hero（顶部留出胶囊安全区） -->
+      <view class="plan-hero" style="padding-top: {{padTop}}px;">
+      <image wx:if="{{meals.length && meals[0].image}}" class="plan-hero-image" src="{{meals[0].image}}" mode="aspectFill" />
+      <view class="plan-hero-shade"></view>
       <view class="hero-top">
         <view class="hero-l">
           <view class="hi">HI, {{nickname}}</view>
           <view class="hero-title">你的专属食谱已生成</view>
           <view class="hero-time">生成于 {{genTime}} · 基于 {{basis}}</view>
         </view>
-        <view class="icon-btn" bindtap="goHome" hover-class="tap"><text class="x-t">×</text></view>
+        <view class="icon-btn plan-refresh" bindtap="goHome" hover-class="tap"><text class="x-t">‹</text></view>
       </view>
       <view class="plan-stats">
         <view class="me-num"><view class="b">{{planDays}}<text class="em"> 天</text></view><view class="s">计划时长</view></view>
@@ -62,6 +64,12 @@
         </view>
       </scroll-view>
 
+      <view class="ingredient-tip" bindtap="reCustomize" hover-class="tap">
+        <text class="ingredient-label">定制食材</text>
+        <text class="ingredient-copy">按你的口味调整餐单</text>
+        <text class="ingredient-arrow">›</text>
+      </view>
+
       <view class="sec sec-sm">
         <text class="en">DAY {{planDay + 1}}</text>
         <text class="cn cn-sm">第 {{planDay + 1}} 天餐单</text>
@@ -71,11 +79,26 @@
 
       <!-- 三餐卡 -->
       <view class="plan-meal" wx:for="{{meals}}" wx:key="mealId">
+        <view class="meal-card-visual">
         <image class="ph" src="{{item.image}}" mode="aspectFill" />
+          <view class="meal-nutrition">
+            <view class="nutrition-line"><view class="nutrition-dot carb"></view><text>碳水</text><text class="nutrition-value">{{item.carbs}}g</text></view>
+            <view class="nutrition-line"><view class="nutrition-dot protein"></view><text>蛋白质</text><text class="nutrition-value">{{item.protein}}g</text></view>
+            <view class="nutrition-line"><view class="nutrition-dot fat"></view><text>脂肪</text><text class="nutrition-value">{{item.fat}}g</text></view>
+          </view>
+          <view class="meal-ribbon">{{item.when}}</view>
+        </view>
         <view class="meal-main">
+          <view class="meal-total">{{item.kcal}} <text>kcal</text></view>
           <view class="when">{{item.when}} · {{item.en}}</view>
           <view class="nm">{{item.name}}</view>
           <view class="kc">{{item.kcal}} kcal · 蛋白质 {{item.protein}}g</view>
+        </view>
+        <view wx:if="{{item.tags.length}}" class="meal-ingredients">
+          <view class="meal-ingredient" wx:for="{{item.tags}}" wx:key="*this" wx:for-item="tag">
+            <view class="ingredient-dot"></view>
+            <text>{{tag}}</text>
+          </view>
         </view>
         <view class="meal-side">
           <text class="swap" catchtap="swapMeal" data-meal-id="{{item.mealId}}">换一道</text>
@@ -104,7 +127,7 @@
       <view wx:if="{{started}}" class="btn-ink cta" bindtap="goMall" hover-class="tap">按今日餐单去点餐</view>
       <view wx:elif="{{finished}}" class="btn-ink cta" bindtap="reCustomize" hover-class="tap">计划已完成 · 重新定制</view>
       <view wx:else class="btn-ink cta" bindtap="startPlan" hover-class="tap">开始执行计划</view>
-      <view class="re-custom" bindtap="reCustomize" hover-class="tap">重新定制</view>
+      <view wx:if="{{!finished}}" class="re-custom" bindtap="reCustomize" hover-class="tap">重新定制</view>
     </view>
 
     <view style="height: 60rpx;"></view>

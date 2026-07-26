@@ -502,14 +502,14 @@
 .meal-2 { background: #E1B978; transform: rotate(-0.35deg); }
 .meal.is-featured { background: #E1B978; }
 .meal-image {
-  width: 76rpx;
-  height: 76rpx;
+  width: 100rpx;
+  height: 100rpx;
   flex: none;
   border-radius: 50%;
-  border: 3rpx solid rgba(255, 247, 226, 0.88);
+  border: 4rpx solid rgba(255, 247, 226, 0.92);
   background: #E8F1EA;
 }
-.meal .what { flex: 1; min-width: 0; margin-left: 18rpx; }
+.meal .what { flex: 1; min-width: 0; margin-left: 14rpx; }
 .meal-meta { display: flex; align-items: center; height: 26rpx; }
 .meal-label {
   display: inline-flex;
@@ -531,7 +531,7 @@
 .meal-status-dot { width: 8rpx; height: 8rpx; flex: none; margin-right: 7rpx; border-radius: 50%; background: #9A7A56; }
 .meal-status.is-done .meal-status-dot { background: #4F8966; }
 .meal.is-featured .meal-status { color: #4F8966; }
-.meal .kcal { min-width: 92rpx; display: flex; align-items: baseline; justify-content: flex-end; margin-left: 14rpx; color: #76583D; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.meal .kcal { min-width: 88rpx; display: flex; align-items: baseline; justify-content: flex-end; margin-left: 10rpx; color: #76583D; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .kcal-num { font-size: 26rpx; font-weight: 700; }
 .kcal-unit { margin-left: 4rpx; font-size: 17rpx; }
 .meal.is-featured .kcal { color: #A56536; }

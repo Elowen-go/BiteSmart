@@ -38,6 +38,9 @@ interface MealVM {
   name: string
   kcal: number
   protein: number
+  carbs: number
+  fat: number
+  tags: string[]
   image: string
   done: boolean
   dishId: number | string
@@ -227,6 +230,9 @@ Page({
         name: m.dishName || '健康菜品',
         kcal: Number(m.calories || 0),
         protein: Number(m.protein || 0),
+        carbs: Number(m.carbs || 0),
+        fat: Number(m.fat || 0),
+        tags: parseJsonList(m.tags).slice(0, 3),
         image: m.dishImage || '',
         done: m.checked === 1,
         dishId: m.dishId || 0
