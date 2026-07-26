@@ -4,6 +4,31 @@
 
 .tap { opacity: 0.72; }
 
+/* ---- 页面头 ---- */
+.mall-head {
+  padding: 14rpx 0 24rpx;
+}
+.mall-head .en {
+  display: block;
+  font-size: 18rpx;
+  letter-spacing: 4rpx;
+  color: var(--faint);
+  font-weight: 800;
+}
+.mall-head .t {
+  display: block;
+  margin-top: 8rpx;
+  font-size: 42rpx;
+  line-height: 1.25;
+  font-weight: 800;
+}
+.mall-head .s {
+  display: block;
+  margin-top: 8rpx;
+  font-size: 22rpx;
+  color: var(--sub);
+}
+
 /* ---- 搜索行 ---- */
 .searchrow { display: flex; align-items: center; padding: 8rpx 0 28rpx; }
 
@@ -68,9 +93,18 @@
 }
 
 /* ---- 排序行 ---- */
-.sortrow { display: flex; align-items: center; padding: 24rpx 4rpx; font-size: 22rpx; color: var(--sub); }
-.sortrow text { margin-right: 32rpx; }
+.sortrow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24rpx 4rpx;
+  font-size: 22rpx;
+  color: var(--sub);
+}
+.sort-left { display: flex; align-items: center; min-width: 0; }
+.sort-left text { margin-right: 32rpx; }
 .sortrow .on { color: var(--green-deep); font-weight: 700; }
+.sort-count { flex: none; color: var(--faint); font-variant-numeric: tabular-nums; }
 
 /* ---- 空状态 ---- */
 .empty { display: flex; flex-direction: column; align-items: center; padding: 100rpx 0 60rpx; }
@@ -115,6 +149,18 @@
   padding: 8rpx 14rpx;
   font-weight: 700;
   color: var(--green-ink);
+}
+.g-item .sold {
+  position: absolute;
+  left: 16rpx;
+  bottom: 16rpx;
+  border-radius: 12rpx;
+  background: rgba(23, 37, 31, 0.72);
+  color: #FFFFFF;
+  font-size: 18rpx;
+  font-weight: 700;
+  padding: 8rpx 14rpx;
+  font-variant-numeric: tabular-nums;
 }
 .g-item .soldout {
   position: absolute;

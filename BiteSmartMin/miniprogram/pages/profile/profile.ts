@@ -23,6 +23,12 @@ Page({
       { num: '--', unit: ' kg', label: '当前体重' },
       { num: '--', unit: ' kg', label: '本月变化' }
     ],
+    quicks: [
+      { key: 'orders', label: '订单', url: '/pages/order/order' },
+      { key: 'cart', label: '购物车', url: '/pages/cart/cart' },
+      { key: 'plan', label: '食谱', url: '/pages/plan/plan' },
+      { key: 'review', label: '评价', url: '/pages/review/review' }
+    ],
     menus: [
       { key: 'assessment', label: '健康档案', icon: 'ic-doc', url: '/pages/assessment/assessment', hint: '未定制' },
       { key: 'health', label: '健康记录', icon: 'ic-chart', url: '/pages/health/health' },

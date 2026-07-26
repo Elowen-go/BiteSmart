@@ -1,6 +1,12 @@
 <view class="pg">
   <view class="status-pad" style="height: {{padTop}}px;"></view>
 
+  <view class="mall-head">
+    <text class="en">SMART MARKET</text>
+    <text class="t">今天想吃点什么？</text>
+    <text class="s">按目标挑选低卡、高蛋白与健康套餐</text>
+  </view>
+
   <!-- 搜索行 -->
   <view class="searchrow">
     <view class="searchbox">
@@ -26,9 +32,12 @@
 
   <!-- 排序行 -->
   <view class="sortrow">
-    <text class="{{sort === 'default' ? 'on' : ''}}" data-k="default" bindtap="setSort">综合</text>
-    <text class="{{sort === 'sales' ? 'on' : ''}}" data-k="sales" bindtap="setSort">销量</text>
-    <text class="{{sort === 'priceAsc' || sort === 'priceDesc' ? 'on' : ''}}" data-k="price" bindtap="setSort">价格 {{sort === 'priceAsc' ? '↑' : (sort === 'priceDesc' ? '↓' : '↕')}}</text>
+    <view class="sort-left">
+      <text class="{{sort === 'default' ? 'on' : ''}}" data-k="default" bindtap="setSort">综合</text>
+      <text class="{{sort === 'sales' ? 'on' : ''}}" data-k="sales" bindtap="setSort">销量</text>
+      <text class="{{sort === 'priceAsc' || sort === 'priceDesc' ? 'on' : ''}}" data-k="price" bindtap="setSort">价格 {{sort === 'priceAsc' ? '↑' : (sort === 'priceDesc' ? '↓' : '↕')}}</text>
+    </view>
+    <text class="sort-count">{{filtered.length}} 款</text>
   </view>
 
   <!-- 空状态 -->
@@ -44,6 +53,7 @@
       <view class="ph" data-index="{{index}}" bindtap="openItem" hover-class="tap">
         <image src="{{item.image}}" mode="aspectFill" lazy-load />
         <view class="badge">{{item.badge}}</view>
+        <view wx:if="{{item.sold}}" class="sold">{{item.sold}} 人点过</view>
         <view wx:if="{{item.kind === 'dish' && item.stock === 0}}" class="soldout">已售罄</view>
       </view>
       <view class="nm" data-index="{{index}}" bindtap="openItem">{{item.name}}</view>

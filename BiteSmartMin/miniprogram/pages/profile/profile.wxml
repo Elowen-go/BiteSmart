@@ -2,16 +2,24 @@
   <view class="status-pad" style="height: {{padTop}}px;"></view>
 
   <!-- 用户信息区 -->
-  <view class="me-top">
-    <view class="avatar">{{initial}}</view>
-    <view class="me-info">
-      <view class="nm">
-        {{nickname}}
-        <text class="vip" bindtap="goMember">{{isVip ? 'PRO 会员' : '开通会员'}}</text>
+  <view class="me-card">
+    <view class="me-top">
+      <view class="avatar">{{initial}}</view>
+      <view class="me-info">
+        <view class="nm">
+          {{nickname}}
+          <text class="vip" bindtap="goMember">{{isVip ? 'PRO 会员' : '开通会员'}}</text>
+        </view>
+        <view class="goal">
+          <view class="goal-dot"></view>
+          目标：{{goal}}
+        </view>
       </view>
-      <view class="goal">
-        <view class="goal-dot"></view>
-        目标：{{goal}}
+    </view>
+    <view class="quick-strip">
+      <view class="quick" wx:for="{{quicks}}" wx:key="key" data-url="{{item.url}}" bindtap="openMenu" hover-class="tap">
+        <view class="quick-ic {{item.key}}"></view>
+        <text>{{item.label}}</text>
       </view>
     </view>
   </view>
@@ -22,6 +30,14 @@
       <view class="v">{{item.num}}<text class="u">{{item.unit}}</text></view>
       <view class="l">{{item.label}}</view>
     </view>
+  </view>
+
+  <view class="member-card" bindtap="goMember" hover-class="tap">
+    <view>
+      <view class="member-t">BiteSmart PRO</view>
+      <view class="member-s">解锁专属食谱、营养分析与会员优惠</view>
+    </view>
+    <view class="member-go">查看</view>
   </view>
 
   <!-- 功能列表 -->

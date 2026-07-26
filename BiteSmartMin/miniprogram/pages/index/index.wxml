@@ -1,69 +1,135 @@
 <view class="pg">
-  <view class="status-pad" style="height: {{padTop}}px;"></view>
-
-  <!-- 日期行 -->
-  <view class="h-date">{{dateLine}}</view>
-
-  <!-- 问候行 + 铃铛 -->
-  <view class="h-top">
-    <view class="h-hello">{{greeting}}，{{nickname}}<text class="sub">继续加油</text></view>
-    <view class="icon-btn" bindtap="goNotice" hover-class="tap">
-      <view class="ic-bell"><view class="dome"></view><view class="bar"></view><view class="clap"></view></view>
-      <view class="unread"></view>
+  <!-- 顶部图片氛围区 -->
+  <view class="hero">
+    <swiper class="hero-swiper" autoplay circular interval="3600" duration="520">
+      <swiper-item wx:for="{{heroBanners}}" wx:key="*this">
+        <image class="hero-image" src="{{item}}" mode="aspectFill" />
+      </swiper-item>
+    </swiper>
+    <view class="hero-shade"></view>
+    <view class="hero-top" style="padding-top: {{padTop}}px;">
+      <view class="hero-copy">
+        <view class="h-date">{{dateLine}}</view>
+        <view class="h-hello">{{greeting}}，{{nickname}}</view>
+        <view class="h-sub">今天也用一餐照顾好自己</view>
+      </view>
+      <view class="icon-btn hero-bell" bindtap="goNotice" hover-class="tap">
+        <view class="ic-bell"><view class="dome"></view><view class="bar"></view><view class="clap"></view></view>
+        <view wx:if="{{hasUnreadNotice}}" class="unread"></view>
+      </view>
     </view>
   </view>
 
-  <!-- 今日热量卡 -->
-  <view class="health card" bindtap="goHealth" hover-class="tap">
-    <view class="health-head">
-      <text class="lab">今日热量 TODAY</text>
-      <text class="rest">还可摄入 {{rest}} kcal</text>
-    </view>
-    <view class="health-mid">
-      <view class="ring-css" style="background: conic-gradient(#1E9E62 {{ringDeg}}deg, #EFF1EC 0deg);">
-        <view class="ring-css-inner">
-          <text class="num">{{eaten}}</text>
-          <text class="unit">/ {{target}} kcal</text>
-        </view>
-      </view>
-      <view class="macros">
-        <view class="macro" wx:for="{{macros}}" wx:key="key">
-          <view class="m-top">
-            <text class="m-lab">{{item.label}} {{item.en}}</text>
-            <text class="m-val">{{item.cur}} / {{item.goal}}g</text>
+  <view class="content">
+    <!-- 今日健康浮层 -->
+    <view class="health card" bindtap="goHealth" hover-class="tap">
+      <view class="health-user">
+        <view class="avatar-mini">{{initial}}</view>
+        <view class="health-name">
+          <view class="name-line">
+            <text>Hi，{{nickname}}</text>
+            <text class="member-pill">智能膳食中</text>
           </view>
-          <view class="track"><view class="fill" style="width: {{item.pct}}%; background: {{item.color}};"></view></view>
+          <view class="goal-line">今日目标 {{target}} kcal · 还可摄入 {{rest}} kcal</view>
+        </view>
+        <view class="health-code">
+          <image class="health-file-icon" src="/assets/home/health-profile-user.png" mode="aspectFit" />
+          <text>健康档案</text>
+        </view>
+      </view>
+
+      <view class="health-nums">
+        <view class="hn">
+          <text class="hn-l">已摄入</text>
+          <view class="hn-v">{{eaten}}<text>kcal</text></view>
+        </view>
+        <view class="hn">
+          <text class="hn-l">早餐</text>
+          <view class="hn-v">{{breakfast}}<text>kcal</text></view>
+        </view>
+        <view class="hn">
+          <text class="hn-l">午餐</text>
+          <view class="hn-v">{{lunch}}<text>kcal</text></view>
+        </view>
+        <view class="hn burn">
+          <text class="hn-l">运动消耗</text>
+          <view class="hn-v">-{{exerciseBurn}}<text>kcal</text></view>
         </view>
       </view>
     </view>
-    <view class="health-foot">
-      <text>早餐 <text class="b">{{breakfast}}</text></text>
-      <text>午餐 <text class="b">{{lunch}}</text></text>
-      <text>加餐 <text class="b">{{snack}}</text></text>
-      <text class="burn">运动消耗 <text class="b">-{{exerciseBurn}}</text></text>
+
+    <!-- 快捷入口 -->
+    <view class="quick-row">
+      <view class="quick-card" bindtap="goHealth" hover-class="tap">
+        <image class="quick-img" src="/assets/quick/quick-record.png" mode="aspectFit" />
+        <text>记录</text>
+      </view>
+      <view class="quick-card" bindtap="goPlan" hover-class="tap">
+        <image class="quick-img" src="/assets/quick/quick-plan.png" mode="aspectFit" />
+        <text>食谱</text>
+      </view>
+      <view class="quick-card" bindtap="goMall" hover-class="tap">
+        <image class="quick-img" src="/assets/quick/quick-order.png" mode="aspectFit" />
+        <text>点餐</text>
+      </view>
+      <view class="quick-card" bindtap="goAi" hover-class="tap">
+        <image class="quick-img" src="/assets/quick/quick-ai.png" mode="aspectFit" />
+        <text>问 AI</text>
+      </view>
     </view>
-  </view>
 
   <!-- AI 今日餐单 -->
   <view class="card plan">
-    <view class="plan-head" bindtap="goAi" hover-class="tap">
-      <view class="spark-box"><view class="ic-spark"></view></view>
-      <view class="plan-t">
-        <view class="t">AI 今日餐单</view>
-        <view class="s">{{planSub}}</view>
+    <view class="plan-banner" bindtap="goPlan" hover-class="tap">
+      <view class="plan-title">今日三餐</view>
+      <view class="plan-energy">
+        <text class="plan-energy-num">{{planKcalTotal}}</text>
+        <text class="plan-energy-unit">kcal</text>
+        <text class="plan-energy-label">今日能量安排</text>
       </view>
-      <view class="go" catchtap="goAssessment">定制</view>
+      <view class="plan-banner-side">
+        <text class="plan-day">{{planDayLabel}}</text>
+        <view class="plan-action" catchtap="goAssessment"><text>{{planAction}}</text><text class="plan-arrow">›</text></view>
+      </view>
+      <view class="plan-collage">
+        <block wx:for="{{meals}}" wx:key="when">
+          <image wx:if="{{index < 3}}" class="plan-food plan-food-{{index}}" src="{{item.image}}" mode="aspectFill" />
+        </block>
+      </view>
+      <view class="plan-progress plan-banner-progress">
+        <view class="plan-progress-copy">
+          <text class="plan-progress-title">今日餐单进度</text>
+          <text class="plan-progress-value">{{planDoneCount}} / {{planTotal}} 餐已完成</text>
+        </view>
+        <view class="plan-steps">
+          <block wx:for="{{meals}}" wx:key="when">
+            <view class="plan-step-item">
+              <text class="plan-step-label">{{item.when}}</text>
+              <view class="plan-step-track">
+                <view class="plan-step-dot {{item.done ? 'done' : ''}}"></view>
+                <view wx:if="{{item.hasNext}}" class="plan-step-link {{item.done ? 'done' : ''}}"></view>
+              </view>
+            </view>
+          </block>
+        </view>
+      </view>
     </view>
-    <view class="meal {{item.hot ? 'hot' : ''}}" wx:for="{{meals}}" wx:key="when" bindtap="goPlan" hover-class="tap">
-      <view class="when">
-        <text class="w">{{item.when}}</text>
-        <text class="e">{{item.en}}</text>
-      </view>
-      <view class="what">
-        <view class="n">{{item.name}}</view>
-        <view class="s">{{item.status}}</view>
-      </view>
-      <text class="kcal">{{item.kcal}} kcal</text>
+    <view class="plan-meals">
+      <block wx:for="{{meals}}" wx:key="when">
+        <view class="meal meal-{{index}} {{item.hot ? 'is-featured' : ''}}" bindtap="goPlan" hover-class="tap">
+          <view class="meal-hooks">
+            <view class="meal-hook meal-hook-left"></view>
+            <view class="meal-hook meal-hook-right"></view>
+          </view>
+          <image class="meal-image" src="{{item.image}}" mode="aspectFill" />
+          <view class="what">
+            <view class="meal-meta"><text class="meal-label">{{item.when}}</text></view>
+            <view class="n">{{item.name}}</view>
+            <view class="s meal-status {{item.done ? 'is-done' : ''}}"><view class="meal-status-dot"></view><text>{{item.status}}</text></view>
+          </view>
+          <view class="kcal"><text class="kcal-num">{{item.kcal}}</text><text class="kcal-unit">kcal</text></view>
+        </view>
+      </block>
     </view>
   </view>
 
@@ -108,4 +174,5 @@
   </view>
 
   <view style="height: 32rpx;"></view>
+  </view>
 </view>

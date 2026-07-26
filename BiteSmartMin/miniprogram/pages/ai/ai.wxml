@@ -5,9 +5,37 @@
       <view class="en">AI NUTRITIONIST</view>
       <view class="h2">你的专属 AI 营养师</view>
       <view class="p">基于健康档案与今日摄入，随时为你解答吃什么、怎么吃</view>
+      <view class="ai-caps">
+        <view class="cap">
+          <text class="cap-b">24h</text>
+          <text class="cap-s">饮食问答</text>
+        </view>
+        <view class="cap">
+          <text class="cap-b">7 天</text>
+          <text class="cap-s">食谱规划</text>
+        </view>
+        <view class="cap">
+          <text class="cap-b">实时</text>
+          <text class="cap-s">营养估算</text>
+        </view>
+      </view>
       <view class="ask-entry" bindtap="openChat" hover-class="tap">
         <text class="ask-ph">输入你的问题…</text>
         <view class="ask-go">提问</view>
+      </view>
+    </view>
+
+    <!-- 能力入口 -->
+    <view class="tool-grid">
+      <view class="tool-card" bindtap="openChat" data-question="今天我的饮食结构有什么问题？" hover-class="tap">
+        <view class="tool-ic tool-ic-plate"></view>
+        <view class="tool-t">饮食分析</view>
+        <view class="tool-s">看热量与三大营养素</view>
+      </view>
+      <view class="tool-card" bindtap="goAssessment" hover-class="tap">
+        <view class="tool-ic tool-ic-plan"></view>
+        <view class="tool-t">生成食谱</view>
+        <view class="tool-s">按目标安排 7 天餐单</view>
       </view>
     </view>
 
@@ -16,6 +44,7 @@
     <view class="card rec-card">
       <image class="rec-img" src="{{recommendation.image || image}}" mode="aspectFill" lazy-load="true" bindtap="openRecommendation" />
       <view class="rec-bd">
+        <view class="rec-kicker">MATCHED MENU</view>
         <view class="rec-nm" bindtap="openRecommendation">{{recommendation.name}}</view>
         <view class="rec-sub">{{recommendation.calories}} kcal · 蛋白质 {{recommendation.protein}}g</view>
         <view class="rec-ft">

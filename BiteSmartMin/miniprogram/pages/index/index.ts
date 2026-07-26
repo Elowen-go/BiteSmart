@@ -4,19 +4,33 @@ import { addToCart } from '../../api/cart'
 import { getDietRecords, getExerciseRecords } from '../../api/health'
 import { getProfile } from '../../api/user'
 import { getCurrentPlan } from '../../api/plan'
+import { getNotices } from '../../api/notice'
 import { MOCK_COMBOS, MOCK_DISHES, MOCK_HEALTH, MOCK_MEALS, uimg } from '../../mock/catalog'
 
 const WEEK_EN = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY']
 const DEFAULT_TARGET = 2000
+const NOTICE_SEEN_KEY = 'bitesmart.notice.seenAt'
 
 /** 计划餐 mealIndex（0 早 / 1 午 / 2 晚）→ 餐单卡文案 */
 const PLAN_WHEN = ['早餐', '午餐', '晚餐']
 const PLAN_EN = ['BREAKFAST', 'LUNCH', 'DINNER']
+const PLAN_IMAGES = [
+  '/assets/home/home-banner-3.jpg',
+  '/assets/home/home-banner-1.jpg',
+  '/assets/home/home-banner-2.jpg'
+]
 
 const pad = (n: number): string => (n < 10 ? '0' + n : '' + n)
 const todayStr = (): string => {
   const d = new Date()
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+}
+
+const parseNoticeTime = (value?: string): number => {
+  if (!value) return 0
+  const normalized = value.includes('T') ? value : value.replace(' ', 'T')
+  const time = Date.parse(normalized)
+  return Number.isFinite(time) ? time : 0
 }
 
 interface RecItem {
@@ -35,16 +49,27 @@ interface PlanMealView {
   status: string
   kcal: number
   hot: boolean
+  done: boolean
+  hasNext: boolean
   dishId: number | string
+  image: string
 }
 
 Page({
   data: {
     padTop: 44,
+    hasUnreadNotice: false,
+    latestNoticeAt: 0,
+    heroBanners: [
+      '/assets/home/home-banner-1.jpg',
+      '/assets/home/home-banner-2.jpg',
+      '/assets/home/home-banner-3.jpg'
+    ],
     ringDeg: 0,
     dateLine: '',
     greeting: '你好',
     nickname: '王硕',
+    initial: '王',
     // 今日热量卡（初始为 mock，真实数据到达后覆盖）
     eaten: 0,
     target: MOCK_HEALTH.target,
@@ -55,8 +80,19 @@ Page({
     snack: MOCK_HEALTH.snack,
     exerciseBurn: MOCK_HEALTH.exerciseBurn,
     // AI 今日餐单
-    planSub: '基于「减脂」目标生成 · 已匹配晚餐',
-    meals: MOCK_MEALS as PlanMealView[],
+    planSub: '基于「减脂」目标生成 · 今日餐单',
+    planAction: '定制',
+    planDayLabel: '第 1 / 7 天',
+    planDoneCount: 2,
+    planTotal: 3,
+    planProgressPct: 67,
+    planKcalTotal: MOCK_MEALS.reduce((sum, meal) => sum + meal.kcal, 0),
+    meals: MOCK_MEALS.map((meal, index) => ({
+      ...meal,
+      done: meal.status === '已记录',
+      hasNext: index < MOCK_MEALS.length - 1,
+      image: PLAN_IMAGES[index % PLAN_IMAGES.length]
+    })) as PlanMealView[],
     // 为你推荐
     recs: [] as RecItem[],
     // 健康套餐 hero
@@ -84,6 +120,7 @@ Page({
       dateLine: `${WEEK_EN[now.getDay()]} · ${pad(now.getMonth() + 1)} / ${pad(now.getDate())}`,
       greeting,
       nickname: user.nickname || user.username || '王硕',
+      initial: (user.nickname || user.username || '王硕').slice(0, 1),
       recs: [0, 1, 2, 9, 11].map((i) => {
         const d = MOCK_DISHES[i]
         return { id: d.id, name: d.name, kcal: d.kcal, tags: d.tags.join(' · '), price: d.price, image: uimg(d.img, 400) }
@@ -91,11 +128,31 @@ Page({
     })
     this.loadToday()
     this.loadPlanCard()
+    this.loadNoticeBadge()
   },
 
   onShow() {
     this.loadToday()
     this.loadPlanCard()
+    this.loadNoticeBadge()
+  },
+
+  loadNoticeBadge() {
+    getNotices()
+      .then((notices) => {
+        const latestAt = notices.reduce((max, item) => {
+          const at = parseNoticeTime(String(item.publishTime || item.createTime || ''))
+          return at > max ? at : max
+        }, 0)
+        const seenAt = Number(wx.getStorageSync(NOTICE_SEEN_KEY) || 0)
+        this.setData({
+          latestNoticeAt: latestAt,
+          hasUnreadNotice: latestAt > seenAt
+        })
+      })
+      .catch(() => {
+        this.setData({ hasUnreadNotice: false })
+      })
   },
 
   /**
@@ -110,7 +167,16 @@ Page({
         if (!detail || !detail.plan) return
         const plan = detail.plan
         if (plan.status === 30 || plan.status === 40) {
-          this.setData({ planSub: '计划已完成 · 点「定制」开启新食谱' })
+          this.setData({
+            planSub: '计划已完成 · 开启下一份健康餐单',
+            planAction: '新计划',
+            planDayLabel: `第 ${plan.planDays || 7} / ${plan.planDays || 7} 天`,
+            planDoneCount: 3,
+            planTotal: 3,
+            planProgressPct: 100,
+            planKcalTotal: this.data.meals.reduce((sum, meal) => sum + Number(meal.kcal || 0), 0),
+            meals: this.data.meals.map((meal) => ({ ...meal, done: true, status: '已记录' }))
+          })
           return
         }
         const meals = detail.meals || []
@@ -121,19 +187,29 @@ Page({
           .sort((a, b) => (a.mealIndex || 0) - (b.mealIndex || 0))
         if (!today.length) return
         const doneCount = today.filter((m) => m.checked === 1).length
+        const mealViews = today.map((m, index) => ({
+          when: PLAN_WHEN[m.mealIndex || 0] || '加餐',
+          en: PLAN_EN[m.mealIndex || 0] || 'SNACK',
+          name: m.dishName || '健康菜品',
+          status: running ? (m.checked === 1 ? '已记录' : '待记录') : '计划餐',
+          kcal: Number(m.calories || 0),
+          hot: false,
+          done: m.checked === 1,
+          hasNext: index < today.length - 1,
+          dishId: m.dishId || '',
+          image: PLAN_IMAGES[index % PLAN_IMAGES.length]
+        })) as PlanMealView[]
         this.setData({
           planSub: running
-            ? `专属食谱 · 第 ${day + 1} / ${plan.planDays || 7} 天 · 已打卡 ${doneCount}/3`
+            ? '专属食谱 · 今日餐单'
             : '专属食谱已生成 · 待开始',
-          meals: today.map((m) => ({
-            when: PLAN_WHEN[m.mealIndex || 0] || '加餐',
-            en: PLAN_EN[m.mealIndex || 0] || 'SNACK',
-            name: m.dishName || '健康菜品',
-            status: running ? (m.checked === 1 ? '已打卡' : '待打卡') : '计划餐',
-            kcal: Number(m.calories || 0),
-            hot: false,
-            dishId: m.dishId || ''
-          }))
+          planAction: running ? '查看计划' : '去定制',
+          planDayLabel: `第 ${day + 1} / ${plan.planDays || 7} 天`,
+          planDoneCount: doneCount,
+          planTotal: today.length,
+          planProgressPct: Math.round((doneCount / Math.max(today.length, 1)) * 100),
+          planKcalTotal: today.reduce((sum, meal) => sum + Number(meal.calories || 0), 0),
+          meals: mealViews
         })
       })
       .catch(() => { /* 接口失败保持静态卡 */ })
@@ -193,6 +269,10 @@ Page({
   /* 热量环形图为纯 CSS conic-gradient 实现（见 wxml/scss），无 canvas */
 
   goNotice() {
+    if (this.data.latestNoticeAt) {
+      wx.setStorageSync(NOTICE_SEEN_KEY, this.data.latestNoticeAt)
+      this.setData({ hasUnreadNotice: false })
+    }
     wx.navigateTo({ url: '/pages/notice/notice' })
   },
 
