@@ -27,7 +27,7 @@ view, text, image, scroll-view, canvas, button, input {
   box-sizing: border-box;
 }
 
-image { background: #DCE5DD; }
+image { background: transparent; }
 
 button::after { border: 0; }
 

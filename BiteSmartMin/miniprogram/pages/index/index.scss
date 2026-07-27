@@ -19,7 +19,9 @@
 /* ---- 顶部图片 ---- */
 .hero {
   position: relative;
-  height: 430rpx;
+  /* 1500:860 原图比例，避免宽屏设备继续裁掉图片上下内容。 */
+  height: 57.333vw;
+  min-height: 430rpx;
   overflow: hidden;
   background: #17251F;
 }
@@ -544,6 +546,9 @@
 .rec-card { display: inline-block; vertical-align: top; width: 316rpx; margin-right: 24rpx; }
 .rec-card:last-child { margin-right: 0; }
 
+/* 推荐内容与下一组套餐之间留出独立的视觉呼吸空间 */
+.rec-row + .sec { margin-top: 88rpx; }
+
 .rec-card .ph {
   position: relative;
   width: 316rpx;
@@ -589,6 +594,20 @@
 .rec-card .nm { font-size: 26rpx; font-weight: 700; margin-top: 18rpx; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .rec-card .sub { font-size: 20rpx; color: #8F877B; margin-top: 6rpx; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .rec-card .row { display: flex; justify-content: space-between; align-items: center; margin-top: 14rpx; }
+.rec-card .addbtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 118rpx;
+  height: 54rpx;
+  border: 0;
+  border-radius: 999rpx;
+  background: #173B2D;
+  box-shadow: 0 8rpx 16rpx rgba(23, 59, 45, .2);
+}
+.rec-card .addbtn::before,
+.rec-card .addbtn::after { display: none; }
+.rec-card .addbtn text { color: #FFF8ED; font-size: 20rpx; font-weight: 800; }
 
 /* ---- 健康套餐 hero ---- */
 .combo-hero {

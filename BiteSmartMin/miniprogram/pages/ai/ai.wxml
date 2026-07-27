@@ -1,71 +1,89 @@
 <view class="pg">
-  <scroll-view class="body" scroll-y enhanced show-scrollbar="{{false}}" style="padding-top: {{padTop}}px;">
-    <!-- AI 面板 -->
-    <view class="ai-panel">
-      <view class="en">AI NUTRITIONIST</view>
-      <view class="h2">你的专属 AI 营养师</view>
-      <view class="p">基于健康档案与今日摄入，随时为你解答吃什么、怎么吃</view>
-      <view class="ai-caps">
-        <view class="cap">
-          <text class="cap-b">24h</text>
-          <text class="cap-s">饮食问答</text>
-        </view>
-        <view class="cap">
-          <text class="cap-b">7 天</text>
-          <text class="cap-s">食谱规划</text>
-        </view>
-        <view class="cap">
-          <text class="cap-b">实时</text>
-          <text class="cap-s">营养估算</text>
-        </view>
+  <view class="topbar" style="padding-top: {{padTop}}px;">
+    <view class="brand-lockup">
+      <view class="ai-mark"><image class="ai-avatar-image" src="/assets/ai/ai-avatar.png" mode="aspectFill" /></view>
+      <view class="brand-copy">
+        <text class="brand-overline">BITESMART / DAILY CARE</text>
+        <text class="brand-title">AI 营养师</text>
       </view>
-      <view class="ask-entry" bindtap="openChat" hover-class="tap">
-        <text class="ask-ph">输入你的问题…</text>
-        <view class="ask-go">提问</view>
+    </view>
+    <view class="status"><view class="status-dot"></view><text>在线</text></view>
+  </view>
+
+  <scroll-view class="body" scroll-y enhanced show-scrollbar="{{false}}" scroll-into-view="{{toView}}" scroll-with-animation="true">
+    <view class="welcome">
+      <view class="welcome-backdrop">
+        <image class="welcome-backdrop-image" src="/assets/ai/ai-character.png" mode="aspectFit" />
+      </view>
+      <view class="welcome-main">
+        <text class="welcome-title">今天想聊点什么？</text>
+        <text class="welcome-copy">从一餐开始，找到适合你的答案。</text>
+      </view>
+      <view class="welcome-side">
+        <image class="welcome-character" src="/assets/ai/ai-character.png" mode="aspectFit" />
       </view>
     </view>
 
-    <!-- 能力入口 -->
-    <view class="tool-grid">
-      <view class="tool-card" bindtap="openChat" data-question="今天我的饮食结构有什么问题？" hover-class="tap">
-        <view class="tool-ic tool-ic-plate"></view>
-        <view class="tool-t">饮食分析</view>
-        <view class="tool-s">看热量与三大营养素</view>
+    <view class="prompt-section">
+      <view class="section-heading">
+        <text class="section-title">你可以问我</text>
       </view>
-      <view class="tool-card" bindtap="goAssessment" hover-class="tap">
-        <view class="tool-ic tool-ic-plan"></view>
-        <view class="tool-t">生成食谱</view>
-        <view class="tool-s">按目标安排 7 天餐单</view>
-      </view>
-    </view>
-
-    <!-- AI 今日推荐 -->
-    <view class="sec"><text class="en">FOR YOU</text><text class="cn">AI 今日推荐</text><view class="line"></view></view>
-    <view class="card rec-card">
-      <image class="rec-img" src="{{recommendation.image || image}}" mode="aspectFill" lazy-load="true" bindtap="openRecommendation" />
-      <view class="rec-bd">
-        <view class="rec-kicker">MATCHED MENU</view>
-        <view class="rec-nm" bindtap="openRecommendation">{{recommendation.name}}</view>
-        <view class="rec-sub">{{recommendation.calories}} kcal · 蛋白质 {{recommendation.protein}}g</view>
-        <view class="rec-ft">
-          <view class="price"><text class="cur">¥</text>{{recommendation.price}}</view>
-          <view class="addbtn" bindtap="addRecommendation" hover-class="tap"></view>
+      <view class="prompt-list">
+        <view class="prompt-item" wx:for="{{suggestions}}" wx:key="*this" bindtap="useSuggestion" data-question="{{item}}" hover-class="tap">
+          <text class="prompt-text">{{item}}</text>
         </view>
       </view>
     </view>
 
-    <!-- 快捷提问 -->
-    <view class="sec"><text class="en">ASK AI</text><text class="cn">快捷提问</text><view class="line"></view></view>
-    <scroll-view class="q-row" scroll-x enhanced show-scrollbar="{{false}}">
-      <text class="q" wx:for="{{questions}}" wx:key="*this" bindtap="openChat" data-question="{{item}}" hover-class="tap">{{item}}</text>
-    </scroll-view>
+    <view class="recommend-section">
+      <view class="recommend-heading">
+        <text class="recommend-title">AI 今日推荐</text>
+        <view class="recommend-more" bindtap="goFood" hover-class="tap"><text>查看全部</text><text>›</text></view>
+      </view>
+      <scroll-view class="recommend-row" scroll-x enhanced show-scrollbar="{{false}}">
+        <view class="recommend-card" wx:for="{{recommendations}}" wx:key="id">
+          <view class="recommend-media" bindtap="openRecommendation" data-id="{{item.id}}" hover-class="tap">
+            <image class="recommend-img" src="{{item.image}}" mode="aspectFill" lazy-load="true" />
+          </view>
+          <view class="recommend-card-body">
+            <text class="recommend-name">{{item.name}}</text>
+            <view class="recommend-card-foot">
+              <text class="recommend-kcal">{{item.calories}} kcal</text>
+              <view class="recommend-add" catchtap="addRecommendation" data-id="{{item.id}}" hover-class="tap"><text>+</text></view>
+            </view>
+          </view>
+        </view>
+      </scroll-view>
+    </view>
 
-    <!-- 定制入口 -->
-    <view class="c-note" bindtap="goAssessment" hover-class="tap">
-      <text>想要更系统的安排？让 AI 为你定制 <b>7 天专属食谱</b></text>
-      <text class="go">去定制 ›</text>
+    <view class="day-label" wx:if="{{messages.length > 0}}">今天</view>
+
+    <block wx:for="{{messages}}" wx:key="index" id="m{{index}}">
+      <view class="message-row me-row" wx:if="{{item.question}}">
+        <view class="bubble me-bubble">{{item.question}}</view>
+        <view class="user-avatar">
+          <image wx:if="{{avatar}}" class="user-avatar-image" src="{{avatar}}" mode="aspectFill" binderror="onAvatarError" />
+          <text wx:else>{{initial}}</text>
+        </view>
+      </view>
+      <view class="message-row" wx:if="{{item.answer}}">
+        <view class="message-avatar"><image class="ai-avatar-image" src="/assets/ai/ai-avatar.png" mode="aspectFill" /></view>
+        <view class="bubble ai-bubble">{{item.answer}}</view>
+      </view>
+    </block>
+
+    <view class="message-row" wx:if="{{loading}}">
+      <view class="message-avatar"><image class="ai-avatar-image" src="/assets/ai/ai-avatar.png" mode="aspectFill" /></view>
+      <view class="bubble ai-bubble typing"><text class="dot"></text><text class="dot"></text><text class="dot"></text></view>
     </view>
 
     <view class="foot-space"></view>
   </scroll-view>
+
+  <view class="composer">
+    <view class="composer-inner">
+      <input class="composer-input" value="{{question}}" placeholder="问问你的饮食计划..." placeholder-class="composer-placeholder" bindinput="onInput" confirm-type="send" bindconfirm="send" adjust-position="{{true}}" cursor-spacing="16" />
+      <view class="send-button {{loading ? 'disabled' : ''}}" bindtap="send" hover-class="tap"><view class="ic-send"></view></view>
+    </view>
+  </view>
 </view>

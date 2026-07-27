@@ -1,8 +1,99 @@
-.pg { padding: 0 40rpx; }
+.pg {
+  min-height: 100vh;
+  padding: 0 40rpx;
+  background: linear-gradient(180deg, #F7F7F3 0%, #F5F0E8 420rpx, #F7F7F3 860rpx);
+}
 
-.status-pad { width: 100%; }
+.status-pad {
+  width: calc(100% + 80rpx);
+  margin-left: -40rpx;
+  background: #34483D;
+}
 
 .tap { opacity: 0.72; }
+
+.mall-head { display: none; }
+.market-hero-shell + .mall-head + .searchrow { display: none; }
+.searchrow.market-top-search {
+  margin: 0 -40rpx;
+  padding: 8rpx 40rpx 28rpx;
+  background: #34483D;
+}
+
+/* Food-focused hero with depth cues, kept separate from the homepage hero. */
+.market-hero-shell {
+  position: relative;
+  margin: 0 -40rpx 56rpx;
+  padding: 0 40rpx 26rpx;
+  border-radius: 0 0 36rpx 36rpx;
+  background:
+    radial-gradient(ellipse at 50% 40%, rgba(116, 143, 119, 0.34) 0%, rgba(67, 91, 75, 0.14) 52%, transparent 76%),
+    linear-gradient(180deg, #34483D 0%, #506356 68%, #D9D2C5 100%);
+  box-shadow: 0 18rpx 32rpx rgba(25, 31, 26, 0.13);
+}
+.market-hero-shell::before {
+  content: '';
+  display: none !important;
+  position: absolute;
+  z-index: 0;
+  left: 32rpx;
+  right: 32rpx;
+  top: 56rpx;
+  bottom: 28rpx;
+  border: 1rpx solid rgba(255, 255, 255, 0.72);
+  border-radius: 28rpx;
+  background: rgba(255, 255, 255, 0.42);
+}
+.market-hero {
+  position: relative;
+  z-index: 1;
+  height: 390rpx;
+  margin: 0;
+  overflow: visible;
+  border-radius: 0;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+.market-hero::before {
+  content: '';
+  display: none !important;
+  position: absolute;
+  z-index: 0;
+  left: 26rpx;
+  right: -10rpx;
+  top: 44rpx;
+  bottom: 0;
+  border: 1rpx solid rgba(255, 255, 255, 0.9);
+  border-radius: 26rpx;
+  background: #FFFDF7;
+  box-shadow: 0 18rpx 28rpx rgba(75, 96, 70, 0.18);
+}
+.market-hero-shadow {
+  position: absolute;
+  z-index: 1;
+  left: 14%;
+  right: 14%;
+  bottom: 2rpx;
+  height: 42rpx;
+  border-radius: 50%;
+  background: rgba(69, 95, 63, 0.32);
+  filter: blur(18rpx);
+}
+.market-hero-foreground {
+  position: absolute;
+  z-index: 2;
+  left: 0;
+  top: 36rpx;
+  width: 104%;
+  height: 400rpx;
+  display: block;
+  background: transparent !important;
+  background-color: transparent !important;
+  transform: rotate(-1deg);
+  filter: drop-shadow(0 24rpx 24rpx rgba(20, 31, 24, 0.46));
+  pointer-events: none;
+}
 
 /* ---- 页面头 ---- */
 .mall-head {
@@ -36,8 +127,8 @@
   flex: 1;
   display: flex;
   align-items: center;
-  border: 1rpx solid var(--hair);
-  background: #FFFFFF;
+  border: 1rpx solid #E8E0D4;
+  background: #FFFDF8;
   border-radius: 20rpx;
   padding: 0 28rpx;
   height: 84rpx;
@@ -55,8 +146,8 @@
 .filterbtn {
   width: 84rpx;
   height: 84rpx;
-  border: 1rpx solid var(--hair);
-  background: #FFFFFF;
+  border: 1rpx solid #E8E0D4;
+  background: #FFFDF8;
   border-radius: 20rpx;
   display: flex;
   align-items: center;
@@ -72,24 +163,47 @@
 .f-lines .l3 { width: 10rpx; margin-top: 7rpx; }
 
 /* ---- 分类 tab ---- */
-.cats { white-space: nowrap; width: 100%; border-bottom: 1rpx solid var(--hair); }
+.cats {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  white-space: nowrap;
+  width: 100%;
+  padding: 12rpx 10rpx 10rpx;
+  border: 1rpx solid #E8E0D4;
+  border-radius: 20rpx;
+  background: rgba(255, 253, 248, 0.84);
+  box-shadow: 0 6rpx 16rpx rgba(79, 59, 39, 0.05);
+}
+.cats-inner {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-width: 100%;
+}
 .cat {
   display: inline-block;
-  padding: 0 4rpx 20rpx;
-  margin-right: 40rpx;
-  font-size: 26rpx;
-  color: var(--sub);
+  flex: 1;
+  min-width: 0;
+  padding: 9rpx 6rpx;
+  margin-right: 0;
+  border-radius: 999rpx;
+  font-size: 24rpx;
+  color: #8F8374;
   position: relative;
+  text-align: center;
 }
-.cat.on { color: var(--ink); font-weight: 800; }
+.cat.on { color: #123B2A; font-weight: 800; background: #E9F5EE; }
 .cat.on::after {
   content: '';
   position: absolute;
-  left: 0;
-  right: 0;
-  bottom: -1rpx;
-  height: 4rpx;
-  background: var(--green);
+  left: 50%;
+  bottom: 4rpx;
+  width: 8rpx;
+  height: 8rpx;
+  margin-left: -4rpx;
+  border-radius: 50%;
+  background: #E29578;
 }
 
 /* ---- 排序行 ---- */
@@ -97,14 +211,16 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 24rpx 4rpx;
+  margin: 12rpx 2rpx 0;
+  padding: 8rpx 10rpx 14rpx;
   font-size: 22rpx;
-  color: var(--sub);
+  color: #9B9186;
+  border-bottom: 1rpx solid #E8E0D4;
 }
 .sort-left { display: flex; align-items: center; min-width: 0; }
-.sort-left text { margin-right: 32rpx; }
-.sortrow .on { color: var(--green-deep); font-weight: 700; }
-.sort-count { flex: none; color: var(--faint); font-variant-numeric: tabular-nums; }
+.sort-left text { margin-right: 8rpx; padding: 6rpx 12rpx; border-radius: 999rpx; }
+.sortrow .on { color: #A56536; font-weight: 700; background: #F6EFE3; }
+.sort-count { flex: none; padding: 5rpx 10rpx; border-radius: 999rpx; color: #A56536; background: #F6EFE3; font-variant-numeric: tabular-nums; }
 
 /* ---- 空状态 ---- */
 .empty { display: flex; flex-direction: column; align-items: center; padding: 100rpx 0 60rpx; }
@@ -124,38 +240,50 @@
 
 /* ---- 双列瀑布卡 ---- */
 .grid2 {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
+  display: block;
+  margin: 18rpx -14rpx 0;
+  padding: 0 14rpx 8rpx;
+  border-radius: 0;
+  background: transparent;
 }
-.g-item { width: 325rpx; margin-bottom: 36rpx; }
+.g-item {
+  width: 100%;
+  margin-bottom: 0;
+  padding: 24rpx 0 58rpx;
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
 
 .g-item .ph {
   position: relative;
-  width: 325rpx;
-  height: 260rpx;
-  border-radius: 20rpx;
+  width: 100%;
+  height: 320rpx;
+  border-radius: 22rpx;
   overflow: hidden;
-  background: #DCE5DD;
+  background: #E8DED0;
+  box-shadow: none;
 }
 .g-item .ph image { width: 100%; height: 100%; }
 .g-item .badge {
   position: absolute;
-  left: 16rpx;
-  top: 16rpx;
-  background: rgba(255, 255, 255, 0.94);
+  left: 20rpx;
+  top: 20rpx;
+  background: rgba(255, 253, 248, 0.96);
   border-radius: 12rpx;
   font-size: 18rpx;
   padding: 8rpx 14rpx;
   font-weight: 700;
-  color: var(--green-ink);
+  color: #59442E;
 }
 .g-item .sold {
   position: absolute;
-  left: 16rpx;
-  bottom: 16rpx;
+  left: 20rpx;
+  bottom: 20rpx;
   border-radius: 12rpx;
-  background: rgba(23, 37, 31, 0.72);
+  background: rgba(18, 59, 42, 0.82);
   color: #FFFFFF;
   font-size: 18rpx;
   font-weight: 700;
@@ -174,19 +302,47 @@
   color: var(--sub);
   letter-spacing: 4rpx;
 }
-.g-item .nm { font-size: 26rpx; font-weight: 700; margin-top: 18rpx; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.g-item .tags { display: flex; flex-wrap: wrap; margin-top: 12rpx; }
+.g-item .nm {
+  margin: 18rpx 4rpx 0;
+  color: #342C25;
+  font-size: 34rpx;
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.g-item .tags { display: flex; flex-wrap: wrap; margin: 12rpx 4rpx 0; }
 .g-tag {
-  font-size: 18rpx;
-  color: var(--sub);
-  border: 1rpx solid var(--hair);
-  border-radius: 8rpx;
-  padding: 4rpx 12rpx;
-  background: #FFFFFF;
+  font-size: 21rpx;
+  color: #5C3E29;
+  border: 1rpx solid #D4A373;
+  border-radius: 999rpx;
+  padding: 6rpx 14rpx;
+  background: #EAD5B7;
+  font-weight: 700;
+  line-height: 1.2;
   margin-right: 10rpx;
   margin-bottom: 8rpx;
 }
-.g-item .row { display: flex; justify-content: space-between; align-items: center; margin-top: 12rpx; }
+.g-item .row { display: flex; justify-content: space-between; align-items: center; margin: 18rpx 4rpx 0; }
+.g-item .addbtn {
+  width: 138rpx;
+  height: 62rpx;
+  border: 0;
+  border-radius: 999rpx;
+  background: #173B2D;
+  box-shadow: 0 8rpx 16rpx rgba(23, 59, 45, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.g-item .addbtn::before,
+.g-item .addbtn::after {
+  display: none;
+}
+.g-item .addbtn text { color: #FFF8ED; font-size: 22rpx; font-weight: 800; }
+.g-item .price { font-size: 38rpx; }
+.g-item .price .cur { font-size: 24rpx; }
 
 /* ---- 购物车悬浮按钮 ---- */
 .cart-fab {

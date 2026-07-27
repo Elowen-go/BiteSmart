@@ -71,6 +71,7 @@ const mockItems = (): GridItem[] => {
 Page({
   data: {
     padTop: 44,
+    marketHeroImage: '/assets/home/home-banner-1.jpg',
     cats: CATS,
     cat: 'all',
     sort: 'default' as 'default' | 'sales' | 'priceAsc' | 'priceDesc',
@@ -206,5 +207,10 @@ Page({
 
   openCart() {
     wx.navigateTo({ url: '/pages/cart/cart' })
+  },
+
+  openFeatured() {
+    this.setData({ cat: 'all', keyword: '', sort: 'default' })
+    this.applyFilters()
   }
 })

@@ -1,33 +1,32 @@
 <view class="pg">
   <view class="status-pad" style="height: {{padTop}}px;"></view>
 
-  <view class="mall-head">
-    <text class="en">SMART MARKET</text>
-    <text class="t">今天想吃点什么？</text>
-    <text class="s">按目标挑选低卡、高蛋白与健康套餐</text>
-  </view>
-
-  <!-- 搜索行 -->
-  <view class="searchrow">
+  <view class="market-top-search searchrow">
     <view class="searchbox">
       <view class="ic-search"></view>
-      <input class="kw" placeholder="搜索菜品、套餐、食材" placeholder-class="ph-cls" value="{{keyword}}" bindinput="onSearch" confirm-type="search" />
-      <view wx:if="{{keyword}}" class="clr" bindtap="clearSearch">×</view>
+      <input class="kw" placeholder="Search dishes, meal plans, ingredients" placeholder-class="ph-cls" value="{{keyword}}" bindinput="onSearch" confirm-type="search" />
+      <view wx:if="{{keyword}}" class="clr" bindtap="clearSearch">x</view>
     </view>
-    <view class="filterbtn" hover-class="tap">
-      <view class="f-lines"><view class="l1"></view><view class="l2"></view><view class="l3"></view></view>
+  </view>
+
+  <view class="market-hero-shell">
+    <view class="market-hero">
+      <view class="market-hero-shadow"></view>
+      <image class="market-hero-foreground" src="/assets/home/market-hero-foreground.png" mode="aspectFit" />
     </view>
   </view>
 
   <!-- 分类 tab -->
   <scroll-view class="cats" scroll-x enhanced show-scrollbar="{{false}}">
-    <view
-      wx:for="{{cats}}"
-      wx:key="k"
-      class="cat {{cat === item.k ? 'on' : ''}}"
-      data-k="{{item.k}}"
-      bindtap="setCat"
-    >{{item.t}}</view>
+    <view class="cats-inner">
+      <view
+        wx:for="{{cats}}"
+        wx:key="k"
+        class="cat {{cat === item.k ? 'on' : ''}}"
+        data-k="{{item.k}}"
+        bindtap="setCat"
+      >{{item.t}}</view>
+    </view>
   </scroll-view>
 
   <!-- 排序行 -->
@@ -66,7 +65,7 @@
           <text wx:if="{{item.org}}" class="org">¥{{item.org}}</text>
         </view>
         <view wx:if="{{item.kind === 'dish' && item.stock === 0}}" class="pill gray">售罄</view>
-        <view wx:else class="addbtn" data-index="{{index}}" catchtap="addItem"></view>
+        <view wx:else class="addbtn" data-index="{{index}}" catchtap="addItem"><text>加入</text></view>
       </view>
     </view>
   </view>

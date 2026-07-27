@@ -150,7 +150,7 @@
       <view class="sub">{{item.tags}}</view>
       <view class="row">
         <view class="price"><text class="cur">¥</text>{{item.price}}</view>
-        <view class="addbtn" catchtap="addDish" data-id="{{item.id}}"></view>
+        <view class="addbtn" catchtap="addDish" data-id="{{item.id}}"><text>加入</text></view>
       </view>
     </view>
   </scroll-view>

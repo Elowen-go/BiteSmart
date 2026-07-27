@@ -1,21 +1,28 @@
 <view class="pg">
-  <view class="status-pad" style="height: {{padTop}}px;"></view>
+  <!-- 顶部健康生活氛围区 -->
+  <view class="profile-hero" style="height: calc(404rpx + {{padTop}}px); --profile-pad: {{padTop}}px;">
+    <image class="profile-hero-image" src="/assets/home/profile-hero.png" mode="aspectFill" />
+    <view class="profile-hero-shade"></view>
+    <view class="status-pad" style="height: {{padTop}}px;"></view>
+    <view class="profile-hero-brand">BiteSmart · HEALTHY LIVING</view>
+    <view class="profile-hero-user">
+      <view class="hero-avatar">{{initial}}</view>
+      <view class="hero-user-info">
+        <view class="hero-name">{{nickname}} <text class="hero-vip">{{isVip ? 'PRO 会员' : '开通会员'}}</text></view>
+        <view class="hero-goal"><view class="hero-goal-dot"></view>目标：{{goal}}</view>
+      </view>
+    </view>
+    <view class="profile-hero-member" bindtap="goMember" hover-class="tap">
+      <view>
+        <text class="hero-member-title">BiteSmart PRO</text>
+        <text class="hero-member-sub">解锁专属食谱、营养分析与会员优惠</text>
+      </view>
+      <view class="hero-member-go">成为会员 <text>›</text></view>
+    </view>
+  </view>
 
   <!-- 用户信息区 -->
   <view class="me-card">
-    <view class="me-top">
-      <view class="avatar">{{initial}}</view>
-      <view class="me-info">
-        <view class="nm">
-          {{nickname}}
-          <text class="vip" bindtap="goMember">{{isVip ? 'PRO 会员' : '开通会员'}}</text>
-        </view>
-        <view class="goal">
-          <view class="goal-dot"></view>
-          目标：{{goal}}
-        </view>
-      </view>
-    </view>
     <view class="quick-strip">
       <view class="quick" wx:for="{{quicks}}" wx:key="key" data-url="{{item.url}}" bindtap="openMenu" hover-class="tap">
         <view class="quick-ic {{item.key}}"></view>
@@ -25,24 +32,8 @@
   </view>
 
   <!-- 数据速览 -->
-  <view class="me-nums">
-    <view class="me-num" wx:for="{{stats}}" wx:key="label">
-      <view class="v">{{item.num}}<text class="u">{{item.unit}}</text></view>
-      <view class="l">{{item.label}}</view>
-    </view>
-  </view>
-
-  <view class="member-card" bindtap="goMember" hover-class="tap">
-    <view>
-      <view class="member-t">BiteSmart PRO</view>
-      <view class="member-s">解锁专属食谱、营养分析与会员优惠</view>
-    </view>
-    <view class="member-go">查看</view>
-  </view>
-
   <!-- 功能列表 -->
   <view class="sec">
-    <text class="en">SERVICES</text>
     <text class="cn">功能服务</text>
     <view class="line"></view>
   </view>
