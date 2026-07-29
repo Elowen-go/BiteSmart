@@ -46,7 +46,7 @@
       <view class="kv" wx:if="{{remark}}"><text class="k">订单备注</text><text class="v remark">{{remark}}</text></view>
     </view>
 
-    <view class="op-row" wx:if="{{status === 20 || status === 30}}">
+    <view class="op-row" wx:if="{{status === 20 || status === 30 || status === 40}}">
       <view wx:if="{{status === 20}}" class="btn-ink ghost op-half" bindtap="reject" hover-class="tap">拒单</view>
       <view class="btn-ink ghost op-half" bindtap="goException" hover-class="tap">异常上报</view>
     </view>
@@ -62,7 +62,8 @@
   <!-- 底部操作条 -->
   <view wx:if="{{found}}" class="action-bar">
     <view wx:if="{{status === 20}}" class="btn-ink green big-action" bindtap="pickup" hover-class="tap">确认取餐</view>
-    <view wx:elif="{{status === 30}}" class="btn-ink green big-action" bindtap="deliver" hover-class="tap">确认送达</view>
+    <view wx:elif="{{status === 30}}" class="btn-ink green big-action" bindtap="startDelivery" hover-class="tap">开始配送</view>
+    <view wx:elif="{{status === 40}}" class="btn-ink green big-action" bindtap="deliver" hover-class="tap">确认送达</view>
     <view wx:else class="btn-ink big-action disabled">{{status === 50 ? '任务已完成' : statusText}}</view>
   </view>
 </view>

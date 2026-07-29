@@ -74,13 +74,18 @@
     </block>
     <block wx:elif="{{view.group === 'doing'}}">
       <view class="btn-ink green bbar-btn wide" bindtap="delivery" hover-class="tap">查看配送进度</view>
+      <view class="btn-ink refund-btn bbar-btn" wx:if="{{view.canRefund}}" bindtap="applyRefund" hover-class="tap">{{view.refundActionText}}</view>
+      <view class="btn-ink refund-btn disabled bbar-btn" wx:elif="{{view.refundState === 'processing'}}">退款处理中</view>
     </block>
     <block wx:elif="{{view.group === 'done'}}">
       <view class="btn-ink ghost bbar-btn" bindtap="rebuy" hover-class="tap">再次购买</view>
       <view class="btn-ink green bbar-btn" bindtap="goReview" hover-class="tap">评价本单</view>
+      <view class="btn-ink refund-btn bbar-btn" wx:if="{{view.canRefund}}" bindtap="applyRefund" hover-class="tap">{{view.refundActionText}}</view>
+      <view class="btn-ink refund-btn disabled bbar-btn" wx:elif="{{view.refundState === 'processing'}}">退款处理中</view>
     </block>
     <block wx:else>
       <view class="btn-ink ghost bbar-btn wide" bindtap="rebuy" hover-class="tap">再次购买</view>
+      <view class="btn-ink refund-btn disabled bbar-btn" wx:if="{{view.refundState === 'processing' || view.refundState === 'refunded'}}">{{view.refundActionText}}</view>
     </block>
   </view>
 </view>

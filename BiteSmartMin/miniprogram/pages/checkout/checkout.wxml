@@ -22,7 +22,7 @@
     </view>
 
     <!-- 商品清单 -->
-    <view class="sec"><text class="en">ITEMS</text><text class="cn">商品清单</text><view class="line"></view><text class="more">{{items.length}} 件</text></view>
+    <view class="sec"><text class="cn">商品清单</text><view class="line"></view><text class="more">{{items.length}} 件</text></view>
     <view class="card co-list">
       <view class="meal" wx:for="{{items}}" wx:key="id">
         <image class="ph" src="{{item.dishImage || item.comboImage}}" mode="aspectFill" lazy-load="true" />
@@ -38,7 +38,7 @@
     </view>
 
     <!-- 配送与备注 -->
-    <view class="sec"><text class="en">DELIVERY</text><text class="cn">配送与备注</text><view class="line"></view></view>
+    <view class="sec"><text class="cn">配送与备注</text><view class="line"></view></view>
     <view class="card co-block">
       <view class="co-line">
         <text class="lab">配送方式</text>
@@ -57,7 +57,7 @@
     </view>
 
     <!-- 费用明细 -->
-    <view class="sec"><text class="en">PAYMENT</text><text class="cn">费用明细</text><view class="line"></view></view>
+    <view class="sec"><text class="cn">费用明细</text><view class="line"></view></view>
     <view class="card co-block money">
       <view class="money-row"><text>商品金额</text><b>¥{{subtotal}}</b></view>
       <view class="money-row"><text>配送费</text><b>{{fee === 0 ? '免配送费' : '¥' + fee}}</b></view>

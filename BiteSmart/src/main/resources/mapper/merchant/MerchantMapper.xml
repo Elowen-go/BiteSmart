@@ -4,7 +4,7 @@
 
     <sql id="BaseColumns">
         id, user_id, shop_name, shop_logo, business_license, license_number,
-        contact_name, contact_phone, shop_address, delivery_range, business_hours,
+        contact_name, contact_phone, shop_address, shop_lat, shop_lng, delivery_range, business_hours,
         shop_notice, status, open_status, audit_remark, avg_rating,
         create_time, update_time, deleted
     </sql>
@@ -30,10 +30,10 @@
 
     <insert id="insert" parameterType="com.ws.bitesmart.entity.merchant.Merchant">
         INSERT INTO merchant (id, user_id, shop_name, shop_logo, business_license, license_number,
-                               contact_name, contact_phone, shop_address, delivery_range, business_hours,
+                               contact_name, contact_phone, shop_address, shop_lat, shop_lng, delivery_range, business_hours,
                                shop_notice, status, avg_rating, create_time, update_time)
         VALUES (#{id}, #{userId}, #{shopName}, #{shopLogo}, #{businessLicense}, #{licenseNumber},
-                #{contactName}, #{contactPhone}, #{shopAddress}, #{deliveryRange}, #{businessHours},
+                #{contactName}, #{contactPhone}, #{shopAddress}, #{shopLat}, #{shopLng}, #{deliveryRange}, #{businessHours},
                 #{shopNotice}, #{status}, #{avgRating}, NOW(), NOW())
     </insert>
 
@@ -48,6 +48,8 @@
             <if test="contactName != null">contact_name = #{contactName},</if>
             <if test="contactPhone != null">contact_phone = #{contactPhone},</if>
             <if test="shopAddress != null">shop_address = #{shopAddress},</if>
+            <if test="shopLat != null">shop_lat = #{shopLat},</if>
+            <if test="shopLng != null">shop_lng = #{shopLng},</if>
             <if test="deliveryRange != null">delivery_range = #{deliveryRange},</if>
             <if test="businessHours != null">business_hours = #{businessHours},</if>
             <if test="shopNotice != null">shop_notice = #{shopNotice},</if>

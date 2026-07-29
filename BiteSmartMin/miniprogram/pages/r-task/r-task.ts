@@ -3,6 +3,7 @@ import {
   getDriverTasks,
   getPendingTasks,
   pickupDriverTask,
+  startDeliveryTask,
   deliverDriverTask,
   rejectDriverTask,
   updateDriverLocation,
@@ -36,7 +37,7 @@ Page({
     statusText: '',
     fee: FEE_TEXT,
     status: 0,
-    // 取/送坐标（后端并行开发中，当前任务数据无此列 → 导航按钮 toast 提示）
+    // 取货点和收货点坐标（未维护坐标时导航按钮会提示）
     merchantLat: 0,
     merchantLng: 0,
     deliveryLat: 0,
@@ -145,6 +146,14 @@ Page({
     this.stopLocationTimer()
   },
 
+  onHide() {
+    this.stopLocationTimer()
+  },
+
+  onShow() {
+    if (this.data.found) this.syncLocationTimer()
+  },
+
   /* ---------- 导航（wx.openLocation 调起手机地图 App，无需 key；后续可用 config/amap.ts 的 key 接高德 SDK 做页内路线规划） ---------- */
 
   navTo(lat: number, lng: number, name: string, address: string) {
@@ -163,17 +172,27 @@ Page({
     this.navTo(this.data.deliveryLat, this.data.deliveryLng, `${this.data.receiver}（收货地址）`, this.data.address)
   },
 
-  /** 确认取餐：20 → 30（同步订单 deliveryStatus=20，用户端可见"骑手已取餐"） */
+  /** 确认取餐：20 → 30（用户端显示“已取餐”） */
   pickup() {
     pickupDriverTask(this.data.id)
       .then(() => {
-        wx.showToast({ title: '已取餐，开始配送', icon: 'none' })
+        wx.showToast({ title: '已取餐，请开始配送', icon: 'none' })
         this.loadTask()
       })
       .catch((error: Error) => wx.showToast({ title: error.message || '操作失败', icon: 'none' }))
   },
 
-  /** 确认送达：30 → 50（订单 40→50 完结，商家结算解冻） */
+  /** 开始配送：30 → 40 */
+  startDelivery() {
+    startDeliveryTask(this.data.id)
+      .then(() => {
+        wx.showToast({ title: '已开始配送', icon: 'none' })
+        this.loadTask()
+      })
+      .catch((error: Error) => wx.showToast({ title: error.message || '操作失败', icon: 'none' }))
+  },
+
+  /** 确认送达：40 → 50（订单 40→50 完结，商家结算解冻） */
   deliver() {
     deliverDriverTask(this.data.id)
       .then(() => {

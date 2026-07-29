@@ -3,7 +3,7 @@ import { request } from '../utils/request'
 /**
  * 配送 API —— 用户端物流跟踪 + 骑手端任务/结算/评价：
  * - taskStatus 真实枚举（与用户端 delivery 页一致）：
- *   10 待接单 →(accept 抢单，乐观锁)→ 20 待取餐 →(pickup)→ 30 已取餐配送中 →(deliver)→ 50 已送达；60 异常 / 70 已取消
+ *   10 待接单 →(accept 抢单，乐观锁)→ 20 待取餐 →(pickup)→ 30 已取餐 →(start)→ 40 配送中 →(deliver)→ 50 已送达；60 异常 / 70 已取消
  * - 商家出餐（订单 30→40）时后端自动创建 task_status=10 的任务；送达后订单 40→50 完结
  * - exception / status 的 reason、status 参数后端用 @RequestParam 接收，走 query 传参
  * - 所有 Long id 传输层为 string，页面禁止 Number() 强转
@@ -35,7 +35,7 @@ export interface RiderTask {
   exceptionReason?: string
   orderRemark?: string // 订单备注快照（商家出餐建任务时从订单带出）
   createTime?: string
-  // 取/送坐标（后端并行开发中；当前 delivery_task 无此列，缺失时导航按钮 toast 提示）
+  // 取货点和收货点坐标（GCJ-02；未维护坐标时导航按钮会提示）
   merchantLat?: number
   merchantLng?: number
   deliveryLat?: number
@@ -44,7 +44,7 @@ export interface RiderTask {
 
 /** 骑手端状态文案（口径同用户端 delivery 页） */
 export const riderTaskStatusText = (taskStatus?: number): string => {
-  const map: Record<number, string> = { 10: '待接单', 20: '待取餐', 30: '配送中', 40: '配送中', 50: '已送达', 60: '配送异常', 70: '已取消' }
+  const map: Record<number, string> = { 10: '待接单', 20: '待取餐', 30: '已取餐', 40: '配送中', 50: '已送达', 60: '配送异常', 70: '已取消' }
   return (taskStatus != null && map[taskStatus]) || '未知'
 }
 
@@ -63,6 +63,10 @@ export const acceptDriverTask = (id: number | string): Promise<void> =>
 /** 确认取餐：20 → 30（同步订单 deliveryStatus=20 已取餐） */
 export const pickupDriverTask = (id: number | string): Promise<void> =>
   request<void>({ url: `/driver/tasks/${id}/pickup`, method: 'POST' })
+
+/** 开始配送：30 → 40 */
+export const startDeliveryTask = (id: number | string): Promise<void> =>
+  request<void>({ url: `/driver/tasks/${id}/start`, method: 'POST' })
 
 /** 确认送达：30/40 → 50（同步订单 40→50 已完成，商家结算解冻） */
 export const deliverDriverTask = (id: number | string): Promise<void> =>
@@ -87,6 +91,7 @@ export interface DriverProfile {
   realName?: string
   phone?: string
   vehicleType?: number
+  serviceArea?: string
   status?: number
 }
 

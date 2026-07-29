@@ -1,4 +1,4 @@
-<view class="pg">
+<view class="pg merchant-tab-page">
   <scroll-view class="body" scroll-y enhanced show-scrollbar="{{false}}">
     <!-- 店铺头 -->
     <view class="shop-head" style="padding-top: {{padTop}}px;">
@@ -26,6 +26,11 @@
       <view class="m-row" bindtap="goReviews" hover-class="tap">
         <view class="m-ic ic-star"></view>
         <text>评价管理</text>
+        <text class="arrow">›</text>
+      </view>
+      <view class="m-row" bindtap="goInventory" hover-class="tap">
+        <view class="m-ic ic-inventory"></view>
+        <text>库存管理</text>
         <text class="arrow">›</text>
       </view>
       <view class="m-row" bindtap="goCombos" hover-class="tap">

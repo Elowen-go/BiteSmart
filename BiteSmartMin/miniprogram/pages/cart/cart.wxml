@@ -14,6 +14,8 @@
 
     <!-- 购物车条目 -->
     <view class="c-item" wx:for="{{items}}" wx:key="id">
+      <view class="c-swipe-delete" catchtap="removeItem" data-id="{{item.id}}">删除</view>
+      <view class="c-item-content" style="transform: translateX({{item.swipeX}}rpx);" data-id="{{item.id}}" bindtouchstart="swipeStart" bindtouchend="swipeEnd">
       <view class="ck {{item.selected === 1 ? 'on' : ''}}" catchtap="toggleSelected" data-id="{{item.id}}">
         <text class="ck-t">✓</text>
       </view>
@@ -22,7 +24,6 @@
         <view class="nm">{{item.dishName || item.comboName}}</view>
         <view class="sub">
           <text>¥{{item.price}} / 份</text>
-          <text class="del" catchtap="removeItem" data-id="{{item.id}}">删除</text>
         </view>
         <view class="b-row2">
           <view class="price"><text class="cur">¥</text>{{item.price * item.quantity}}</view>
@@ -32,6 +33,7 @@
             <text class="st-btn" catchtap="changeQuantity" data-id="{{item.id}}" data-delta="1">+</text>
           </view>
         </view>
+      </view>
       </view>
     </view>
 

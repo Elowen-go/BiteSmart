@@ -13,6 +13,7 @@ import com.ws.bitesmart.entity.merchant.Merchant;
 import com.ws.bitesmart.entity.order.OrderItem;
 import com.ws.bitesmart.entity.order.Orders;
 import com.ws.bitesmart.entity.order.ShoppingCart;
+import com.ws.bitesmart.entity.refund.RefundApplication;
 import com.ws.bitesmart.exception.BusinessException;
 import com.ws.bitesmart.mapper.dish.ComboDishRelMapper;
 import com.ws.bitesmart.mapper.dish.ComboMapper;
@@ -21,6 +22,7 @@ import com.ws.bitesmart.mapper.merchant.MerchantMapper;
 import com.ws.bitesmart.mapper.order.OrderItemMapper;
 import com.ws.bitesmart.mapper.order.OrdersMapper;
 import com.ws.bitesmart.mapper.order.ShoppingCartMapper;
+import com.ws.bitesmart.mapper.refund.RefundApplicationMapper;
 import com.ws.bitesmart.service.delivery.DeliveryTaskService;
 import com.ws.bitesmart.service.dish.ComboService;
 import com.ws.bitesmart.service.system.OperateLogService;
@@ -66,6 +68,7 @@ public class OrderService {
     private final OperateLogService operateLogService;
     private final DeliveryTaskService deliveryTaskService;
     private final MerchantMapper merchantMapper;
+    private final RefundApplicationMapper refundApplicationMapper;
 
     /** 订单号序列计数器（确保同一毫秒内不重复） */
     private static final AtomicLong ORDER_NO_SEQ = new AtomicLong(0);
@@ -107,6 +110,14 @@ public class OrderService {
     @Transactional(rollbackFor = Exception.class)
     public String createOrder(Long userId, String address, String receiverName,
                               String receiverPhone, String remark) {
+        return createOrder(userId, address, receiverName, receiverPhone, remark, null, null);
+    }
+
+    /** 创建订单并保存收货地址坐标，供配送任务导航使用。 */
+    @Transactional(rollbackFor = Exception.class)
+    public String createOrder(Long userId, String address, String receiverName,
+                              String receiverPhone, String remark,
+                              BigDecimal deliveryLat, BigDecimal deliveryLng) {
         List<ShoppingCart> selectedItems = shoppingCartMapper.findSelectedByUserId(userId);
         if (selectedItems == null || selectedItems.isEmpty()) {
             throw new BusinessException("请先选择要购买的商品");
@@ -116,7 +127,8 @@ public class OrderService {
             throw new BusinessException("购物车中包含不同商家的商品，请使用分商家结算");
         }
         Map.Entry<Long, List<ShoppingCart>> group = grouped.entrySet().iterator().next();
-        return createOrderForItems(userId, address, receiverName, receiverPhone, remark, group.getKey(), group.getValue());
+        return createOrderForItems(userId, address, receiverName, receiverPhone, remark,
+                deliveryLat, deliveryLng, group.getKey(), group.getValue());
     }
 
     /** 一次结算按商家拆成多个订单，整个过程保持在同一事务中。 */
@@ -132,7 +144,7 @@ public class OrderService {
         for (Map.Entry<Long, List<ShoppingCart>> entry : grouped.entrySet()) {
             String remark = remarksByMerchant == null ? null : remarksByMerchant.get(entry.getKey());
             orderNos.add(createOrderForItems(userId, address, receiverName, receiverPhone,
-                    remark, entry.getKey(), entry.getValue()));
+                    remark, null, null, entry.getKey(), entry.getValue()));
         }
         shoppingCartMapper.deleteByUserId(userId);
         return orderNos;
@@ -151,7 +163,9 @@ public class OrderService {
     }
 
     private String createOrderForItems(Long userId, String address, String receiverName,
-                                       String receiverPhone, String remark, Long merchantId,
+                                       String receiverPhone, String remark,
+                                       BigDecimal deliveryLat, BigDecimal deliveryLng,
+                                       Long merchantId,
                                        List<ShoppingCart> selectedItems) {
         // 店铺打烊则拒绝下单（open_status=20）
         Merchant merchant = merchantMapper.findById(merchantId);
@@ -254,6 +268,8 @@ public class OrderService {
         order.setLockStockTime(LocalDateTime.now());
         order.setAutoCancelTime(LocalDateTime.now().plusMinutes(30));
         order.setDeliveryAddress(address);
+        order.setDeliveryLat(deliveryLat);
+        order.setDeliveryLng(deliveryLng);
         order.setReceiverName(receiverName);
         order.setReceiverPhone(receiverPhone);
         order.setRemark(remark);
@@ -303,6 +319,45 @@ public class OrderService {
         operateLogService.record(userId, null, null,
                 "取消订单", "OrderService.cancelOrder", null, order.getOrderNo(), null, null, null);
         log.info("订单已取消: orderNo={}, userId={}, reason={}", order.getOrderNo(), userId, reason);
+    }
+
+    /**
+     * 用户申请退款：待接单、备餐中、配送中的订单可以提交退款工单。
+     * 退款由后台审核，用户提交后订单仍保留原业务状态，避免审核驳回时丢失原状态。
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public void applyRefund(Long id, Long userId, String reason, String desc) {
+        Orders order = ordersMapper.findById(id);
+        if (order == null || !order.getUserId().equals(userId)) {
+            throw new BusinessException(ResultCodeEnum.ORDER_NOT_FOUND);
+        }
+        if (order.getOrderStatus() == null ||
+                (order.getOrderStatus() != 20 && order.getOrderStatus() != 30 &&
+                        order.getOrderStatus() != 40)) {
+            throw new BusinessException(ResultCodeEnum.ORDER_STATUS_ERROR, "当前订单状态不支持退款申请");
+        }
+
+        RefundApplication latest = refundApplicationMapper.findLatestByOrderId(id);
+        if (latest != null && latest.getAuditStatus() != null &&
+                (latest.getAuditStatus() == 10 || latest.getAuditStatus() == 20 || latest.getAuditStatus() == 40)) {
+            throw new BusinessException(ResultCodeEnum.ORDER_STATUS_ERROR, "该订单已有退款申请，请等待处理结果");
+        }
+
+        RefundApplication application = new RefundApplication();
+        application.setId(SnowflakeUtil.generate());
+        application.setOrderId(order.getId());
+        application.setOrderNo(order.getOrderNo());
+        application.setUserId(userId);
+        application.setRefundAmount(order.getPayAmount() != null ? order.getPayAmount() : order.getTotalAmount());
+        application.setRefundReason(reason == null || reason.trim().isEmpty() ? "其他原因" : reason.trim());
+        application.setRefundDesc(desc == null || desc.trim().isEmpty() ? null : desc.trim());
+        application.setAuditStatus(10);
+        application.setApplyTime(LocalDateTime.now());
+        refundApplicationMapper.insert(application);
+
+        operateLogService.record(userId, null, null,
+                "提交退款申请", "OrderService.applyRefund", null, order.getOrderNo(), null, null, null);
+        log.info("用户已提交退款申请: orderNo={}, userId={}", order.getOrderNo(), userId);
     }
 
     /**

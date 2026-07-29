@@ -1,7 +1,7 @@
 <view class="pg">
   <!-- 顶部健康生活氛围区 -->
   <view class="profile-hero" style="height: calc(404rpx + {{padTop}}px); --profile-pad: {{padTop}}px;">
-    <image class="profile-hero-image" src="/assets/home/profile-hero.png" mode="aspectFill" />
+    <image class="profile-hero-image" src="/assets/home/profile-hero.jpg" mode="aspectFill" />
     <view class="profile-hero-shade"></view>
     <view class="status-pad" style="height: {{padTop}}px;"></view>
     <view class="profile-hero-brand">BiteSmart · HEALTHY LIVING</view>

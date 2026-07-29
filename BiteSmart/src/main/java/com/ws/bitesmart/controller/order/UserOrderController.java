@@ -6,6 +6,7 @@ import com.ws.bitesmart.dto.request.BatchOrderRequest;
 import com.ws.bitesmart.entity.order.OrderItem;
 import com.ws.bitesmart.entity.order.Orders;
 import com.ws.bitesmart.security.LoginUser;
+import com.ws.bitesmart.mapper.refund.RefundApplicationMapper;
 import com.ws.bitesmart.service.order.OrderService;
 import com.ws.bitesmart.service.order.PaymentService;
 import com.ws.bitesmart.mapper.order.OrderStatusLogMapper;
@@ -24,6 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.math.BigDecimal;
 
 /**
  * 用户端 - 订单接口
@@ -40,6 +42,7 @@ public class UserOrderController {
     private final OrderService orderService;
     private final PaymentService paymentService;
     private final OrderStatusLogMapper orderStatusLogMapper;
+    private final RefundApplicationMapper refundApplicationMapper;
     private final AlipayPaymentService alipayPaymentService;
 
     /**
@@ -56,10 +59,12 @@ public class UserOrderController {
                                                  @RequestParam String address,
                                                  @RequestParam String receiverName,
                                                  @RequestParam String receiverPhone,
-                                                 @RequestParam(required = false) String remark) {
+                                                 @RequestParam(required = false) String remark,
+                                                 @RequestParam(required = false) BigDecimal latitude,
+                                                 @RequestParam(required = false) BigDecimal longitude) {
         if (loginUser == null) return ResultVO.error(401, "未登录");
         String orderNo = orderService.createOrder(loginUser.getUserId(), address,
-                receiverName, receiverPhone, remark);
+                receiverName, receiverPhone, remark, latitude, longitude);
         Map<String, String> result = new HashMap<>();
         result.put("orderNo", orderNo);
         return ResultVO.success(result);
@@ -109,6 +114,7 @@ public class UserOrderController {
         result.put("order", order);
         result.put("items", items);
         result.put("statusTimeline", orderStatusLogMapper.findByOrderId(id));
+        result.put("refundApplication", refundApplicationMapper.findLatestByOrderId(id));
         return ResultVO.success(result);
     }
 
@@ -120,6 +126,17 @@ public class UserOrderController {
         if (loginUser == null) return ResultVO.error(401, "未登录");
         orderService.cancelOrder(id, loginUser.getUserId(), reason);
         return ResultVO.ok("取消成功");
+    }
+
+    /** 用户申请退款：已支付订单提交后进入退款审核流程。 */
+    @PostMapping("/{id}/refund")
+    public ResultVO<Void> refund(@AuthenticationPrincipal LoginUser loginUser,
+                                  @PathVariable Long id,
+                                  @RequestParam(required = false) String reason,
+                                  @RequestParam(required = false) String desc) {
+        if (loginUser == null) return ResultVO.error(401, "未登录");
+        orderService.applyRefund(id, loginUser.getUserId(), reason, desc);
+        return ResultVO.ok("退款申请已提交");
     }
 
     /**

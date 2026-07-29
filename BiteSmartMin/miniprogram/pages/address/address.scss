@@ -80,3 +80,54 @@
 .save-btn { margin-top: 8rpx; }
 
 .foot-space { height: 40rpx; }
+
+/* Map-based address picker */
+.location-picker {
+  display: flex;
+  align-items: center;
+  gap: 18rpx;
+  min-height: 100rpx;
+  padding: 16rpx 18rpx;
+  border: 1rpx solid #D9E7DB;
+  border-radius: 18rpx;
+  background: linear-gradient(120deg, #F0F8F0 0%, #FBFCF8 100%);
+}
+.location-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56rpx;
+  height: 56rpx;
+  flex: none;
+  border-radius: 17rpx;
+  background: #DDF1E1;
+}
+.location-icon .ic-pin { display: none; }
+.location-icon::before {
+  content: '';
+  position: absolute;
+  left: 19rpx;
+  top: 13rpx;
+  width: 20rpx;
+  height: 20rpx;
+  border: 3rpx solid #19764A;
+  border-radius: 50% 50% 50% 0;
+  background: transparent;
+  transform: rotate(-45deg);
+}
+.location-icon::after {
+  content: '';
+  position: absolute;
+  left: 27rpx;
+  top: 21rpx;
+  width: 6rpx;
+  height: 6rpx;
+  border-radius: 50%;
+  background: #19764A;
+}
+.location-main { flex: 1; min-width: 0; }
+.location-name { overflow: hidden; color: #2C4233; font-size: 23rpx; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+.location-name.muted { color: #347753; }
+.location-address { overflow: hidden; margin-top: 5rpx; color: #87958B; font-size: 19rpx; line-height: 1.4; text-overflow: ellipsis; white-space: nowrap; }
+.location-arrow { flex: none; color: #8DA096; font-size: 38rpx; line-height: 1; }

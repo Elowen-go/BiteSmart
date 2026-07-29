@@ -82,6 +82,30 @@
   border-radius: 6rpx;
   background: #fff;
 }
+/* 库存：货架和库存条 */
+.ic-inventory::before {
+  content: '';
+  position: absolute;
+  left: 14rpx;
+  top: 16rpx;
+  width: 36rpx;
+  height: 30rpx;
+  border: 3rpx solid var(--ink);
+  border-radius: 5rpx;
+  background:
+    linear-gradient(var(--ink), var(--ink)) 8rpx 8rpx / 20rpx 3rpx no-repeat,
+    linear-gradient(var(--ink), var(--ink)) 8rpx 17rpx / 14rpx 3rpx no-repeat;
+}
+.ic-inventory::after {
+  content: '';
+  position: absolute;
+  left: 20rpx;
+  top: 11rpx;
+  width: 24rpx;
+  height: 3rpx;
+  background: var(--ink);
+  border-radius: 2rpx;
+}
 /* 退出：箭头出门 */
 .ic-exit::before {
   content: '';

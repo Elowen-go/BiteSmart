@@ -6,6 +6,25 @@ import { uimg } from '../../mock/catalog'
 
 const FALLBACK_LOGO = uimg('1543353071-873f17a7a088', 200)
 
+const formatBusinessHours = (value: unknown): string => {
+  if (!value) return ''
+  const raw = String(value).trim()
+  if (!raw) return ''
+
+  try {
+    const parsed = typeof value === 'object' ? value as Record<string, unknown> : JSON.parse(raw) as Record<string, unknown>
+    const weekday = String(parsed.weekday || '').trim()
+    const weekend = String(parsed.weekend || '').trim()
+    if (weekday && weekend) return `工作日 ${weekday} · 周末 ${weekend}`
+    if (weekday) return `工作日 ${weekday}`
+    if (weekend) return `周末 ${weekend}`
+  } catch {
+    // 非 JSON 格式时直接显示原始营业时间文本
+  }
+
+  return raw.startsWith('{') ? '' : raw
+}
+
 Page({
   data: {
     padTop: 44,
@@ -31,7 +50,8 @@ Page({
     getMerchantShop()
       .then((shop: MerchantShop | null) => {
         if (!shop) return
-        const hours = shop.businessHours ? ` · ${shop.businessHours}` : ''
+        const hoursText = formatBusinessHours(shop.businessHours)
+        const hours = hoursText ? ` · ${hoursText}` : ''
         this.setData({
           shopName: shop.shopName || 'BiteSmart 门店',
           shopLogo: shop.shopLogo || FALLBACK_LOGO,
@@ -57,6 +77,10 @@ Page({
 
   goReviews() {
     wx.navigateTo({ url: '/pages/m-reviews/m-reviews' })
+  },
+
+  goInventory() {
+    wx.navigateTo({ url: '/pages/m-inventory/m-inventory' })
   },
 
   goCombos() {

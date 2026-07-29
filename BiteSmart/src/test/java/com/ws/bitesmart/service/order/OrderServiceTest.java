@@ -13,9 +13,11 @@ import com.ws.bitesmart.mapper.dish.DishMapper;
 import com.ws.bitesmart.mapper.order.OrderItemMapper;
 import com.ws.bitesmart.mapper.order.OrdersMapper;
 import com.ws.bitesmart.mapper.order.ShoppingCartMapper;
+import com.ws.bitesmart.mapper.merchant.MerchantMapper;
 import com.ws.bitesmart.service.delivery.DeliveryTaskService;
 import com.ws.bitesmart.service.dish.ComboService;
 import com.ws.bitesmart.service.system.OperateLogService;
+import com.ws.bitesmart.mapper.refund.RefundApplicationMapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -40,6 +42,8 @@ class OrderServiceTest {
     @Mock private ComboService comboService;
     @Mock private OperateLogService operateLogService;
     @Mock private DeliveryTaskService deliveryTaskService;
+    @Mock private MerchantMapper merchantMapper;
+    @Mock private RefundApplicationMapper refundApplicationMapper;
 
     @Test
     void createOrderReportsSpecificStockShortage() {
@@ -104,6 +108,7 @@ class OrderServiceTest {
 
     private OrderService service() {
         return new OrderService(ordersMapper, orderItemMapper, shoppingCartMapper, dishMapper,
-                comboMapper, comboDishRelMapper, comboService, operateLogService, deliveryTaskService);
+                comboMapper, comboDishRelMapper, comboService, operateLogService, deliveryTaskService,
+                merchantMapper, refundApplicationMapper);
     }
 }

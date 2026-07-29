@@ -25,13 +25,15 @@
     <block wx:if="{{step === 0}}">
       <view class="asm-q">你的目标是</view>
       <view class="asm-sub">AI 将以此确定每日热量预算与营养结构</view>
-      <view class="opt {{goal === item.n ? 'on' : ''}}" wx:for="{{goals}}" wx:key="n" bindtap="pickGoal" data-v="{{item.n}}" hover-class="tap">
-        <image class="ph" src="{{item.image}}" mode="aspectFill" />
-        <view class="opt-main">
-          <view class="opt-name">{{item.n}}</view>
-          <view class="opt-desc">{{item.d}}</view>
+      <view class="opt-grid goal-grid">
+        <view class="opt {{goal === item.n ? 'on' : ''}}" wx:for="{{goals}}" wx:key="n" bindtap="pickGoal" data-v="{{item.n}}" hover-class="tap">
+          <image class="ph" src="{{item.image}}" mode="aspectFill" />
+          <view class="opt-main">
+            <view class="opt-name">{{item.n}}</view>
+            <view class="opt-desc">{{item.d}}</view>
+          </view>
+          <view class="ck-c"><text wx:if="{{goal === item.n}}" class="ck-t">✓</text></view>
         </view>
-        <view class="ck-c"><text wx:if="{{goal === item.n}}" class="ck-t">✓</text></view>
       </view>
     </block>
 
@@ -40,7 +42,7 @@
       <view class="asm-q">想改善的部位</view>
       <view class="asm-sub">可多选，人体模型会同步高亮所选部位</view>
       <view class="part-chips">
-        <view class="chip {{parts.indexOf(item) >= 0 ? 'on' : ''}}" wx:for="{{partList}}" wx:key="*this" bindtap="togglePart" data-v="{{item}}">{{item}}</view>
+        <view class="chip {{item.selected ? 'on' : ''}}" wx:for="{{partList}}" wx:key="n" bindtap="togglePart" data-v="{{item.n}}">{{item.n}}</view>
       </view>
       <view class="bodymap">
         <view class="fig">
@@ -64,13 +66,15 @@
     <block wx:if="{{step === 2}}">
       <view class="asm-q">每周的运动量</view>
       <view class="asm-sub asm-sub-line">AI 会根据运动量计算每日总能量消耗（TDEE），用于精准定制食谱与运动计划</view>
-      <view class="opt {{activity === item.n ? 'on' : ''}}" wx:for="{{acts}}" wx:key="n" bindtap="pickActivity" data-v="{{item.n}}" hover-class="tap">
-        <image class="ph" src="{{item.image}}" mode="aspectFill" />
-        <view class="opt-main">
-          <view class="opt-name">{{item.n}}</view>
-          <view class="opt-desc">{{item.d}}</view>
+      <view class="opt-grid activity-grid">
+        <view class="opt {{activity === item.n ? 'on' : ''}}" wx:for="{{acts}}" wx:key="n" bindtap="pickActivity" data-v="{{item.n}}" hover-class="tap">
+          <image class="ph" src="{{item.image}}" mode="aspectFill" />
+          <view class="opt-main">
+            <view class="opt-name">{{item.n}}</view>
+            <view class="opt-desc">{{item.d}}</view>
+          </view>
+          <view class="ck-c"><text wx:if="{{activity === item.n}}" class="ck-t">✓</text></view>
         </view>
-        <view class="ck-c"><text wx:if="{{activity === item.n}}" class="ck-t">✓</text></view>
       </view>
       <view class="f-lab" style="margin-top: 24rpx;">每周运动次数</view>
       <view class="part-chips">
@@ -108,14 +112,14 @@
       <view class="form-row">
         <view class="f-lab">饮食偏好（可多选）</view>
         <view class="part-chips">
-          <view class="chip {{prefs.indexOf(item) >= 0 ? 'on' : ''}}" wx:for="{{prefList}}" wx:key="*this" bindtap="togglePref" data-v="{{item}}">{{item}}</view>
+          <view class="chip {{item.selected ? 'on' : ''}}" wx:for="{{prefList}}" wx:key="n" bindtap="togglePref" data-v="{{item.n}}">{{item.n}}</view>
         </view>
       </view>
 
       <view class="form-row">
         <view class="f-lab">忌口 / 过敏（可多选）</view>
         <view class="part-chips">
-          <view class="chip {{avoid.indexOf(item) >= 0 ? 'on' : ''}}" wx:for="{{avoidList}}" wx:key="*this" bindtap="toggleAvoid" data-v="{{item}}">{{item}}</view>
+          <view class="chip {{item.selected ? 'on' : ''}}" wx:for="{{avoidList}}" wx:key="n" bindtap="toggleAvoid" data-v="{{item.n}}">{{item.n}}</view>
         </view>
       </view>
 

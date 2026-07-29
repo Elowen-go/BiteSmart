@@ -4,7 +4,8 @@
 
     <sql id="BaseColumns">
         id, order_id, order_no, driver_id, merchant_id, merchant_address, merchant_phone,
-        delivery_address, receiver_name, receiver_phone, pickup_code, task_status,
+        delivery_address, merchant_lat, merchant_lng, delivery_lat, delivery_lng,
+        receiver_name, receiver_phone, pickup_code, task_status,
         current_lat, current_lng, location_update_time,
         pickup_time, deliver_time, estimated_delivery_time, route_json,
         exception_reason, reject_reason, order_remark, create_time, update_time, deleted
@@ -13,7 +14,8 @@
     <!-- 带 t. 别名的列，用于联查 delivery_driver 的查询 -->
     <sql id="AliasedColumns">
         t.id, t.order_id, t.order_no, t.driver_id, t.merchant_id, t.merchant_address, t.merchant_phone,
-        t.delivery_address, t.receiver_name, t.receiver_phone, t.pickup_code, t.task_status,
+        t.delivery_address, t.merchant_lat, t.merchant_lng, t.delivery_lat, t.delivery_lng,
+        t.receiver_name, t.receiver_phone, t.pickup_code, t.task_status,
         t.current_lat, t.current_lng, t.location_update_time,
         t.pickup_time, t.deliver_time, t.estimated_delivery_time, t.route_json,
         t.exception_reason, t.reject_reason, t.order_remark, t.create_time, t.update_time, t.deleted,
@@ -70,14 +72,16 @@
     <insert id="insert" parameterType="com.ws.bitesmart.entity.delivery.DeliveryTask">
         INSERT INTO delivery_task (id, order_id, order_no, driver_id, merchant_id,
                                    merchant_address, merchant_phone,
-                                   delivery_address, receiver_name, receiver_phone,
+                                   delivery_address, merchant_lat, merchant_lng, delivery_lat, delivery_lng,
+                                   receiver_name, receiver_phone,
                                    pickup_code, task_status,
                                    current_lat, current_lng,
                                    estimated_delivery_time, order_remark,
                                    create_time, update_time)
         VALUES (#{id}, #{orderId}, #{orderNo}, #{driverId}, #{merchantId},
                 #{merchantAddress}, #{merchantPhone},
-                #{deliveryAddress}, #{receiverName}, #{receiverPhone},
+                #{deliveryAddress}, #{merchantLat}, #{merchantLng}, #{deliveryLat}, #{deliveryLng},
+                #{receiverName}, #{receiverPhone},
                 #{pickupCode}, #{taskStatus},
                 #{currentLat}, #{currentLng},
                 #{estimatedDeliveryTime}, #{orderRemark},

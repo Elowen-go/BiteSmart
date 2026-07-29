@@ -5,6 +5,17 @@
 .nav-t { font-size: 32rpx; font-weight: 800; }
 .nav-right { margin-left: auto; font-size: 22rpx; color: var(--sub); }
 
+/* ---------- 搜索与分类筛选 ---------- */
+.dish-filters { flex: none; padding: 0 32rpx 8rpx; }
+.dish-search { display: flex; align-items: center; height: 72rpx; padding: 0 20rpx; border: 1rpx solid var(--hair); border-radius: 16rpx; background: #FFFFFF; }
+.dish-search .ic-search { margin-right: 14rpx; }
+.dish-search-input { flex: 1; min-width: 0; height: 100%; font-size: 24rpx; color: var(--ink); }
+.dish-search-placeholder { color: var(--faint); }
+.dish-search-clear { display: flex; align-items: center; justify-content: center; width: 44rpx; height: 44rpx; color: var(--sub); font-size: 34rpx; line-height: 1; }
+.category-tabs { width: 100%; white-space: nowrap; padding: 18rpx 0 10rpx; }
+.category-tab { display: inline-flex; align-items: center; justify-content: center; min-width: 112rpx; height: 52rpx; margin-right: 12rpx; padding: 0 20rpx; border: 1rpx solid transparent; border-radius: 999rpx; color: var(--sub); background: #F0F3EE; font-size: 22rpx; }
+.category-tab.on { border-color: var(--green); color: #FFFFFF; background: var(--green); font-weight: 700; }
+
 .body { flex: 1; padding: 8rpx 32rpx 0; box-sizing: border-box; }
 
 /* ---------- 菜品行（复刻原型 dish-row） ---------- */
@@ -16,20 +27,40 @@
 .dish-main .nm { font-size: 26rpx; font-weight: 700; }
 .dish-main .nm .pill { margin-left: 12rpx; vertical-align: 4rpx; }
 .dish-main .sub { font-size: 20rpx; color: var(--sub); margin-top: 8rpx; }
-.stock-edit { display: flex; align-items: center; gap: 12rpx; font-size: 22rpx; color: var(--sub); margin-top: 12rpx; }
+.dish-controls { display: flex; align-items: center; justify-content: flex-start; gap: 12rpx; margin-top: 12rpx; }
+.stock-edit { display: flex; align-items: center; gap: 12rpx; min-width: 0; font-size: 22rpx; color: var(--sub); }
 .stock-edit input {
   width: 96rpx;
+  height: 48rpx;
   border: 1rpx solid var(--hair);
   border-radius: 8rpx;
-  padding: 6rpx 10rpx;
+  padding: 0 10rpx;
+  box-sizing: border-box;
   font-size: 22rpx;
+  line-height: 48rpx;
   text-align: center;
   background: #fff;
   min-height: 0;
 }
 /* 库存预警：stock ≤ LOW_STOCK_THRESHOLD（见 utils/merchant-vm）时数字变橙 */
 .stock-edit input.low { color: var(--orange); border-color: var(--orange); font-weight: 700; }
-.edit-link { margin-top: 10rpx; font-size: 22rpx; color: var(--green-deep); font-weight: 700; }
+.edit-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  min-width: 96rpx;
+  height: 52rpx;
+  padding: 0 18rpx;
+  margin-left: 8rpx;
+  box-sizing: border-box;
+  border: 1rpx solid #B9D9C4;
+  border-radius: 999rpx;
+  background: #EFF8F2;
+  color: var(--green-deep);
+  font-size: 22rpx;
+  font-weight: 700;
+}
 .dish-side { text-align: center; }
 .dish-side .side-lab { font-size: 18rpx; color: var(--faint); margin-top: 10rpx; }
 

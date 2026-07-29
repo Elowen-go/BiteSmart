@@ -22,7 +22,7 @@ export const getProfile = (): Promise<UserProfile | null> => request<UserProfile
 export const saveProfile = (profile: UserProfile): Promise<void> => request<void>({ url: '/user/profile', method: 'PUT', data: profile })
 
 /** 地址 id 为雪花 Long，传输层是字符串，禁止 Number() 强转 */
-export interface UserAddress { id?: number | string; receiverName?: string; receiverPhone?: string; province?: string; city?: string; district?: string; detailAddress?: string; addressTag?: string; isDefault?: number }
+export interface UserAddress { id?: number | string; receiverName?: string; receiverPhone?: string; province?: string; city?: string; district?: string; detailAddress?: string; locationName?: string; latitude?: number; longitude?: number; addressTag?: string; isDefault?: number }
 export const getAddresses = (): Promise<UserAddress[]> => request<UserAddress[]>({ url: '/user/addresses' })
 export const addAddress = (address: UserAddress): Promise<void> => request<void>({ url: '/user/addresses', method: 'POST', data: address })
 export const updateAddress = (id: number | string, address: UserAddress): Promise<void> => request<void>({ url: `/user/addresses/${id}`, method: 'PUT', data: address })

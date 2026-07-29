@@ -36,6 +36,17 @@
         <input class="f-input" placeholder="省市区 + 详细地址" placeholder-class="ph-txt" value="{{shopAddress}}" data-field="shopAddress" bindinput="onInput" />
       </view>
       <view class="form-row">
+        <view class="f-lab">地图取货点</view>
+        <view class="location-picker" bindtap="chooseShopLocation" hover-class="tap">
+          <view class="location-icon"><view class="ic-pin"></view></view>
+          <view class="location-main">
+            <view class="location-name {{shopLat && shopLng ? '' : 'muted'}}">{{shopLat && shopLng ? '已设置店铺坐标' : '点击地图选择店铺位置'}}</view>
+            <view class="location-address">{{shopLat && shopLng ? '用于骑手导航和路线定位' : '建议设置准确的取货点'}}</view>
+          </view>
+          <text class="location-arrow">›</text>
+        </view>
+      </view>
+      <view class="form-row">
         <view class="f-lab">店铺公告</view>
         <textarea class="f-input f-textarea" placeholder="展示给用户端的公告，如营业时间调整、优惠活动" placeholder-class="ph-txt" value="{{shopNotice}}" data-field="shopNotice" bindinput="onInput" maxlength="200" />
       </view>

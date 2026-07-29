@@ -10,6 +10,7 @@ export interface Dish {
   price?: number
   originalPrice?: number
   stock?: number
+  minStockWarning?: number
   salesCount?: number
   unit?: string
   description?: string

@@ -324,6 +324,11 @@ button::after { border: 0; }
   padding-bottom: env(safe-area-inset-bottom);
   flex: none;
 }
+
+/* 商家主页面共享：底栏固定，内容区域独立滚动 */
+.merchant-tab-page { position: relative; min-height: 0; }
+.merchant-tab-page > .body { min-height: 0; padding-bottom: calc(136rpx + env(safe-area-inset-bottom)) !important; }
+.merchant-tab-page > .m-tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; }
 .m-tab { flex: 1; text-align: center; font-size: 20rpx; color: var(--faint); }
 .m-tab .m-tab-ic { width: 40rpx; height: 40rpx; display: block; margin: 0 auto 6rpx; background: transparent; }
 .m-tab.on { color: var(--green); font-weight: 700; }

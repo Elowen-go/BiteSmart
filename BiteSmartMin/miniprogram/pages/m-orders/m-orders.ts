@@ -1,26 +1,34 @@
 import { getSafeArea } from '../../utils/safe-area'
 import {
   getMerchantOrders,
+  getMerchantDishes,
   getMerchantOrderDetail,
   acceptMerchantOrder,
   rejectMerchantOrder,
   finishMerchantOrder,
   type MerchantOrderItem
 } from '../../api/merchant'
-import { buildOrderVM, money, type MOrderVM } from '../../utils/merchant-vm'
+import { buildOrderVM, money, type DishPriceMap, type MOrderVM } from '../../utils/merchant-vm'
 import { fmtDateTime } from '../../utils/json'
 
 const TABS = [
+  { k: 'all', n: '全部' },
+  { k: '10', n: '待支付' },
   { k: '20', n: '待接单' },
   { k: '30', n: '备餐中' },
-  { k: '40', n: '待取餐' },
-  { k: 'all', n: '全部' }
+  { k: '40-pickup', n: '待取餐' },
+  { k: '40-delivery', n: '配送中' },
+  { k: '50', n: '已完成' },
+  { k: '60', n: '已取消' },
+  { k: '70', n: '退款中' },
+  { k: '80', n: '已退款' }
 ]
 
-/** 待取餐口径：orderStatus=40 且骑手未取餐（deliveryStatus<=10）；骑手取餐后只在「全部」可见 */
+/** 配送状态按 deliveryStatus 拆分，退款和终态订单也保留独立筛选项 */
 const inTab = (o: MOrderVM, k: string): boolean => {
   if (k === 'all') return true
-  if (k === '40') return o.status === 40 && o.deliveryStatus <= 10
+  if (k === '40-pickup') return o.status === 40 && o.deliveryStatus <= 10
+  if (k === '40-delivery') return o.status === 40 && o.deliveryStatus > 10
   return o.status === Number(k)
 }
 
@@ -33,7 +41,7 @@ Page({
     menuH: 32,
     active: 'orders',
     tabs: TABS,
-    tab: '20',
+    tab: 'all',
     counts: {} as Record<string, number>,
     list: [] as MOrderVM[],
     // 订单详情弹层
@@ -50,9 +58,12 @@ Page({
 
   all: [] as MOrderVM[],
 
-  onLoad() {
+  pendingDetailId: '' as string,
+
+  onLoad(options: Record<string, string | undefined>) {
     const sa = getSafeArea()
     this.setData({ padTop: sa.padTop, menuTop: sa.menuTop, menuH: sa.menuH })
+    this.pendingDetailId = options && options.orderId ? decodeURIComponent(options.orderId) : ''
     this.loadOrders()
   },
 
@@ -61,10 +72,23 @@ Page({
   },
 
   loadOrders() {
-    getMerchantOrders()
-      .then((orders) => {
-        this.all = (orders || []).map(buildOrderVM)
+    Promise.all([
+      getMerchantOrders(),
+      getMerchantDishes().catch(() => [])
+    ])
+      .then(([orders, dishes]) => {
+        const dishPrices: DishPriceMap = {}
+        ;(dishes || []).forEach((dish) => {
+          const price = Number(dish.price)
+          if (dish.id != null && Number.isFinite(price) && price > 0) dishPrices[String(dish.id)] = price
+        })
+        this.all = (orders || []).map((order) => buildOrderVM(order, dishPrices))
         this.applyTab()
+        if (this.pendingDetailId) {
+          const id = this.pendingDetailId
+          this.pendingDetailId = ''
+          this.openDetailById(id)
+        }
       })
       .catch((error: Error) => {
         console.warn('[m-orders] 订单加载失败：', error && error.message)
@@ -97,6 +121,10 @@ Page({
 
   openDetail(e: WechatMiniprogram.CustomEvent) {
     const id = e.currentTarget.dataset.id as number | string
+    this.openDetailById(id)
+  },
+
+  openDetailById(id: number | string) {
     getMerchantOrderDetail(id)
       .then((d) => {
         const order = d.order || {}
@@ -120,6 +148,14 @@ Page({
       .catch((error: Error) => wx.showToast({ title: error.message || '订单详情加载失败', icon: 'none' }))
   },
 
+  toggleItems(e: WechatMiniprogram.CustomEvent) {
+    const id = String(e.currentTarget.dataset.id)
+    this.all = this.all.map((order) => (
+      String(order.id) === id ? { ...order, itemsExpanded: !order.itemsExpanded } : order
+    ))
+    this.applyTab()
+  },
+
   closeSheet() {
     this.setData({ sheetShow: false })
   },
@@ -128,20 +164,29 @@ Page({
 
   accept(e: WechatMiniprogram.CustomEvent) {
     const id = e.currentTarget.dataset.id as number | string
-    acceptMerchantOrder(id)
-      .then(() => {
-        this.setData({ sheetShow: false })
-        wx.showToast({ title: '已接单，开始备餐', icon: 'none' })
-        this.loadOrders()
-      })
-      .catch((error: Error) => wx.showToast({ title: error.message || '接单失败', icon: 'none' }))
+    wx.showModal({
+      title: '确认接单？',
+      content: '确认后订单将进入备餐流程',
+      confirmText: '确认接单',
+      confirmColor: '#0F7A4A',
+      success: (res) => {
+        if (!res.confirm) return
+        acceptMerchantOrder(id)
+          .then(() => {
+            this.setData({ sheetShow: false })
+            wx.showToast({ title: '已接单，开始备餐', icon: 'none' })
+            this.loadOrders()
+          })
+          .catch((error: Error) => wx.showToast({ title: error.message || '接单失败', icon: 'none' }))
+      }
+    })
   },
 
   reject(e: WechatMiniprogram.CustomEvent) {
     const id = e.currentTarget.dataset.id as number | string
     wx.showModal({
       title: '拒绝该订单？',
-      content: '拒单后订单将取消并自动退款给用户',
+      content: '',
       confirmText: '确认拒单',
       confirmColor: '#C0563F',
       editable: true,

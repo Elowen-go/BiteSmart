@@ -49,6 +49,10 @@ public class Orders {
     /** 配送地址 */
     private String deliveryAddress;
 
+    /** 收货地址坐标（GCJ-02） */
+    private BigDecimal deliveryLat;
+    private BigDecimal deliveryLng;
+
     /** 收货人姓名 */
     private String receiverName;
 

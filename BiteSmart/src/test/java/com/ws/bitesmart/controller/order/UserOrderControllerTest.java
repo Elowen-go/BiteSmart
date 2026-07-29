@@ -8,6 +8,7 @@ import com.ws.bitesmart.security.LoginUser;
 import com.ws.bitesmart.service.order.OrderService;
 import com.ws.bitesmart.service.order.PaymentService;
 import com.ws.bitesmart.mapper.order.OrderStatusLogMapper;
+import com.ws.bitesmart.mapper.refund.RefundApplicationMapper;
 import com.ws.bitesmart.service.payment.AlipayPaymentService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -24,11 +25,12 @@ class UserOrderControllerTest {
     @Mock private OrderService orderService;
     @Mock private PaymentService paymentService;
     @Mock private OrderStatusLogMapper orderStatusLogMapper;
+    @Mock private RefundApplicationMapper refundApplicationMapper;
     @Mock private AlipayPaymentService alipayPaymentService;
 
     @Test
     void cancelUsesAuthenticatedUserId() {
-        UserOrderController controller = new UserOrderController(orderService, paymentService, orderStatusLogMapper, alipayPaymentService);
+        UserOrderController controller = new UserOrderController(orderService, paymentService, orderStatusLogMapper, refundApplicationMapper, alipayPaymentService);
 
         var result = controller.cancel(new LoginUser(88L, 10), 123L, "不需要了");
 
@@ -38,14 +40,14 @@ class UserOrderControllerTest {
 
     @Test
     void createPassesAddressAndReceiverDetailsToOrderService() {
-        when(orderService.createOrder(88L, "园区一号楼", "张三", "13800000000", "少盐"))
+        when(orderService.createOrder(88L, "园区一号楼", "张三", "13800000000", "少盐", null, null))
                 .thenReturn("ORD-1");
 
-        var result = controller().create(new LoginUser(88L, 10), "园区一号楼", "张三", "13800000000", "少盐");
+        var result = controller().create(new LoginUser(88L, 10), "园区一号楼", "张三", "13800000000", "少盐", null, null);
 
         assertThat(result.getCode()).isEqualTo(200);
         assertThat(result.getData()).containsEntry("orderNo", "ORD-1");
-        verify(orderService).createOrder(88L, "园区一号楼", "张三", "13800000000", "少盐");
+        verify(orderService).createOrder(88L, "园区一号楼", "张三", "13800000000", "少盐", null, null);
     }
 
     @Test
@@ -94,6 +96,6 @@ class UserOrderControllerTest {
     }
 
     private UserOrderController controller() {
-        return new UserOrderController(orderService, paymentService, orderStatusLogMapper, alipayPaymentService);
+        return new UserOrderController(orderService, paymentService, orderStatusLogMapper, refundApplicationMapper, alipayPaymentService);
     }
 }

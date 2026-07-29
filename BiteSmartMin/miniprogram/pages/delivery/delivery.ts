@@ -121,12 +121,14 @@ const buildView = (tracking: TrackingInfo): TrackView => {
 
 Page({
   data: { tracking: null as TrackingInfo | null, view: null as TrackView | null, orderId: '' as number | string, loading: false, menuTop: 0, menuH: 32 },
+  trackingTimer: null as ReturnType<typeof setInterval> | null,
+
   onLoad(options: Record<string, string>) {
     if (!requireUser()) return
     const { menuTop, menuH } = getSafeArea()
     // 订单 id 为雪花字符串，原样透传禁止 Number() 强转
     const orderId = (options && options.orderId) || ''
-    this.setData({ menuTop, menuH, orderId, loading: true })
+    this.setData({ menuTop, menuH, orderId, loading: true }, () => this.startTrackingTimer())
     if (orderId) {
       getTracking(orderId)
         .then((tracking) => this.setData({ tracking, view: buildView(tracking) }))
@@ -136,13 +138,37 @@ Page({
       this.setData({ loading: false })
     }
   },
+  onShow() {
+    this.startTrackingTimer()
+  },
+
+  onHide() {
+    this.stopTrackingTimer()
+  },
+
+  onUnload() {
+    this.stopTrackingTimer()
+  },
+
+  startTrackingTimer() {
+    if (!this.data.orderId || this.trackingTimer) return
+    this.trackingTimer = setInterval(() => this.refresh(true), 15000)
+  },
+
+  stopTrackingTimer() {
+    if (this.trackingTimer) {
+      clearInterval(this.trackingTimer)
+      this.trackingTimer = null
+    }
+  },
+
   back() { wx.navigateBack() },
-  refresh() {
+  refresh(silent = false) {
     if (!this.data.orderId) return
     getTracking(this.data.orderId)
       .then((tracking) => {
         this.setData({ tracking, view: buildView(tracking) })
-        wx.showToast({ title: '已刷新', icon: 'none' })
+        if (!silent) wx.showToast({ title: '已刷新', icon: 'none' })
       })
       .catch(() => {})
   },

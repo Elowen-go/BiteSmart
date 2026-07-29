@@ -1,4 +1,4 @@
-.pg { display: flex; flex-direction: column; height: 100vh; background: var(--bg); }
+.pg { position: relative; display: flex; flex-direction: column; height: 100vh; min-height: 0; background: var(--bg); }
 
 /* ---------- 自定义导航（margin-top = 胶囊 top，与胶囊同行对齐） ---------- */
 .nav { display: flex; align-items: center; padding: 0 32rpx; flex: none; }
@@ -6,8 +6,8 @@
 .nav-right { margin-left: auto; font-size: 22rpx; color: var(--sub); }
 
 /* ---------- 状态筛选 ---------- */
-.o-tabs { display: flex; border-bottom: 1rpx solid var(--hair); padding: 0 16rpx; flex: none; background: var(--bg); }
-.o-tab { flex: 1; text-align: center; padding: 24rpx 0 20rpx; font-size: 24rpx; color: var(--sub); position: relative; }
+.o-tabs { display: flex; width: 100%; height: 88rpx; border-bottom: 1rpx solid var(--hair); padding: 0 16rpx; box-sizing: border-box; flex: none; background: var(--bg); white-space: nowrap; }
+.o-tab { display: inline-flex; align-items: center; justify-content: center; position: relative; width: 136rpx; height: 88rpx; flex: none; padding: 24rpx 0 20rpx; box-sizing: border-box; font-size: 24rpx; color: var(--sub); }
 .o-tab.on { color: var(--ink); font-weight: 800; }
 .o-tab.on::after { content: ''; position: absolute; left: 26%; right: 26%; bottom: -1rpx; height: 4rpx; background: var(--green); }
 .o-tab .u {
@@ -20,7 +20,40 @@
   vertical-align: 4rpx;
 }
 
-.body { flex: 1; padding: 16rpx 32rpx 0; box-sizing: border-box; }
+.body {
+  flex: 1;
+  min-height: 0;
+  padding: 16rpx 32rpx calc(136rpx + env(safe-area-inset-bottom));
+  box-sizing: border-box;
+}
+
+/* 订单明细行与工作台保持一致 */
+.m-order .mo-item-list { display: block; }
+.m-order .mo-item { display: flex; align-items: center; min-width: 0; padding: 18rpx 0; border-bottom: 1rpx solid #EEF1ED; color: var(--ink); font-size: 22rpx; line-height: 1.35; }
+.m-order .mo-item-thumb { width: 76rpx; height: 76rpx; flex: none; overflow: hidden; border-radius: 10rpx; background: #E4ECE4; }
+.m-order .mo-item-thumb image { width: 100%; height: 100%; display: block; }
+.m-order .mo-item-placeholder { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; color: var(--green-deep); font-size: 22rpx; font-weight: 800; }
+.m-order .mo-item-copy { flex: 1; min-width: 0; margin-left: 16rpx; }
+.m-order .mo-item-name { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 24rpx; }
+.m-order .mo-item-price { display: block; margin-top: 4rpx; color: var(--sub); font-size: 20rpx; }
+.m-order .mo-item-price.pending { color: var(--faint); }
+.m-order .mo-item-qty { margin-left: 16rpx; color: var(--sub); font-size: 20rpx; }
+.m-order .mo-items .mo-meta { display: flex; align-items: center; gap: 12rpx; margin-top: 14rpx; }
+.m-order .mo-remark { flex: 1; min-width: 0; overflow: hidden; padding: 11rpx 14rpx; border-radius: 999rpx; background: #F4F6F2; color: var(--sub); font-size: 20rpx; line-height: 1.35; text-overflow: ellipsis; white-space: nowrap; }
+.m-order .mo-detail-hint { flex: none; color: var(--green-deep); font-size: 20rpx; font-weight: 700; }
+.m-order .mo-items-toggle { display: flex; align-items: center; justify-content: center; gap: 10rpx; margin: 16rpx 0 4rpx; color: var(--sub); font-size: 20rpx; font-weight: 600; }
+.m-order .mo-items-toggle-chevron { width: 10rpx; height: 10rpx; border-right: 3rpx solid var(--sub); border-bottom: 3rpx solid var(--sub); transform: translateY(-3rpx) rotate(45deg); }
+.m-order .mo-items-toggle-chevron.up { transform: translateY(3rpx) rotate(225deg); }
+.m-order .mo-ops .pill.gray { padding: 8rpx 16rpx; border-radius: 10rpx; font-size: 22rpx; }
+
+/* 底栏固定在视口底部，订单列表独立滚动 */
+.m-tabbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 30;
+}
 
 /* ---------- 空态 ---------- */
 .empty { display: flex; flex-direction: column; align-items: center; padding: 120rpx 0 80rpx; }
@@ -47,9 +80,10 @@
   border-radius: 24rpx 24rpx 0 0;
   transform: translateY(100%);
   transition: transform 0.25s;
-  z-index: 21;
+  z-index: 41;
   padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
 }
+.mask { z-index: 40; }
 .sheet.show { transform: translateY(0); }
 .grab { width: 72rpx; height: 8rpx; border-radius: 4rpx; background: var(--hair); margin: 16rpx auto 4rpx; }
 .s-head { display: flex; align-items: center; justify-content: space-between; padding: 16rpx 32rpx; }

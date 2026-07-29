@@ -77,7 +77,7 @@ Page({
   },
 
   vehicle() {
-    wx.showToast({ title: '车辆信息修改建设中', icon: 'none' })
+    this.goProfile()
   },
 
   logout() {

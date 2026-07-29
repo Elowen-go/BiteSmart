@@ -152,6 +152,17 @@ public class DeliveryDriverController {
     }
 
     /**
+     * 开始配送：30 已取餐 -> 40 配送中。
+     */
+    @PostMapping("/tasks/{id}/start")
+    public ResultVO<Void> startDelivery(@AuthenticationPrincipal LoginUser loginUser,
+                                         @PathVariable Long id) {
+        if (loginUser == null) return ResultVO.error(401, "未登录");
+        deliveryTaskService.startDeliveryTask(id, loginUser.getUserId());
+        return ResultVO.ok("已开始配送");
+    }
+
+    /**
      * 骑手拒单：任务回待接单池（taskStatus 20→10），记录拒单原因
      *
      * @param id     配送任务ID

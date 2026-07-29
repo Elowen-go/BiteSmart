@@ -1,6 +1,16 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.ws.bitesmart.mapper.refund.RefundApplicationMapper">
+    <insert id="insert" parameterType="com.ws.bitesmart.entity.refund.RefundApplication">
+        INSERT INTO refund_application (
+            id, order_id, order_no, user_id, refund_amount, refund_reason, refund_desc,
+            evidence_images, apply_time, audit_status, create_time, update_time, deleted
+        ) VALUES (
+            #{id}, #{orderId}, #{orderNo}, #{userId}, #{refundAmount}, #{refundReason}, #{refundDesc},
+            #{evidenceImages}, NOW(), #{auditStatus}, NOW(), NOW(), 0
+        )
+    </insert>
+
     <select id="findAll" resultType="com.ws.bitesmart.entity.refund.RefundApplication">
         SELECT id, order_id, order_no, user_id, refund_amount, refund_reason, refund_desc,
                evidence_images, apply_time, audit_status, audit_operator_id, audit_remark,
@@ -15,6 +25,15 @@
                evidence_images, apply_time, audit_status, audit_operator_id, audit_remark,
                audit_time, refund_time, create_time, update_time, deleted
         FROM refund_application WHERE id = #{id} AND deleted = 0
+    </select>
+    <select id="findLatestByOrderId" resultType="com.ws.bitesmart.entity.refund.RefundApplication">
+        SELECT id, order_id, order_no, user_id, refund_amount, refund_reason, refund_desc,
+               evidence_images, apply_time, audit_status, audit_operator_id, audit_remark,
+               audit_time, refund_time, create_time, update_time, deleted
+        FROM refund_application
+        WHERE order_id = #{orderId} AND deleted = 0
+        ORDER BY create_time DESC, id DESC
+        LIMIT 1
     </select>
     <select id="countByStatus" resultType="long">
         SELECT COUNT(*) FROM refund_application

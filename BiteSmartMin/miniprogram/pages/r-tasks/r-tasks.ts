@@ -4,6 +4,7 @@ import {
   getPendingTasks,
   acceptDriverTask,
   updateDriverStatus,
+  updateDriverLocation,
   riderTaskStatusText,
   type RiderTask
 } from '../../api/delivery'
@@ -17,6 +18,7 @@ const RIDER_ONLINE_KEY = 'bitesmart_rider_online'
 
 /** 配送费展示值：delivery_task 无费用字段（结算记录在送达后才生成），按原型展示 ¥5 */
 const FEE_TEXT = '5'
+const LOCATION_INTERVAL = 15000
 
 export interface RiderTaskVM {
   id: number | string
@@ -52,6 +54,9 @@ Page({
     loadError: ''
   },
 
+  locationTimer: null as ReturnType<typeof setInterval> | null,
+  locationWarned: false,
+
   onLoad() {
     this.setData({ padTop: getSafeArea().padTop })
     let online = false
@@ -63,7 +68,18 @@ Page({
   },
 
   onShow() {
-    if (this.data.online) this.loadAll()
+    if (this.data.online) {
+      this.loadAll()
+      this.syncLocationTimer()
+    }
+  },
+
+  onHide() {
+    this.stopLocationTimer()
+  },
+
+  onUnload() {
+    this.stopLocationTimer()
   },
 
   loadAll() {
@@ -72,7 +88,7 @@ Page({
         const mine = (tasks || [])
           .filter((t) => t.taskStatus === 20 || t.taskStatus === 30 || t.taskStatus === 40)
           .map(buildVM)
-        this.setData({ mine, loadError: '' })
+        this.setData({ mine, loadError: '' }, () => this.syncLocationTimer())
       })
       .catch((error: Error) => {
         console.warn('[r-tasks] 我的任务加载失败：', error && error.message)
@@ -94,8 +110,52 @@ Page({
         this.setData({ online: next })
         wx.showToast({ title: next ? '已上线，开始接单' : '已下线', icon: 'none' })
         if (next) this.loadAll()
+        else this.stopLocationTimer()
       })
       .catch((error: Error) => wx.showToast({ title: error.message || '状态更新失败', icon: 'none' }))
+  },
+
+  /** 任务列表页保活配送中的定位，避免离开任务详情后停止上报。 */
+  syncLocationTimer() {
+    const active = this.data.mine.filter((task) => task.status === 30 || task.status === 40)
+    if (!active.length) {
+      this.stopLocationTimer()
+      return
+    }
+    if (this.locationTimer) return
+    this.uploadLocations()
+    this.locationTimer = setInterval(() => this.uploadLocations(), LOCATION_INTERVAL)
+  },
+
+  stopLocationTimer() {
+    if (this.locationTimer) {
+      clearInterval(this.locationTimer)
+      this.locationTimer = null
+    }
+  },
+
+  uploadLocations() {
+    const active = this.data.mine.filter((task) => task.status === 30 || task.status === 40)
+    if (!active.length) return
+    wx.getLocation({
+      type: 'gcj02',
+      success: (res) => {
+        Promise.all(active.map((task) => updateDriverLocation(task.id, res.latitude, res.longitude)))
+          .catch((error: Error) => console.warn('[r-tasks] 定位上传失败：', error && error.message))
+      },
+      fail: () => {
+        if (this.locationWarned) return
+        this.locationWarned = true
+        wx.showModal({
+          title: '需要定位权限',
+          content: '配送中需要持续上报位置，请在设置中开启定位权限',
+          confirmText: '去开启',
+          success: (r) => {
+            if (r.confirm) wx.openSetting({})
+          }
+        })
+      }
+    })
   },
 
   /** 抢单：乐观锁，被抢/单满时后端 400，toast message 并刷新大厅 */

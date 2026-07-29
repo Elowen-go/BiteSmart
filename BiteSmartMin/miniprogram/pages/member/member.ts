@@ -57,10 +57,21 @@ Page({
     // 套餐 id 原样透传（可能是雪花字符串），禁止 Number() 强转
     const id = String(event.currentTarget.dataset.id || '')
     if (!id || this.data.buying) return
-    this.setData({ buying: true })
-    buyMembership(id)
-      .then(() => { wx.showToast({ title: '会员购买成功', icon: 'none' }); this.refreshStatus() })
-      .catch((error: Error) => wx.showToast({ title: error.message || '购买失败', icon: 'none' }))
-      .finally(() => this.setData({ buying: false }))
+    const plan = this.data.plans.find((item) => String(item.id) === id)
+    if (!plan) return
+    wx.showModal({
+      title: '确认开通会员',
+      content: `${plan.name} · ${plan.days}，金额 ¥${plan.price}`,
+      confirmText: '确认购买',
+      cancelText: '再看看',
+      success: (result) => {
+        if (!result.confirm) return
+        this.setData({ buying: true })
+        buyMembership(id)
+          .then(() => { wx.showToast({ title: '会员购买成功', icon: 'none' }); this.refreshStatus() })
+          .catch((error: Error) => wx.showToast({ title: error.message || '购买失败', icon: 'none' }))
+          .finally(() => this.setData({ buying: false }))
+      }
+    })
   }
 })

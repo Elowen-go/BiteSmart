@@ -25,7 +25,7 @@ Page({
   onLoad() {
     if (!requireUser()) return
     const { menuTop, menuH } = getSafeArea()
-    this.setData({ menuTop, menuH })
+    this.setData({ menuTop: menuTop + 8, menuH })
   },
   onShow() {
     getCart().then((items) => {
@@ -76,7 +76,9 @@ Page({
       address: addressText,
       receiverName: (address && address.receiverName) || '',
       receiverPhone: (address && address.receiverPhone) || '',
-      remark: this.data.remark
+      remark: this.data.remark,
+      latitude: this.data.delivery === 0 && address && address.latitude ? address.latitude : undefined,
+      longitude: this.data.delivery === 0 && address && address.longitude ? address.longitude : undefined
     })
       .then((created) => getOrders().then((result) => ({ created, orders: Array.isArray(result) ? result : result.records })))
       .then(({ created, orders }) => {

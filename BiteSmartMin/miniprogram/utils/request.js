@@ -1,8 +1,20 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.request = void 0;
+exports.request = exports.API_ORIGIN = void 0;
 const auth_1 = require("./auth");
-const BASE_URL = 'http://localhost:8080/api';
+// 开发者工具可直连电脑本机，手机预览则使用电脑的局域网地址。
+const LAN_API_ORIGIN = 'http://192.168.110.49:8080';
+const isDevtools = (() => {
+    try {
+        return wx.getSystemInfoSync().platform === 'devtools';
+    }
+    catch (_) {
+        return false;
+    }
+})();
+const API_ORIGIN = isDevtools ? 'http://localhost:8080' : LAN_API_ORIGIN;
+exports.API_ORIGIN = API_ORIGIN;
+const BASE_URL = `${API_ORIGIN}/api`;
 const request = (options) => {
     return new Promise((resolve, reject) => {
         const token = (0, auth_1.getToken)();

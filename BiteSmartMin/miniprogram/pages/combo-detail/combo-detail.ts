@@ -69,6 +69,7 @@ Page({
   data: {
     combo: null as ComboView | null,
     dayMeals: [] as DayMeals[],
+    featuredMeals: [] as MealItem[],
     menuTop: 0,
     swapVisible: false,
     swapDay: 0,
@@ -87,13 +88,19 @@ Page({
     const id = (options && options.id) || String(MOCK_COMBOS[0].id)
     const mock = MOCK_COMBOS.find((c) => String(c.id) === id)
     // mock 命中先渲染保证秒开；未命中等待接口
-    if (mock) this.setData({ menuTop, combo: buildView(mock), dayMeals: buildDays(mock) })
+    if (mock) {
+      const days = buildDays(mock)
+      this.setData({ menuTop, combo: buildView(mock), dayMeals: days, featuredMeals: days.length ? days[0].items : [] })
+    }
     else this.setData({ menuTop })
     getCombo(id)
       .then((detail) => this.applyRemote(id, detail.combo, detail.dishRels))
       .catch((error: Error) => {
         console.warn('[combo-detail] 套餐接口不可用，使用本地 mock：', error && error.message)
-        if (!this.data.combo) this.setData({ combo: buildView(MOCK_COMBOS[0]), dayMeals: buildDays(MOCK_COMBOS[0]) })
+        if (!this.data.combo) {
+          const days = buildDays(MOCK_COMBOS[0])
+          this.setData({ combo: buildView(MOCK_COMBOS[0]), dayMeals: days, featuredMeals: days.length ? days[0].items : [] })
+        }
       })
   },
 
@@ -147,7 +154,11 @@ Page({
         const items = meals.slice(i, i + 3).map((m, s) => ({ ...m, slot: SLOTS[s % 3] }))
         dayMeals.push({ day: `DAY ${dayMeals.length + 1}`, items })
       }
-      this.setData({ dayMeals, combo: this.data.combo ? { ...this.data.combo, days: dayMeals.length, meals: meals.length } : this.data.combo })
+      this.setData({
+        dayMeals,
+        featuredMeals: dayMeals.length ? dayMeals[0].items : [],
+        combo: this.data.combo ? { ...this.data.combo, days: dayMeals.length, meals: meals.length } : this.data.combo
+      })
     })
   },
 

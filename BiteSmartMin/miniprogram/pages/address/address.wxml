@@ -54,8 +54,19 @@
         <input class="f-input" type="number" maxlength="11" placeholder="11 位手机号" placeholder-class="ph-txt" value="{{form.receiverPhone}}" data-field="receiverPhone" bindinput="onInput" />
       </view>
       <view class="form-row">
-        <view class="f-lab">详细地址 <text class="req">*</text></view>
-        <input class="f-input" placeholder="小区 / 大厦 / 门牌号" placeholder-class="ph-txt" value="{{form.detailAddress}}" data-field="detailAddress" bindinput="onInput" />
+        <view class="f-lab">收货位置 <text class="req">*</text></view>
+        <view class="location-picker" bindtap="chooseLocation" hover-class="tap">
+          <view class="location-icon"><view class="ic-pin"></view></view>
+          <view class="location-main" wx:if="{{form.detailAddress}}">
+            <view class="location-name">{{form.locationName || '已选择位置'}}</view>
+            <view class="location-address">{{form.detailAddress}}</view>
+          </view>
+          <view class="location-main" wx:else>
+            <view class="location-name muted">点击地图选择地址</view>
+            <view class="location-address">将自动获取位置和详细地址</view>
+          </view>
+          <text class="location-arrow">›</text>
+        </view>
       </view>
       <view class="btn-ink green save-btn" bindtap="saveAddress" hover-class="tap">保存地址</view>
     </view>

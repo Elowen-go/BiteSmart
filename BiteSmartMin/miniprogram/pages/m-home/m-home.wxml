@@ -1,7 +1,13 @@
-<view class="pg">
+<view class="pg merchant-tab-page">
   <scroll-view class="body" scroll-y enhanced show-scrollbar="{{false}}">
+    <!-- 工作台顶部氛围图：延伸到状态栏下方，避免出现纯色空白 -->
+    <view class="workbench-hero">
+      <image class="workbench-hero-img" src="/assets/home/merchant-workbench-hero.webp" mode="aspectFill" />
+    </view>
+
+    <view class="workbench-content">
     <!-- 店铺头 + 营业开关 -->
-    <view class="shop-head" style="padding-top: {{padTop}}px;">
+    <view class="shop-head">
       <view class="logo"><image src="{{shopLogo}}" mode="aspectFill" /></view>
       <view class="shop-main">
         <view class="nm">{{shopName}}</view>
@@ -26,62 +32,107 @@
       <view class="stat-cell"><view class="b">{{pendingCount}}<text class="em"> 单</text></view><view class="s">待接单</view></view>
     </view>
 
-    <!-- 待接单队列 -->
-    <view class="sec">
-      <text class="en">PENDING</text>
-      <text class="cn">待接单队列</text>
-      <view class="line"></view>
-      <text class="more">{{queue.length}} 单</text>
-    </view>
-    <block wx:if="{{queue.length}}">
-      <view class="card m-order" wx:for="{{queue}}" wx:key="id">
-        <view class="mo-head">
-          <text class="no">#{{item.orderNo}}</text>
-          <text class="st-tag {{item.statusCls}}">{{item.statusText}}</text>
-        </view>
-        <view class="mo-items">{{item.itemsText}}
-          <view class="mo-meta">{{item.metaText}}</view>
-        </view>
-        <view class="mo-foot">
-          <text class="amt">¥{{item.amount}}</text>
-          <view class="mo-ops">
-            <view class="op ghost" catchtap="reject" data-id="{{item.id}}">拒单</view>
-            <view class="op dark" catchtap="accept" data-id="{{item.id}}">接单</view>
-          </view>
-        </view>
+    <!-- 订单状态总览：两种主要状态始终在首屏可见 -->
+    <view class="status-overview">
+      <view class="status-overview-item pending {{statusFilter === 'pending' ? 'active' : ''}}" bindtap="selectStatus" data-status="pending" hover-class="tap">
+        <view class="so-main"><text class="so-label">待接单</text><text class="so-count">{{queue.length}}</text></view>
+        <view class="so-sub">需要处理 <text class="so-arrow">{{statusFilter === 'pending' ? '当前' : '查看'}} ›</text></view>
       </view>
-    </block>
-    <view wx:else class="card empty-card">暂无待接单 · 用户支付成功后订单会实时出现在这里</view>
+      <view class="status-overview-item doing {{statusFilter === 'doing' ? 'active' : ''}}" bindtap="selectStatus" data-status="doing" hover-class="tap">
+        <view class="so-main"><text class="so-label">进行中</text><text class="so-count">{{doing.length}}</text></view>
+        <view class="so-sub">履约中的订单 <text class="so-arrow">{{statusFilter === 'doing' ? '当前' : '查看'}} ›</text></view>
+      </view>
+    </view>
 
-    <!-- 进行中 -->
-    <view class="sec">
-      <text class="en">IN PROGRESS</text>
-      <text class="cn">进行中</text>
-      <view class="line"></view>
-      <text class="more">{{doing.length}} 单</text>
-    </view>
-    <block wx:if="{{doing.length}}">
-      <view class="card m-order" wx:for="{{doing}}" wx:key="id">
-        <view class="mo-head">
-          <text class="no">#{{item.orderNo}}</text>
-          <text class="st-tag {{item.statusCls}}">{{item.statusText}}</text>
-        </view>
-        <view class="mo-items">{{item.itemsText}}
-          <view class="mo-meta">{{item.metaText}}</view>
-        </view>
-        <view class="mo-foot">
-          <text class="amt">¥{{item.amount}}</text>
-          <view class="mo-ops">
-            <view wx:if="{{item.status === 30}}" class="op primary" catchtap="done" data-id="{{item.id}}">出餐完成</view>
-            <text wx:elif="{{item.deliveryStatus <= 10}}" class="pill orange">等待骑手取餐</text>
-            <text wx:else class="pill green">骑手履约中</text>
+    <block wx:if="{{statusFilter === 'pending'}}">
+      <!-- 待接单队列 -->
+      <view class="sec">
+        <text class="cn">待接单队列</text>
+        <view class="line"></view>
+        <text class="more">{{queue.length}} 单</text>
+      </view>
+      <block wx:if="{{queue.length}}">
+        <view class="card m-order" wx:for="{{queue}}" wx:key="id" bindtap="openOrderDetail" data-id="{{item.id}}" hover-class="tap">
+          <view class="mo-head">
+            <text class="no">#{{item.orderNo}}</text>
+            <text class="st-tag {{item.statusCls}}">{{item.statusText}}</text>
+          </view>
+          <view class="mo-items">
+            <view class="mo-item-list">
+              <block wx:for="{{item.items}}" wx:for-item="dish" wx:for-index="dishIndex" wx:key="index">
+                <view wx:if="{{dishIndex < 3 || item.itemsExpanded}}" class="mo-item">
+                  <view class="mo-item-thumb">
+                    <image wx:if="{{dish.image}}" src="{{dish.image}}" mode="aspectFill" />
+                    <text wx:else class="mo-item-placeholder">食</text>
+                  </view>
+                  <view class="mo-item-copy"><text class="mo-item-name">{{dish.name}}</text><text wx:if="{{dish.price}}" class="mo-item-price">¥{{dish.price}}</text><text wx:else class="mo-item-price pending">价格待同步</text></view>
+                  <text class="mo-item-qty">×{{dish.quantity}}</text>
+                </view>
+              </block>
+            </view>
+            <view wx:if="{{item.items.length > 3}}" class="mo-items-toggle" catchtap="toggleItems" data-id="{{item.id}}">
+              <text>{{item.itemsExpanded ? '收起' : '查看更多'}}</text><view class="mo-items-toggle-chevron {{item.itemsExpanded ? 'up' : ''}}"></view>
+            </view>
+            <view class="mo-meta"><text class="mo-remark">{{item.metaText}}</text><text class="mo-detail-hint">查看详情 ›</text></view>
+          </view>
+          <view class="mo-foot">
+            <text class="amt">¥{{item.amount}}</text>
+            <view class="mo-ops">
+              <view class="op ghost" catchtap="reject" data-id="{{item.id}}">拒单</view>
+              <view class="op dark" catchtap="accept" data-id="{{item.id}}">接单</view>
+            </view>
           </view>
         </view>
-      </view>
+      </block>
+      <view wx:else class="card empty-card">暂无待接单 · 用户支付成功后订单会实时出现在这里</view>
     </block>
-    <view wx:else class="card empty-card">暂无进行中的订单</view>
+
+    <block wx:else>
+      <!-- 进行中 -->
+      <view class="sec">
+        <text class="cn">进行中</text>
+        <view class="line"></view>
+        <text class="more">{{doing.length}} 单</text>
+      </view>
+      <block wx:if="{{doing.length}}">
+        <view class="card m-order" wx:for="{{doing}}" wx:key="id" bindtap="openOrderDetail" data-id="{{item.id}}" hover-class="tap">
+          <view class="mo-head">
+            <text class="no">#{{item.orderNo}}</text>
+            <text class="st-tag {{item.statusCls}}">{{item.statusText}}</text>
+          </view>
+          <view class="mo-items">
+            <view class="mo-item-list">
+              <block wx:for="{{item.items}}" wx:for-item="dish" wx:for-index="dishIndex" wx:key="index">
+                <view wx:if="{{dishIndex < 3 || item.itemsExpanded}}" class="mo-item">
+                  <view class="mo-item-thumb">
+                    <image wx:if="{{dish.image}}" src="{{dish.image}}" mode="aspectFill" />
+                    <text wx:else class="mo-item-placeholder">食</text>
+                  </view>
+                  <view class="mo-item-copy"><text class="mo-item-name">{{dish.name}}</text><text wx:if="{{dish.price}}" class="mo-item-price">¥{{dish.price}}</text><text wx:else class="mo-item-price pending">价格待同步</text></view>
+                  <text class="mo-item-qty">×{{dish.quantity}}</text>
+                </view>
+              </block>
+            </view>
+            <view wx:if="{{item.items.length > 3}}" class="mo-items-toggle" catchtap="toggleItems" data-id="{{item.id}}">
+              <text>{{item.itemsExpanded ? '收起' : '查看更多'}}</text><view class="mo-items-toggle-chevron {{item.itemsExpanded ? 'up' : ''}}"></view>
+            </view>
+            <view class="mo-meta"><text class="mo-remark">{{item.metaText}}</text><text class="mo-detail-hint">查看详情 ›</text></view>
+          </view>
+          <view class="mo-foot">
+            <text class="amt">¥{{item.amount}}</text>
+            <view class="mo-ops">
+              <view wx:if="{{item.status === 30}}" class="op primary" catchtap="done" data-id="{{item.id}}">出餐完成</view>
+              <text wx:elif="{{item.deliveryStatus <= 10}}" class="pill orange">等待骑手取餐</text>
+              <text wx:else class="pill green">骑手履约中</text>
+            </view>
+          </view>
+        </view>
+      </block>
+      <view wx:else class="card empty-card">暂无进行中的订单</view>
+    </block>
 
     <view style="height: 32rpx;"></view>
+    </view>
   </scroll-view>
 
   <!-- 商家端自定义底栏（无原生 tabBar，独立页面栈） -->

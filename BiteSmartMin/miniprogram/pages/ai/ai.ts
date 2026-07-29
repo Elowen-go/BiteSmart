@@ -2,6 +2,7 @@ import { chat, getChatHistory, recommend, type AiConversation } from '../../api/
 import { addToCart } from '../../api/cart'
 import { MOCK_DISHES, uimg } from '../../mock/catalog'
 import { getUserInfo } from '../../utils/auth'
+import { API_ORIGIN } from '../../utils/request'
 import { getSafeArea } from '../../utils/safe-area'
 import { requireUser } from '../../utils/user-route'
 
@@ -9,8 +10,13 @@ const QUESTIONS = ['减脂晚餐怎么吃？', '今天蛋白质够吗？', '推�
 const normalizeAvatar = (value: unknown): string => {
   const avatar = String(value || '').trim()
   if (!avatar) return ''
-  if (/^(https?:\/\/|data:image\/|\/)/i.test(avatar)) return avatar
-  return `http://localhost:8080/${avatar.replace(/^\/+/, '')}`
+  if (/^(https?:\/\/|data:image\/)/i.test(avatar)) return avatar
+  if (avatar.startsWith('/uploads/')) {
+    return `${API_ORIGIN}/api/files/download/${avatar.slice('/uploads/'.length)}`
+  }
+  if (avatar.startsWith('/api/')) return `${API_ORIGIN}${avatar}`
+  if (avatar.startsWith('/')) return `${API_ORIGIN}${avatar}`
+  return `${API_ORIGIN}/${avatar.replace(/^\/+/, '')}`
 }
 const INITIAL_RECOMMENDATIONS = MOCK_DISHES.slice(0, 3).map((dish) => ({
   id: dish.id as number | string,

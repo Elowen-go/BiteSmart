@@ -1,5 +1,52 @@
-.pg { display: flex; flex-direction: column; height: 100vh; background: var(--bg); }
-.body { flex: 1; padding: 0 32rpx; box-sizing: border-box; }
+.pg { position: relative; display: flex; flex-direction: column; height: 100vh; min-height: 0; background: var(--bg); }
+.body {
+  flex: 1;
+  min-height: 0;
+  padding: 0 0 calc(136rpx + env(safe-area-inset-bottom));
+  box-sizing: border-box;
+}
+
+/* 顶部图片铺满内容宽度，直接延伸到状态栏下方 */
+.workbench-hero {
+  width: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: #AFC6D8;
+}
+.workbench-hero-img {
+  display: block;
+  width: 100%;
+  height: 460rpx;
+}
+
+.workbench-content { padding: 0 32rpx; box-sizing: border-box; }
+
+/* 裁切统计列的背景和分割线，让顶部两个圆角真正显示出来 */
+.stat-strip {
+  overflow: hidden;
+  border-radius: 24rpx;
+}
+
+/* 店铺信息直接压在图片底部，取消额外白色外框 */
+.shop-head {
+  position: relative;
+  z-index: 2;
+  margin: -132rpx 0 28rpx;
+  padding: 24rpx 16rpx 16rpx;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+/* 底栏脱离滚动区域，订单再多也始终停留在屏幕底部 */
+.m-tabbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 30;
+}
 
 /* ---------- 库存预警条 ---------- */
 .stock-alert {
@@ -14,3 +61,59 @@
 }
 .stock-alert .sa-t { font-size: 24rpx; font-weight: 700; color: var(--orange); }
 .stock-alert .sa-go { font-size: 22rpx; color: var(--sub); }
+
+/* 状态总览压缩成一行，让两个主要订单状态不用滚动就能被发现 */
+.status-overview {
+  display: flex;
+  gap: 16rpx;
+  margin-top: 20rpx;
+}
+.status-overview-item {
+  flex: 1;
+  min-width: 0;
+  padding: 20rpx 22rpx;
+  border: 1rpx solid var(--hair);
+  border-radius: 16rpx;
+  background: #fff;
+  box-shadow: 0 4rpx 16rpx rgba(23, 37, 31, .04);
+}
+.status-overview-item.pending { border-color: #F1D7B2; background: #FFF9F0; }
+.status-overview-item.doing { border-color: #CBE5D4; background: #F5FBF7; }
+.status-overview-item.active { box-shadow: 0 6rpx 18rpx rgba(23, 37, 31, .10); transform: translateY(-2rpx); }
+.status-overview-item.active::after { display: block; height: 4rpx; margin-top: 14rpx; border-radius: 4rpx; background: currentColor; content: ''; }
+.status-overview-item.pending.active::after { color: var(--orange); }
+.status-overview-item.doing.active::after { color: var(--green-deep); }
+.so-main { display: flex; align-items: baseline; justify-content: space-between; }
+.so-label { color: var(--ink); font-size: 24rpx; font-weight: 800; }
+.so-count { color: var(--ink); font-size: 34rpx; font-weight: 800; line-height: 1; }
+.pending .so-count { color: var(--orange); }
+.doing .so-count { color: var(--green-deep); }
+.so-sub { margin-top: 10rpx; color: var(--sub); font-size: 19rpx; }
+.so-arrow { float: right; color: var(--faint); font-size: 26rpx; line-height: 1; }
+
+/* 菜品按订单明细行展示：图片、名称价格、数量三列对齐 */
+.m-order .mo-item-list { display: block; }
+.m-order .mo-item {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  padding: 18rpx 0;
+  border-bottom: 1rpx solid #EEF1ED;
+  color: var(--ink);
+  font-size: 22rpx;
+  line-height: 1.35;
+}
+.m-order .mo-item-thumb { width: 76rpx; height: 76rpx; flex: none; overflow: hidden; border-radius: 10rpx; background: #E4ECE4; }
+.m-order .mo-item-thumb image { width: 100%; height: 100%; display: block; }
+.m-order .mo-item-placeholder { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; color: var(--green-deep); font-size: 22rpx; font-weight: 800; }
+.m-order .mo-item-copy { flex: 1; min-width: 0; margin-left: 16rpx; }
+.m-order .mo-item-name { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 24rpx; }
+.m-order .mo-item-price { display: block; margin-top: 4rpx; color: var(--sub); font-size: 20rpx; }
+.m-order .mo-item-price.pending { color: var(--faint); }
+.m-order .mo-item-qty { margin-left: 16rpx; color: var(--sub); font-size: 20rpx; }
+.m-order .mo-items .mo-meta { display: flex; align-items: center; gap: 12rpx; margin-top: 14rpx; }
+.m-order .mo-remark { flex: 1; min-width: 0; overflow: hidden; padding: 11rpx 14rpx; border-radius: 999rpx; background: #F4F6F2; color: var(--sub); font-size: 20rpx; line-height: 1.35; text-overflow: ellipsis; white-space: nowrap; }
+.m-order .mo-detail-hint { flex: none; color: var(--green-deep); font-size: 20rpx; font-weight: 700; }
+.m-order .mo-items-toggle { display: flex; align-items: center; justify-content: center; gap: 10rpx; margin: 16rpx 0 4rpx; color: var(--sub); font-size: 20rpx; font-weight: 600; }
+.m-order .mo-items-toggle-chevron { width: 10rpx; height: 10rpx; border-right: 3rpx solid var(--sub); border-bottom: 3rpx solid var(--sub); transform: translateY(-3rpx) rotate(45deg); }
+.m-order .mo-items-toggle-chevron.up { transform: translateY(3rpx) rotate(225deg); }

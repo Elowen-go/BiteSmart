@@ -15,6 +15,16 @@
         <view class="f-lab">联系电话</view>
         <input class="f-input" type="number" maxlength="11" placeholder="11 位手机号" placeholder-class="ph-txt" value="{{phone}}" data-field="phone" bindinput="onInput" />
       </view>
+      <view class="form-row">
+        <view class="f-lab">车辆类型 <text class="req">*</text></view>
+        <picker mode="selector" range="{{vehicleTypes}}" value="{{vehicleIndex}}" bindchange="pickVehicle">
+          <view class="f-picker {{vehicleIndex === 0 ? 'placeholder' : ''}}">{{vehicleTypes[vehicleIndex]}}<text class="chev-down">⌄</text></view>
+        </picker>
+      </view>
+      <view class="form-row">
+        <view class="f-lab">服务区域</view>
+        <input class="f-input" placeholder="例如：大学城、城西片区" placeholder-class="ph-txt" value="{{serviceArea}}" data-field="serviceArea" bindinput="onInput" />
+      </view>
     </view>
 
     <view wx:if="{{err}}" class="form-err">{{err}}</view>

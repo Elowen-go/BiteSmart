@@ -10,7 +10,7 @@ import {
   updateMerchantShop,
   type MerchantShop
 } from '../../api/merchant'
-import { buildOrderVM, money, LOW_STOCK_THRESHOLD, type MOrderVM } from '../../utils/merchant-vm'
+import { buildOrderVM, money, LOW_STOCK_THRESHOLD, type DishPriceMap, type MOrderVM } from '../../utils/merchant-vm'
 import { uimg } from '../../mock/catalog'
 
 const FALLBACK_LOGO = uimg('1543353071-873f17a7a088', 200)
@@ -27,6 +27,7 @@ Page({
     revenue: '0',
     pendingCount: 0,
     lowStockCount: 0,
+    statusFilter: 'pending' as 'pending' | 'doing',
     queue: [] as MOrderVM[],
     doing: [] as MOrderVM[]
   },
@@ -64,10 +65,22 @@ Page({
       })
       .catch((error: Error) => console.warn('[m-home] 今日统计加载失败：', error && error.message))
 
-    getMerchantOrders()
-      .then((orders) => {
-        const list = (orders || []).map(buildOrderVM)
+    Promise.all([
+      getMerchantOrders(),
+      getMerchantDishes().catch((error: Error) => {
+        console.warn('[m-home] 菜品目录加载失败：', error && error.message)
+        return []
+      })
+    ])
+      .then(([orders, dishes]) => {
+        const dishPrices: DishPriceMap = {}
+        ;(dishes || []).forEach((dish) => {
+          const price = Number(dish.price)
+          if (dish.id != null && Number.isFinite(price) && price > 0) dishPrices[String(dish.id)] = price
+        })
+        const list = (orders || []).map((order) => buildOrderVM(order, dishPrices))
         this.setData({
+          lowStockCount: (dishes || []).filter((d) => Number(d.stock || 0) <= LOW_STOCK_THRESHOLD).length,
           queue: list.filter((o) => o.status === 20),
           doing: list.filter((o) => o.status === 30 || o.status === 40)
         })
@@ -76,13 +89,6 @@ Page({
         console.warn('[m-home] 订单加载失败：', error && error.message)
         wx.showToast({ title: '订单加载失败，请稍后重试', icon: 'none' })
       })
-
-    // 库存预警：stock ≤ LOW_STOCK_THRESHOLD 的菜品数（阈值见 utils/merchant-vm，可调整）
-    getMerchantDishes()
-      .then((dishes) => this.setData({
-        lowStockCount: (dishes || []).filter((d) => Number(d.stock || 0) <= LOW_STOCK_THRESHOLD).length
-      }))
-      .catch((error: Error) => console.warn('[m-home] 库存预警加载失败：', error && error.message))
   },
 
   goDishes() {
@@ -102,19 +108,28 @@ Page({
 
   accept(e: WechatMiniprogram.CustomEvent) {
     const id = e.currentTarget.dataset.id as number | string
-    acceptMerchantOrder(id)
-      .then(() => {
-        wx.showToast({ title: '已接单，开始备餐', icon: 'none' })
-        this.loadAll()
-      })
-      .catch((error: Error) => wx.showToast({ title: error.message || '接单失败', icon: 'none' }))
+    wx.showModal({
+      title: '确认接单？',
+      content: '确认后订单将进入备餐流程',
+      confirmText: '确认接单',
+      confirmColor: '#0F7A4A',
+      success: (res) => {
+        if (!res.confirm) return
+        acceptMerchantOrder(id)
+          .then(() => {
+            wx.showToast({ title: '已接单，开始备餐', icon: 'none' })
+            this.loadAll()
+          })
+          .catch((error: Error) => wx.showToast({ title: error.message || '接单失败', icon: 'none' }))
+      }
+    })
   },
 
   reject(e: WechatMiniprogram.CustomEvent) {
     const id = e.currentTarget.dataset.id as number | string
     wx.showModal({
       title: '拒绝该订单？',
-      content: '拒单后订单将取消并自动退款给用户',
+      content: '',
       confirmText: '确认拒单',
       confirmColor: '#C0563F',
       editable: true,
@@ -139,6 +154,32 @@ Page({
         this.loadAll()
       })
       .catch((error: Error) => wx.showToast({ title: error.message || '操作失败', icon: 'none' }))
+  },
+
+  openOrderDetail(e: WechatMiniprogram.CustomEvent) {
+    const id = e.currentTarget.dataset.id as number | string
+    if (!id) return
+    wx.navigateTo({ url: `/pages/m-orders/m-orders?orderId=${encodeURIComponent(String(id))}` })
+  },
+
+  toggleItems(e: WechatMiniprogram.CustomEvent) {
+    const id = String(e.currentTarget.dataset.id)
+    const update = (orders: MOrderVM[]): MOrderVM[] => orders.map((order) => (
+      String(order.id) === id ? { ...order, itemsExpanded: !order.itemsExpanded } : order
+    ))
+    if (this.data.queue.some((order) => String(order.id) === id)) {
+      this.setData({ queue: update(this.data.queue) })
+      return
+    }
+    if (this.data.doing.some((order) => String(order.id) === id)) {
+      this.setData({ doing: update(this.data.doing) })
+    }
+  },
+
+  selectStatus(e: WechatMiniprogram.CustomEvent) {
+    const status = e.currentTarget.dataset.status as 'pending' | 'doing'
+    if (!status || status === this.data.statusFilter) return
+    this.setData({ statusFilter: status })
   },
 
   goTab(e: WechatMiniprogram.CustomEvent) {

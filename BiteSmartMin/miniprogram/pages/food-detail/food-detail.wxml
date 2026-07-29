@@ -19,6 +19,27 @@
       </view>
 
       <!-- 营养四格 -->
+      <view class="selected-section">
+        <view class="selected-head">
+          <text class="selected-title">已选菜品</text>
+          <text class="selected-name">{{item.name}}</text>
+        </view>
+        <view class="selected-card">
+          <image class="selected-ph" src="{{item.image}}" mode="aspectFill" lazy-load="true" />
+          <view class="selected-main">
+            <view class="selected-dish">{{item.name}}</view>
+            <view class="selected-meta">{{item.desc}}</view>
+          </view>
+          <text class="selected-qty">1份</text>
+        </view>
+      </view>
+
+      <view class="detail-copy">
+        <view class="detail-copy-title">图文详情</view>
+        <view class="detail-copy-text">{{item.desc}}</view>
+        <view class="detail-copy-note">食材与营养信息以实际餐品为准</view>
+      </view>
+      <view class="detail-label">营养概览</view>
       <view class="nutri card">
         <view class="nut">
           <b>{{item.kcal}}</b>
@@ -66,7 +87,6 @@
 
   <!-- 浮动按钮 -->
   <view class="nav-back hero-back" style="top: {{menuTop}}px;" bindtap="back" hover-class="tap"><text class="chev">‹</text></view>
-  <button class="nav-back hero-share" style="top: {{menuTop}}px;" open-type="share" hover-class="tap"><view class="ic-share"></view></button>
 
   <!-- 底部操作条 -->
   <view class="bbar">

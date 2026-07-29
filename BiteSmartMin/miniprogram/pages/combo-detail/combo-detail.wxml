@@ -20,6 +20,22 @@
       </view>
 
       <!-- 四格汇总 -->
+      <view class="selected-section" wx:if="{{featuredMeals.length}}">
+        <view class="selected-head">
+          <text class="selected-title">已选菜品</text>
+          <text class="selected-name">{{combo.name}}</text>
+        </view>
+        <view class="selected-card" wx:for="{{featuredMeals}}" wx:key="slot">
+          <image class="selected-ph" src="{{item.img}}" mode="aspectFill" lazy-load="true" />
+          <view class="selected-main">
+            <view class="selected-dish">{{item.name}}</view>
+            <view class="selected-meta">{{item.slot}} · {{item.kcal}} kcal</view>
+          </view>
+          <text class="selected-qty">1份</text>
+        </view>
+      </view>
+
+      <view class="detail-label">套餐概览</view>
       <view class="sum card">
         <view class="cell"><b>{{combo.kcal}}</b><span>日热量 kcal</span></view>
         <view class="cell"><b>{{combo.protein}}</b><span>日蛋白 g</span></view>
@@ -29,7 +45,7 @@
 
       <!-- 每日餐单 -->
       <block wx:if="{{dayMeals.length}}">
-        <view class="sec"><text class="en">DAILY MENU</text><text class="cn">每日餐单</text><view class="line"></view></view>
+        <view class="sec"><text class="en">SELECTED MENU</text><text class="cn">已选菜品</text><view class="line"></view></view>
         <view class="card day-card" wx:for="{{dayMeals}}" wx:key="day" wx:for-item="day" wx:for-index="di">
           <view class="day-h">{{day.day}}</view>
           <view class="meal" wx:for="{{day.items}}" wx:for-item="meal" wx:for-index="mi" wx:key="slot">
@@ -44,7 +60,13 @@
       </block>
 
       <!-- AI 套餐点评 -->
-      <view class="quote">
+  <view class="detail-copy">
+    <view class="detail-copy-title">图文详情</view>
+    <view class="detail-copy-text">{{combo.desc}}</view>
+    <view class="detail-copy-note">套餐内容会根据实际供应情况调整</view>
+  </view>
+
+  <view class="quote">
         <view class="q-head"><view class="ic-spark"></view><text>AI 套餐点评</text></view>
         <view class="q-p">{{combo.ai}}</view>
       </view>

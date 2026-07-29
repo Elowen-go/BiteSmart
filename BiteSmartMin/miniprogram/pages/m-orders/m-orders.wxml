@@ -1,4 +1,4 @@
-<view class="pg">
+<view class="pg merchant-tab-page">
   <!-- 自定义导航 -->
   <view class="nav" style="margin-top: {{menuTop}}px; height: {{menuH}}px;">
     <view class="nav-t">订单管理</view>
@@ -6,11 +6,11 @@
   </view>
 
   <!-- 状态筛选 -->
-  <view class="o-tabs">
+  <scroll-view class="o-tabs" scroll-x enhanced show-scrollbar="{{false}}">
     <view class="o-tab {{tab === item.k ? 'on' : ''}}" wx:for="{{tabs}}" wx:key="k" bindtap="pickTab" data-k="{{item.k}}">
       {{item.n}}<text class="u" wx:if="{{counts[item.k]}}">{{counts[item.k]}}</text>
     </view>
-  </view>
+  </scroll-view>
 
   <scroll-view class="body" scroll-y enhanced show-scrollbar="{{false}}">
     <block wx:if="{{list.length}}">
@@ -19,8 +19,23 @@
           <text class="no">#{{item.orderNo}}</text>
           <text class="st-tag {{item.statusCls}}">{{item.statusText}}</text>
         </view>
-        <view class="mo-items">{{item.itemsText}}
-          <view class="mo-meta">{{item.metaText}}</view>
+        <view class="mo-items">
+          <view class="mo-item-list">
+            <block wx:for="{{item.items}}" wx:for-item="dish" wx:for-index="dishIndex" wx:key="index">
+              <view wx:if="{{dishIndex < 3 || item.itemsExpanded}}" class="mo-item">
+                <view class="mo-item-thumb">
+                  <image wx:if="{{dish.image}}" src="{{dish.image}}" mode="aspectFill" />
+                  <text wx:else class="mo-item-placeholder">食</text>
+                </view>
+                <view class="mo-item-copy"><text class="mo-item-name">{{dish.name}}</text><text wx:if="{{dish.price}}" class="mo-item-price">¥{{dish.price}}</text><text wx:else class="mo-item-price pending">价格待同步</text></view>
+                <text class="mo-item-qty">×{{dish.quantity}}</text>
+              </view>
+            </block>
+          </view>
+          <view wx:if="{{item.items.length > 3}}" class="mo-items-toggle" catchtap="toggleItems" data-id="{{item.id}}">
+            <text>{{item.itemsExpanded ? '收起' : '查看更多'}}</text><view class="mo-items-toggle-chevron {{item.itemsExpanded ? 'up' : ''}}"></view>
+          </view>
+          <view class="mo-meta"><text class="mo-remark">{{item.metaText}}</text><text class="mo-detail-hint">查看详情 ›</text></view>
         </view>
         <view class="mo-foot">
           <text class="amt">¥{{item.amount}}</text>
@@ -34,7 +49,10 @@
             <text wx:elif="{{item.status === 40}}" class="pill green">骑手履约中</text>
             <text wx:elif="{{item.status === 50}}" class="pill gray">已完成</text>
             <text wx:elif="{{item.status === 10}}" class="pill gray">待支付</text>
-            <text wx:else class="pill red">已取消</text>
+            <text wx:elif="{{item.status === 60}}" class="pill red">已取消</text>
+            <text wx:elif="{{item.status === 70}}" class="pill orange">退款中</text>
+            <text wx:elif="{{item.status === 80}}" class="pill gray">已退款</text>
+            <text wx:else class="pill gray">状态待同步</text>
           </view>
         </view>
       </view>

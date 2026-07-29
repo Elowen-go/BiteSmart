@@ -40,6 +40,12 @@ public class DeliveryTask {
     /** 收货人姓名 */
     private String receiverName;
 
+    /** 取货点和收货点坐标（GCJ-02） */
+    private BigDecimal merchantLat;
+    private BigDecimal merchantLng;
+    private BigDecimal deliveryLat;
+    private BigDecimal deliveryLng;
+
     /** 收货人电话 */
     private String receiverPhone;
 

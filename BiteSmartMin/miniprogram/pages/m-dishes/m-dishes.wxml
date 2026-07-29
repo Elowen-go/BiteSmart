@@ -1,8 +1,21 @@
-<view class="pg">
+<view class="pg merchant-tab-page">
   <!-- 自定义导航 -->
   <view class="nav" style="margin-top: {{menuTop}}px; height: {{menuH}}px;">
     <view class="nav-t">菜品管理</view>
     <view class="nav-right" bindtap="addDish" hover-class="tap">+ 新增</view>
+  </view>
+
+  <view class="dish-filters">
+    <view class="dish-search">
+      <view class="ic-search"></view>
+      <input class="dish-search-input" value="{{keyword}}" placeholder="搜索菜品名称" placeholder-class="dish-search-placeholder" bindinput="onSearch" confirm-type="search" />
+      <view wx:if="{{keyword}}" class="dish-search-clear" catchtap="clearSearch">×</view>
+    </view>
+    <scroll-view class="category-tabs" scroll-x enhanced show-scrollbar="{{false}}">
+      <view class="category-tab {{activeCategory === item.id ? 'on' : ''}}" wx:for="{{categories}}" wx:key="id" data-id="{{item.id}}" bindtap="pickCategory">
+        {{item.name}}
+      </view>
+    </scroll-view>
   </view>
 
   <scroll-view class="body" scroll-y enhanced show-scrollbar="{{false}}">
@@ -12,18 +25,24 @@
         <view class="dish-main">
           <view class="nm">{{item.name}}<text wx:if="{{item.stock === 0}}" class="pill red">售罄</text><text wx:elif="{{item.low}}" class="pill orange">库存紧张</text></view>
           <view class="sub">¥{{item.price}} · {{item.kcal}} kcal · 月售 {{item.sold}}</view>
-          <view class="stock-edit">
-            <text>库存</text>
-            <input type="number" class="{{item.low ? 'low' : ''}}" value="{{item.stock}}" data-id="{{item.id}}" bindblur="onStockBlur" />
-            <text>份</text>
+          <view class="dish-controls">
+            <view class="stock-edit">
+              <text>库存</text>
+              <input type="number" class="{{item.low ? 'low' : ''}}" value="{{item.stock}}" data-id="{{item.id}}" bindblur="onStockBlur" />
+              <text>份</text>
+            </view>
+            <view class="edit-link" catchtap="editDish" data-id="{{item.id}}" hover-class="tap">编辑</view>
           </view>
-          <view class="edit-link" catchtap="editDish" data-id="{{item.id}}" hover-class="tap">编辑</view>
         </view>
         <view class="dish-side">
           <view class="switch {{item.onSale ? 'on' : ''}}" catchtap="toggleDish" data-id="{{item.id}}"></view>
           <view class="side-lab">{{item.onSale ? '在售' : '下架'}}</view>
         </view>
       </view>
+    </view>
+    <view wx:elif="{{allList.length}}" class="empty">
+      <view class="t">没有匹配的菜品</view>
+      <view class="s">试试更换关键词或分类</view>
     </view>
     <view wx:else class="empty">
       <view class="t">暂无菜品</view>

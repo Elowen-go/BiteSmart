@@ -8,6 +8,8 @@ Page({
     shopName: '',
     contactPhone: '',
     shopAddress: '',
+    shopLat: 0,
+    shopLng: 0,
     shopNotice: '',
     open: true,
     loaded: false,
@@ -26,6 +28,8 @@ Page({
           shopName: shop.shopName || '',
           contactPhone: shop.contactPhone || '',
           shopAddress: shop.shopAddress || '',
+          shopLat: Number(shop.shopLat || 0),
+          shopLng: Number(shop.shopLng || 0),
           shopNotice: shop.shopNotice || '',
           // openStatus 后端并行开发中：缺省时按营业中兜底
           open: shop.openStatus !== 20,
@@ -47,6 +51,32 @@ Page({
     this.setData({ open: !this.data.open })
   },
 
+  chooseShopLocation() {
+    wx.chooseLocation({
+      latitude: Number(this.data.shopLat) || undefined,
+      longitude: Number(this.data.shopLng) || undefined,
+      success: (result) => {
+        this.setData({
+          shopAddress: result.address || result.name || this.data.shopAddress,
+          shopLat: Number(result.latitude || 0),
+          shopLng: Number(result.longitude || 0),
+          err: ''
+        })
+      },
+      fail: (error) => {
+        if (error && error.errMsg && error.errMsg.indexOf('cancel') >= 0) return
+        wx.showModal({
+          title: '需要位置权限',
+          content: '开启位置权限后，才能在地图上选择店铺取货点。',
+          confirmText: '去设置',
+          success: (result) => {
+            if (result.confirm) wx.openSetting({})
+          }
+        })
+      }
+    })
+  },
+
   submit() {
     if (this.data.submitting) return
     const d = this.data
@@ -63,6 +93,8 @@ Page({
       shopName: d.shopName.trim(),
       contactPhone: d.contactPhone.trim(),
       shopAddress: d.shopAddress.trim(),
+      shopLat: d.shopLat || undefined,
+      shopLng: d.shopLng || undefined,
       shopNotice: d.shopNotice.trim(),
       openStatus: d.open ? 10 : 20
     })

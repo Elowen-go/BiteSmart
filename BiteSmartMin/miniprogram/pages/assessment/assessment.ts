@@ -62,9 +62,9 @@ Page({
     goals: ASM_GOALS.map((g) => ({ ...g, image: uimg(g.img, 200) })),
     acts: ASM_ACTS.map((a) => ({ ...a, image: uimg(a.img, 200) })),
     freqs: ASM_FREQS,
-    partList: ASM_PARTS,
-    prefList: ASM_PREFS,
-    avoidList: ASM_AVOID,
+    partList: ASM_PARTS.map((n) => ({ n, selected: n === '全身' })),
+    prefList: ASM_PREFS.map((n) => ({ n, selected: n === '少油少盐' })),
+    avoidList: ASM_AVOID.map((n) => ({ n, selected: n === '香菜' })),
     // 人体模型高亮层
     frontOverlays: [] as string[],
     backOverlays: [] as string[],
@@ -116,7 +116,8 @@ Page({
       else parts.push(p)
       if (!parts.length) parts = ['全身']
     }
-    this.setData({ parts })
+    const partList = this.data.partList.map((item) => ({ ...item, selected: parts.indexOf(item.n) >= 0 }))
+    this.setData({ parts, partList })
     this.updateOverlays()
   },
 
@@ -138,7 +139,8 @@ Page({
     const i = arr.indexOf(v)
     if (i >= 0) arr.splice(i, 1)
     else arr.push(v)
-    this.setData({ prefs: arr })
+    const prefList = this.data.prefList.map((item) => ({ ...item, selected: arr.indexOf(item.n) >= 0 }))
+    this.setData({ prefs: arr, prefList })
   },
 
   toggleAvoid(e: WechatMiniprogram.CustomEvent) {
@@ -147,7 +149,8 @@ Page({
     const i = arr.indexOf(v)
     if (i >= 0) arr.splice(i, 1)
     else arr.push(v)
-    this.setData({ avoid: arr })
+    const avoidList = this.data.avoidList.map((item) => ({ ...item, selected: arr.indexOf(item.n) >= 0 }))
+    this.setData({ avoid: arr, avoidList })
   },
 
   onFieldInput(e: WechatMiniprogram.CustomEvent) {

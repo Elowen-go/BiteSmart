@@ -123,6 +123,25 @@ export const getMerchantDish = (id: number | string): Promise<Dish> =>
 export const updateMerchantDish = (id: number | string, patch: Partial<Dish>): Promise<void> =>
   request<void>({ url: `/merchant/dishes/${id}`, method: 'PUT', data: patch as Record<string, unknown> })
 
+/* ---------- 库存 ---------- */
+
+export interface MerchantInventoryLog {
+  id?: number | string
+  dishId?: number | string
+  changeType?: number
+  changeQuantity?: number
+  beforeStock?: number
+  afterStock?: number
+  remark?: string
+  createTime?: string
+}
+
+export const getMerchantStockWarnings = (): Promise<Dish[]> =>
+  request<Dish[]>({ url: '/merchant/inventory/warnings' })
+
+export const getMerchantInventoryLogs = (): Promise<MerchantInventoryLog[]> =>
+  request<MerchantInventoryLog[]>({ url: '/merchant/inventory/logs' })
+
 /* ---------- 菜品分类 ---------- */
 
 export interface MerchantCategory {
@@ -176,6 +195,8 @@ export interface MerchantShop {
   contactName?: string
   contactPhone?: string
   shopAddress?: string
+  shopLat?: number
+  shopLng?: number
   businessHours?: string
   shopNotice?: string
   openStatus?: number // 营业状态：10 营业中 / 20 打烊（后端并行开发中，联调前可能缺省）

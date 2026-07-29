@@ -30,6 +30,7 @@
     "pages/m-home/m-home",
     "pages/m-orders/m-orders",
     "pages/m-dishes/m-dishes",
+    "pages/m-inventory/m-inventory",
     "pages/m-me/m-me",
     "pages/m-stats/m-stats",
     "pages/m-reviews/m-reviews",

@@ -7,8 +7,10 @@ import java.util.List;
 
 @Mapper
 public interface RefundApplicationMapper {
+    int insert(RefundApplication application);
     List<RefundApplication> findAll(@Param("auditStatus") Integer auditStatus);
     RefundApplication findById(@Param("id") Long id);
+    RefundApplication findLatestByOrderId(@Param("orderId") Long orderId);
     long countByStatus(@Param("auditStatus") Integer auditStatus);
     int updateAudit(@Param("id") Long id, @Param("status") Integer status,
                     @Param("operatorId") Long operatorId, @Param("remark") String remark);

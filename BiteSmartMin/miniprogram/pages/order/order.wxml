@@ -21,7 +21,16 @@
         <text class="st-tag {{item.statusClass}}">{{item.statusText}}</text>
       </view>
       <view class="o-mid">
-        <view class="o-no">订单 {{item.orderNo || '#' + item.id}}</view>
+        <view class="o-left">
+          <view class="o-no">订单 {{item.orderNo || '#' + item.id}}</view>
+          <view class="o-preview" wx:if="{{item.firstItem}}">
+            <image class="preview-ph" src="{{item.firstItem.image}}" mode="aspectFill" lazy-load="true" />
+            <view class="preview-copy">
+              <view class="preview-name">{{item.firstItem.name}}</view>
+              <view class="preview-qty">{{item.firstItem.qty}}份</view>
+            </view>
+          </view>
+        </view>
         <view class="o-info">
           <view class="amt">¥{{item.amountText}}</view>
           <view class="tm">{{item.timeText}}</view>
@@ -34,13 +43,18 @@
         <block wx:elif="{{item.group === 'doing'}}">
           <view class="op ghost" catchtap="openDetail" data-id="{{item.id}}">订单详情</view>
           <view class="op primary" catchtap="goDelivery" data-id="{{item.id}}">查看配送</view>
+          <view class="op refund" wx:if="{{item.canRefund}}" catchtap="applyRefund" data-id="{{item.id}}">{{item.refundActionText}}</view>
+          <view class="op refund disabled" wx:elif="{{item.refundState === 'processing'}}">退款处理中</view>
         </block>
         <block wx:elif="{{item.group === 'done'}}">
           <view class="op ghost" catchtap="rebuy">再次购买</view>
           <view class="op primary" catchtap="goReview" data-id="{{item.id}}">评价</view>
+          <view class="op refund" wx:if="{{item.canRefund}}" catchtap="applyRefund" data-id="{{item.id}}">{{item.refundActionText}}</view>
+          <view class="op refund disabled" wx:elif="{{item.refundState === 'processing'}}">退款处理中</view>
         </block>
         <block wx:else>
           <view class="op ghost" catchtap="openDetail" data-id="{{item.id}}">订单详情</view>
+          <view class="op refund disabled" wx:if="{{item.refundState === 'processing' || item.refundState === 'refunded'}}">{{item.refundActionText}}</view>
         </block>
       </view>
     </view>

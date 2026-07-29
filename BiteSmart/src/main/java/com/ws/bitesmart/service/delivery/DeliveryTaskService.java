@@ -4,6 +4,7 @@ import com.ws.bitesmart.common.enums.ResultCodeEnum;
 import com.ws.bitesmart.common.util.SnowflakeUtil;
 import com.ws.bitesmart.entity.delivery.DeliveryDriver;
 import com.ws.bitesmart.entity.delivery.DeliveryTask;
+import com.ws.bitesmart.entity.delivery.DriverSettlement;
 import com.ws.bitesmart.entity.delivery.RiderLocation;
 import com.ws.bitesmart.entity.merchant.Merchant;
 import com.ws.bitesmart.entity.order.Orders;
@@ -12,6 +13,7 @@ import com.ws.bitesmart.service.health.HealthRecordService;
 import com.ws.bitesmart.service.merchant.MerchantFinanceService;
 import com.ws.bitesmart.mapper.delivery.DeliveryDriverMapper;
 import com.ws.bitesmart.mapper.delivery.DeliveryTaskMapper;
+import com.ws.bitesmart.mapper.delivery.DriverSettlementMapper;
 import com.ws.bitesmart.mapper.delivery.RiderLocationMapper;
 import com.ws.bitesmart.mapper.merchant.MerchantMapper;
 import com.ws.bitesmart.mapper.order.OrdersMapper;
@@ -43,6 +45,10 @@ public class DeliveryTaskService {
     private final HealthRecordService healthRecordService;
     private final MerchantFinanceService merchantFinanceService;
     private final RiderLocationMapper riderLocationMapper;
+    private final DriverSettlementMapper driverSettlementMapper;
+
+    /** 当前配送费规则，后续可迁移到平台配置。 */
+    private static final BigDecimal DEFAULT_DELIVERY_FEE = new BigDecimal("5.00");
 
     /**
      * 创建配送任务（商家出餐后调用）
@@ -68,8 +74,12 @@ public class DeliveryTaskService {
         if (merchant != null) {
             task.setMerchantAddress(merchant.getShopAddress());
             task.setMerchantPhone(merchant.getContactPhone());
+            task.setMerchantLat(merchant.getShopLat());
+            task.setMerchantLng(merchant.getShopLng());
         }
         task.setDeliveryAddress(order.getDeliveryAddress());
+        task.setDeliveryLat(order.getDeliveryLat());
+        task.setDeliveryLng(order.getDeliveryLng());
         task.setReceiverName(order.getReceiverName());
         task.setReceiverPhone(order.getReceiverPhone());
         // 快照订单备注（骑手端任务详情展示）
@@ -161,6 +171,33 @@ public class DeliveryTaskService {
     }
 
     /**
+     * 开始配送（配送任务 30 已取餐 -> 40 配送中）。
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public void startDeliveryTask(Long taskId, Long driverId) {
+        DeliveryTask task = deliveryTaskMapper.findById(taskId);
+        if (task == null) {
+            throw new BusinessException(ResultCodeEnum.NOT_FOUND, "配送任务不存在");
+        }
+        DeliveryDriver driver = deliveryDriverMapper.findByUserId(driverId);
+        if (driver == null) {
+            throw new BusinessException(ResultCodeEnum.NOT_FOUND, "配送员信息不存在");
+        }
+        if (!task.getDriverId().equals(driver.getId())) {
+            throw new BusinessException("该任务不属于当前配送员");
+        }
+        if (!Integer.valueOf(30).equals(task.getTaskStatus())) {
+            throw new BusinessException(ResultCodeEnum.ORDER_STATUS_ERROR, "当前任务不允许开始配送");
+        }
+
+        int affected = deliveryTaskMapper.updateStatusWithLock(taskId, 30, 40);
+        if (affected == 0) {
+            throw new BusinessException(ResultCodeEnum.ORDER_STATUS_ERROR, "任务状态已变更，开始配送失败");
+        }
+        log.info("配送员开始配送: taskId={}, driverId={}", taskId, driverId);
+    }
+
+    /**
      * 送达（配送完成）
      *
      * @param taskId   配送任务ID
@@ -191,6 +228,7 @@ public class DeliveryTaskService {
 
         // 原子更新配送员当前订单数
         deliveryDriverMapper.decrementOrders(driver.getId());
+        createSettlement(task, driver.getId());
         importCompletedOrderDietRecords(task.getOrderId());
 
         // 同步更新订单状态：配送中(40) → 已完成(50)，并写入完成时间和配送状态(已送达)
@@ -203,6 +241,21 @@ public class DeliveryTaskService {
         }
 
         log.info("配送完成: taskId={}, driverId={}, orderId={}", taskId, driverId, task.getOrderId());
+    }
+
+    /** 送达成功后生成待结算收入记录，状态锁保证同一任务只会生成一次。 */
+    private void createSettlement(DeliveryTask task, Long driverId) {
+        DriverSettlement settlement = new DriverSettlement();
+        settlement.setId(SnowflakeUtil.generate());
+        settlement.setDriverId(driverId);
+        settlement.setDeliveryTaskId(task.getId());
+        settlement.setOrderId(task.getOrderId());
+        settlement.setDeliveryFee(DEFAULT_DELIVERY_FEE);
+        settlement.setBonus(BigDecimal.ZERO);
+        settlement.setPenalty(BigDecimal.ZERO);
+        settlement.setSettlementAmount(DEFAULT_DELIVERY_FEE);
+        settlement.setSettlementStatus(10);
+        driverSettlementMapper.insert(settlement);
     }
 
     /**

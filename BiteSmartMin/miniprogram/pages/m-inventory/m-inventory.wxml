@@ -1,0 +1,47 @@
+<view class="pg">
+  <view class="nav" style="margin-top: {{menuTop}}px; height: {{menuH}}px;">
+    <view class="nav-back" bindtap="goBack" hover-class="tap"><text class="chev">‹</text></view>
+    <view class="nav-t">库存管理</view>
+  </view>
+
+  <scroll-view class="body" scroll-y enhanced show-scrollbar="{{false}}">
+    <view class="overview">
+      <view class="overview-cell"><view class="big">{{totalCount}}</view><view class="label">在管菜品</view></view>
+      <view class="overview-cell"><view class="big normal">{{normalCount}}</view><view class="label">库存正常</view></view>
+      <view class="overview-cell"><view class="big warning">{{warningCount}}</view><view class="label">需要处理</view></view>
+    </view>
+
+    <view class="section-head">
+      <view><text class="eyebrow">ATTENTION</text><text class="title">库存预警</text></view>
+      <view class="manage" bindtap="goDishes" hover-class="tap">去调整 ›</view>
+    </view>
+    <block wx:if="{{warnings.length}}">
+      <view class="warning-list">
+        <view class="warning-item" wx:for="{{warnings}}" wx:key="id">
+          <image class="food" src="{{item.image}}" mode="aspectFill" />
+          <view class="warning-main">
+            <view class="dish-name">{{item.name}}</view>
+            <view class="stock-line">当前 {{item.stock}} 份 · 预警线 {{item.threshold}} 份</view>
+          </view>
+          <text class="pill {{item.statusCls}}">{{item.statusText}}</text>
+        </view>
+      </view>
+    </block>
+    <view wx:else class="empty-card">库存状态良好，暂时没有需要处理的菜品</view>
+
+    <view class="section-head log-head">
+      <view><text class="eyebrow">RECENT LOGS</text><text class="title">最近变动</text></view>
+    </view>
+    <block wx:if="{{logs.length}}">
+      <view class="log-list">
+        <view class="log-item" wx:for="{{logs}}" wx:key="id">
+          <view class="log-mark {{item.cls}}"></view>
+          <view class="log-main"><view class="log-name">{{item.name}} · {{item.changeText}}</view><view class="log-time">{{item.time}} · 库存 {{item.stockText}}</view></view>
+          <text class="log-qty {{item.cls}}">{{item.quantityText}}</text>
+        </view>
+      </view>
+    </block>
+    <view wx:else class="empty-card">暂无库存变动记录</view>
+    <view style="height: 32rpx;"></view>
+  </scroll-view>
+</view>

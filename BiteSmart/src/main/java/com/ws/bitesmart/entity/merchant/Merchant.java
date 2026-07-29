@@ -42,6 +42,10 @@ public class Merchant {
     /** 店铺地址 */
     private String shopAddress;
 
+    /** 店铺坐标（GCJ-02） */
+    private BigDecimal shopLat;
+    private BigDecimal shopLng;
+
     /** 配送范围 JSON */
     private String deliveryRange;
 

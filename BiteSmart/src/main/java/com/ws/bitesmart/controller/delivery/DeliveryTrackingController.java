@@ -48,6 +48,10 @@ public class DeliveryTrackingController {
         result.put("estimatedDeliveryTime", task.getEstimatedDeliveryTime());
         result.put("pickupTime", task.getPickupTime());
         result.put("deliverTime", task.getDeliverTime());
+        result.put("merchantLat", task.getMerchantLat());
+        result.put("merchantLng", task.getMerchantLng());
+        result.put("deliveryLat", task.getDeliveryLat());
+        result.put("deliveryLng", task.getDeliveryLng());
         result.put("currentLat", task.getCurrentLat());
         result.put("currentLng", task.getCurrentLng());
         result.put("orderRemark", task.getOrderRemark());
