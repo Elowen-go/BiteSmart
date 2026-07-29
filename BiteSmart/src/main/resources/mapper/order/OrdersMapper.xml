@@ -4,7 +4,7 @@
 
     <sql id="BaseColumns">
         id, order_no, user_id, merchant_id, delivery_driver_id,
-        total_amount, discount_amount, pay_amount, pay_method, pay_time,
+        total_amount, discount_amount, pay_amount, delivery_type, delivery_fee, pay_method, pay_time,
         order_status, delivery_status, delivery_address, delivery_lat, delivery_lng,
         receiver_name, receiver_phone, remark,
         cancel_time, cancel_reason, finish_time,
@@ -55,7 +55,7 @@
     <!-- 新增订单 -->
     <insert id="insert" parameterType="com.ws.bitesmart.entity.order.Orders">
         INSERT INTO orders (id, order_no, user_id, merchant_id, delivery_driver_id,
-                            total_amount, discount_amount, pay_amount, pay_method, pay_time,
+                            total_amount, discount_amount, pay_amount, delivery_type, delivery_fee, pay_method, pay_time,
                             order_status, delivery_status, delivery_address, delivery_lat, delivery_lng,
                             receiver_name, receiver_phone, remark,
                             cancel_time, cancel_reason, finish_time,
@@ -63,7 +63,7 @@
                             lock_stock_time, auto_cancel_time, channel,
                             create_time, update_time)
         VALUES (#{id}, #{orderNo}, #{userId}, #{merchantId}, #{deliveryDriverId},
-                #{totalAmount}, #{discountAmount}, #{payAmount}, #{payMethod}, #{payTime},
+                #{totalAmount}, #{discountAmount}, #{payAmount}, #{deliveryType}, #{deliveryFee}, #{payMethod}, #{payTime},
                 #{orderStatus}, #{deliveryStatus}, #{deliveryAddress}, #{deliveryLat}, #{deliveryLng},
                 #{receiverName}, #{receiverPhone}, #{remark},
                 #{cancelTime}, #{cancelReason}, #{finishTime},

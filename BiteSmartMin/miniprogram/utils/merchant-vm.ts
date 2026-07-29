@@ -46,6 +46,14 @@ const positiveAmount = (value: unknown): number | null => {
   return Number.isFinite(amount) && amount > 0 ? amount : null
 }
 
+const firstPositiveAmount = (...values: unknown[]): number | null => {
+  for (const value of values) {
+    const amount = positiveAmount(value)
+    if (amount != null) return amount
+  }
+  return null
+}
+
 const normalizeImage = (value?: string): string => {
   const image = String(value || '').trim()
   if (!image) return ''
@@ -81,20 +89,24 @@ export const buildOrderVM = (o: MerchantOrder, dishPrices: DishPriceMap = {}): M
   itemsExpanded: false,
   items: (o.items || []).map((it) => {
     const runtimeItem = it as MerchantOrderItemCompat
-    const quantity = Number(runtimeItem.quantity ?? runtimeItem.qty ?? runtimeItem.num ?? 1) || 1
-    const listedPrice = positiveAmount(runtimeItem.snapshotPrice)
-      ?? positiveAmount(runtimeItem.snapshot_price)
-      ?? positiveAmount(runtimeItem.price)
-      ?? positiveAmount(runtimeItem.unitPrice)
-      ?? positiveAmount(runtimeItem.unit_price)
-    const subtotal = positiveAmount(runtimeItem.subTotal)
-      ?? positiveAmount(runtimeItem.subtotal)
-      ?? positiveAmount(runtimeItem.sub_total)
-      ?? positiveAmount(runtimeItem.amount)
-      ?? positiveAmount(runtimeItem.totalPrice)
-      ?? positiveAmount(runtimeItem.total_price)
+    const quantity = Number(runtimeItem.quantity || runtimeItem.qty || runtimeItem.num || 1) || 1
+    const listedPrice = firstPositiveAmount(
+      runtimeItem.snapshotPrice,
+      runtimeItem.snapshot_price,
+      runtimeItem.price,
+      runtimeItem.unitPrice,
+      runtimeItem.unit_price
+    )
+    const subtotal = firstPositiveAmount(
+      runtimeItem.subTotal,
+      runtimeItem.subtotal,
+      runtimeItem.sub_total,
+      runtimeItem.amount,
+      runtimeItem.totalPrice,
+      runtimeItem.total_price
+    )
     const dishPrice = positiveAmount(dishPrices[String(runtimeItem.dishId || '')])
-    const unitPrice = listedPrice ?? (subtotal != null ? subtotal / quantity : (dishPrice || 0))
+    const unitPrice = listedPrice != null ? listedPrice : (subtotal != null ? subtotal / quantity : (dishPrice || 0))
     return {
       name: it.snapshotName || '商品',
       quantity,

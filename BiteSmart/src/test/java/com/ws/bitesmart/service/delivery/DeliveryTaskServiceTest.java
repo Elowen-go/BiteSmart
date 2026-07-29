@@ -3,6 +3,8 @@ package com.ws.bitesmart.service.delivery;
 import com.ws.bitesmart.entity.delivery.DeliveryDriver;
 import com.ws.bitesmart.entity.delivery.DeliveryTask;
 import com.ws.bitesmart.entity.delivery.DriverSettlement;
+import com.ws.bitesmart.entity.merchant.Merchant;
+import com.ws.bitesmart.entity.order.Orders;
 import com.ws.bitesmart.mapper.delivery.DeliveryDriverMapper;
 import com.ws.bitesmart.mapper.delivery.DeliveryTaskMapper;
 import com.ws.bitesmart.mapper.delivery.DriverSettlementMapper;
@@ -14,8 +16,14 @@ import com.ws.bitesmart.service.health.HealthRecordService;
 import com.ws.bitesmart.service.merchant.MerchantFinanceService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.math.BigDecimal;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -33,6 +41,35 @@ class DeliveryTaskServiceTest {
     @Mock private MerchantMapper merchantMapper;
     @Mock private RiderLocationMapper riderLocationMapper;
     @Mock private DriverSettlementMapper driverSettlementMapper;
+
+    @Test
+    void createTaskLeavesEstimatedDeliveryTimeEmptyUntilAccepted() {
+        Orders order = new Orders();
+        order.setId(11L);
+        order.setOrderNo("ORDER-11");
+        order.setMerchantId(21L);
+        order.setDeliveryType(10);
+        order.setDeliveryAddress("测试收货地址");
+        order.setDeliveryLat(new BigDecimal("30.2000000"));
+        order.setDeliveryLng(new BigDecimal("120.2000000"));
+        order.setReceiverName("测试用户");
+        order.setReceiverPhone("13800138000");
+
+        Merchant merchant = new Merchant();
+        merchant.setShopAddress("测试取货地址");
+        merchant.setContactPhone("0571-12345678");
+        when(deliveryTaskMapper.findByOrderId(11L)).thenReturn(null);
+        when(merchantMapper.findById(21L)).thenReturn(merchant);
+
+        new DeliveryTaskService(deliveryTaskMapper, deliveryDriverMapper, ordersMapper, orderItemMapper,
+                merchantMapper, healthRecordService, merchantFinanceService, riderLocationMapper,
+                driverSettlementMapper).createTask(order);
+
+        ArgumentCaptor<DeliveryTask> captor = ArgumentCaptor.forClass(DeliveryTask.class);
+        verify(deliveryTaskMapper).insert(captor.capture());
+        assertEquals(10, captor.getValue().getTaskStatus());
+        assertNull(captor.getValue().getEstimatedDeliveryTime());
+    }
 
     @Test
     void acceptTaskUsesDriverIdAndOptimisticTaskUpdate() {

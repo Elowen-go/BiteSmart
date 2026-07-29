@@ -12,6 +12,6 @@
  * 放入 miniprogram/libs/ 后，可在此封装 getRegeo（逆地理编码）/ getDrivingRoute
  * （驾车路线规划），用于骑手端页内路线规划与配送路径 polyline 生成。
  */
-export const AMAP_KEY = '' // TODO: 在此填入高德小程序 SDK key
+export const AMAP_KEY = 'bc3954f0e03f08b6b638165c501a026e' // TODO: 在此填入高德小程序 SDK key
 
 export const hasAmapKey = (): boolean => !!AMAP_KEY

@@ -24,4 +24,6 @@ public interface UserMembershipMapper {
     /** 新增会员记录 */
     int insert(UserMembership membership);
 
+    UserMembership findByOrderId(@Param("orderId") Long orderId);
+
 }

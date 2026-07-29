@@ -25,6 +25,8 @@ import {
 } from '@element-plus/icons-vue'
 import { useUserStore } from '../stores/user'
 import { listNotices } from '../api/admin/notices'
+import { getCurrentUser } from '../api/user/profile'
+import { resolveFileUrl } from '../utils/fileUrl'
 
 const route = useRoute()
 const router = useRouter()
@@ -104,7 +106,20 @@ const handleLogout = () => {
   router.push('/login')
 }
 
-onMounted(loadNotificationCount)
+const adminName = computed(() => userStore.userInfo?.nickname || userStore.userInfo?.username || '超级管理员')
+const refreshUser = async () => {
+  try {
+    const res = await getCurrentUser()
+    if (res.code === 200 && res.data) userStore.setUserInfo(res.data)
+  } catch (_) {
+    // Keep the cached profile available when the API is temporarily unavailable.
+  }
+}
+
+onMounted(() => {
+  loadNotificationCount()
+  refreshUser()
+})
 </script>
 
 <template>
@@ -166,8 +181,11 @@ onMounted(loadNotificationCount)
             <HelpFilled />
           </button>
           <div class="user-info">
-            <div class="avatar">A</div>
-            <span v-if="!collapsed">超级管理员</span>
+            <div class="avatar">
+              <img v-if="userStore.userInfo?.avatar" :src="resolveFileUrl(userStore.userInfo.avatar)" alt="管理员头像" @error="$event.currentTarget.style.display = 'none'" />
+              <span v-else>{{ adminName[0] }}</span>
+            </div>
+            <span v-if="!collapsed">{{ adminName }}</span>
             <button class="logout-btn" @click="handleLogout">退出</button>
           </div>
         </div>
@@ -504,6 +522,24 @@ onMounted(loadNotificationCount)
   justify-content: center;
   font-weight: 600;
   font-size: var(--bs-font-size-sm);
+}
+
+.avatar img,
+.avatar span {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+}
+
+.avatar img {
+  display: block;
+  object-fit: cover;
+}
+
+.avatar span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .logout-btn {

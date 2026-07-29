@@ -15,6 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import com.ws.bitesmart.security.LoginUser;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.util.StringUtils;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -80,6 +81,12 @@ public class AuthController {
         if (loginUser == null) return ResultVO.error(401, "未登录");
         authService.bindWechat(loginUser.getUserId(), request.getCode());
         return ResultVO.ok("微信绑定成功");
+    }
+
+    @GetMapping("/wechat-binding")
+    public ResultVO<Boolean> wechatBindingStatus(@AuthenticationPrincipal LoginUser loginUser) {
+        if (loginUser == null) return ResultVO.error(401, "未登录");
+        return ResultVO.success(authService.isWechatBound(loginUser.getUserId()));
     }
 
     @PutMapping("/credentials")

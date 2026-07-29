@@ -39,13 +39,14 @@ const textOf = (status?: number): string => (status != null && STATUS_TEXT[statu
 const classOf = (group: string): string => (group === 'unpaid' ? 's1' : group === 'doing' ? 's2' : 's3')
 
 const refundViewOf = (orderStatus?: number, application?: RefundApplication | null) => {
-  if (orderStatus === 80 || application?.auditStatus === 40) {
+  const auditStatus = application ? application.auditStatus : undefined
+  if (orderStatus === 80 || auditStatus === 40) {
     return { refundState: 'refunded', refundActionText: '已退款', canRefund: false }
   }
-  if (orderStatus === 70 || application?.auditStatus === 10 || application?.auditStatus === 20) {
+  if (orderStatus === 70 || auditStatus === 10 || auditStatus === 20) {
     return { refundState: 'processing', refundActionText: '退款处理中', canRefund: false }
   }
-  if (application?.auditStatus === 30) {
+  if (auditStatus === 30) {
     return { refundState: 'rejected', refundActionText: '重新申请退款', canRefund: true }
   }
   const canRefund = orderStatus === 20 || orderStatus === 30 || orderStatus === 40

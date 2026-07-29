@@ -15,6 +15,10 @@ public interface AiConversationMapper {
     /** 查某个会话的所有对话记录（按时间正序） */
     List<AiConversation> findBySessionId(@Param("sessionId") String sessionId);
 
+    /** 查当前用户某个会话的所有对话记录 */
+    List<AiConversation> findBySessionIdAndUserId(@Param("sessionId") String sessionId,
+                                                  @Param("userId") Long userId);
+
     /** 查用户的所有历史消息 */
     List<AiConversation> findSessionsByUserId(@Param("userId") Long userId);
     long countAll();

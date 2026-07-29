@@ -1,9 +1,7 @@
 import { getSafeArea } from '../../utils/safe-area'
 import { getMerchantCombos, updateMerchantCombo } from '../../api/merchant'
 import type { Combo } from '../../api/catalog'
-import { uimg } from '../../mock/catalog'
-
-const FALLBACK_IMG = uimg('1546069901-ba9599a7e63c', 200)
+import { resolveFileUrl } from '../../api/file'
 
 interface ComboVM {
   id: number | string
@@ -19,7 +17,7 @@ interface ComboVM {
 const buildVM = (c: Combo): ComboVM => ({
   id: c.id || 0,
   name: c.comboName || '套餐',
-  image: c.comboImage || FALLBACK_IMG,
+  image: resolveFileUrl(c.comboImage),
   price: String(c.price != null ? c.price : 0),
   kcal: Number(c.totalCalories || 0),
   protein: c.totalProtein != null ? String(c.totalProtein) : '—',

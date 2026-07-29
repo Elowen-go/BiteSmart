@@ -1,7 +1,8 @@
-import { clearAuth, getUserInfo } from '../../utils/auth'
+import { clearAuth, getUserInfo, setUserInfo } from '../../utils/auth'
 import { getSafeArea } from '../../utils/safe-area'
 import { getWeightRecords, type WeightRecord } from '../../api/health'
-import { getProfile } from '../../api/user'
+import { getCurrentUser, getProfile, updateCurrentUser } from '../../api/user'
+import { resolveFileUrl, uploadFile } from '../../api/file'
 
 interface MenuItem {
   key: string
@@ -14,6 +15,8 @@ interface MenuItem {
 Page({
   data: {
     padTop: 44,
+    avatar: '',
+    avatarUploading: false,
     nickname: '王硕',
     initial: '王',
     goal: '健康生活方式',
@@ -46,12 +49,53 @@ Page({
     this.setData({
       padTop: getSafeArea().padTop,
       nickname,
-      initial: nickname.slice(0, 1)
+      initial: nickname.slice(0, 1),
+      avatar: resolveFileUrl(user && user.avatar)
     })
+    this.refreshAccount()
   },
 
   onShow() {
+    this.refreshAccount()
     this.loadStats()
+  },
+
+  refreshAccount() {
+    getCurrentUser()
+      .then((user) => {
+        setUserInfo(user)
+        const nickname = user.nickname || user.username || this.data.nickname
+        this.setData({ nickname, initial: nickname.slice(0, 1), avatar: resolveFileUrl(user.avatar) })
+      })
+      .catch(() => {})
+  },
+
+  chooseAvatar() {
+    if (this.data.avatarUploading) return
+    wx.chooseImage({
+      count: 1,
+      sizeType: ['compressed'],
+      sourceType: ['album', 'camera'],
+      success: (result) => {
+        const filePath = result.tempFilePaths && result.tempFilePaths[0]
+        if (!filePath) return
+        this.setData({ avatarUploading: true })
+        uploadFile(filePath, 'avatar')
+          .then((url) => updateCurrentUser({ avatar: url }))
+          .then((user) => {
+            setUserInfo(user)
+            const nickname = user.nickname || user.username || this.data.nickname
+            this.setData({ nickname, initial: nickname.slice(0, 1), avatar: resolveFileUrl(user.avatar) })
+            wx.showToast({ title: '头像已更换', icon: 'success' })
+          })
+          .catch((error: Error) => wx.showToast({ title: error.message || '头像上传失败', icon: 'none' }))
+          .finally(() => this.setData({ avatarUploading: false }))
+      }
+    })
+  },
+
+  onAvatarError() {
+    this.setData({ avatar: '' })
   },
 
   /** 当前体重 / 本月变化：来自真实体重记录；目标文案：健康档案 healthGoal */

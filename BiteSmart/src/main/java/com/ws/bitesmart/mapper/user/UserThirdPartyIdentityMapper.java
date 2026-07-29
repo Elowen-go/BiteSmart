@@ -10,5 +10,8 @@ public interface UserThirdPartyIdentityMapper {
     UserThirdPartyIdentity findByProviderAndOpenId(@Param("provider") String provider,
                                                    @Param("openId") String openId);
 
+    UserThirdPartyIdentity findByUserIdAndProvider(@Param("userId") Long userId,
+                                                   @Param("provider") String provider);
+
     int insert(UserThirdPartyIdentity identity);
 }

@@ -24,7 +24,10 @@
     <!-- 今日健康浮层 -->
     <view class="health card" bindtap="goHealth" hover-class="tap">
       <view class="health-user">
-        <view class="avatar-mini">{{initial}}</view>
+        <view class="avatar-mini">
+          <image wx:if="{{avatar}}" class="avatar-mini-image" src="{{avatar}}" mode="aspectFill" binderror="onAvatarError" />
+          <text wx:else>{{initial}}</text>
+        </view>
         <view class="health-name">
           <view class="name-line">
             <text>Hi，{{nickname}}</text>

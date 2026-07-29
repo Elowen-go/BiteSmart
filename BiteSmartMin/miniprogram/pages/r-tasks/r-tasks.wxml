@@ -1,4 +1,4 @@
-<view class="pg">
+<view class="pg rider-tab-page">
   <scroll-view class="body" scroll-y enhanced show-scrollbar="{{false}}">
     <!-- 在线状态卡 -->
     <view class="card rider-status {{online ? 'online' : ''}}" style="margin-top: {{padTop}}px;">

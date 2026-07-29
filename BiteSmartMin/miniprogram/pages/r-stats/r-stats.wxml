@@ -1,43 +1,79 @@
-<view class="pg">
+<view class="pg rider-tab-page">
   <scroll-view class="body" scroll-y enhanced show-scrollbar="{{false}}">
     <view style="height: {{padTop}}px;"></view>
 
-    <view class="sec">
-      <text class="en">EARNINGS</text>
-      <text class="cn">收入统计</text>
-      <view class="line"></view>
+    <view class="stats-head">
+      <view>
+        <text class="stats-kicker">EARNINGS</text>
+        <text class="stats-title">收入统计</text>
+      </view>
+      <text class="stats-updated">实时数据</text>
     </view>
 
-    <!-- 今日概览 -->
-    <view class="stat-strip">
-      <view class="stat-cell"><view class="b">{{todayAmount}}</view><view class="s">今日收入（元）</view></view>
-      <view class="stat-cell"><view class="b">{{todayCount}}</view><view class="s">今日单量</view></view>
-      <view class="stat-cell"><view class="b">{{rating}}</view><view class="s">服务评分</view></view>
+    <view class="earnings-hero">
+      <view class="hero-label">累计收入（元）</view>
+      <view class="hero-amount"><text>¥</text>{{totalAmount}}</view>
+      <view class="hero-meta">
+        <view><text>本周收入</text><strong>¥{{weekAmount}}</strong></view>
+        <view><text>本月收入</text><strong>¥{{monthAmount}}</strong></view>
+      </view>
     </view>
 
-    <!-- 周期汇总 -->
-    <view class="stat-strip" style="margin-top: 24rpx;">
-      <view class="stat-cell"><view class="b">{{weekAmount}}</view><view class="s">本周收入（元）</view></view>
-      <view class="stat-cell"><view class="b">{{monthAmount}}</view><view class="s">本月收入（元）</view></view>
-      <view class="stat-cell"><view class="b">{{monthCount}}</view><view class="s">本月单量</view></view>
+    <view class="metrics-grid">
+      <view class="metric-card">
+        <text class="metric-label">今日收入</text>
+        <text class="metric-value">¥{{todayAmount}}</text>
+        <text class="metric-note">今日已完成 {{todayCount}} 单</text>
+      </view>
+      <view class="metric-card">
+        <text class="metric-label">本月单量</text>
+        <text class="metric-value">{{monthCount}}</text>
+        <text class="metric-note">累计配送订单</text>
+      </view>
+      <view class="metric-card">
+        <text class="metric-label">服务评分</text>
+        <text class="metric-value">{{rating}}</text>
+        <text class="metric-note">来自用户评价</text>
+      </view>
     </view>
 
-    <!-- 近 7 日配送收入柱状图 -->
+    <view class="settlement-card">
+      <view class="settlement-head">
+        <view><text class="section-kicker">SETTLEMENT</text><text class="section-title">结算状态</text></view>
+        <text class="settlement-total">¥{{totalAmount}}</text>
+      </view>
+      <view class="settlement-row">
+        <view class="settlement-name"><view class="status-dot pending"></view><text>待结算</text></view>
+        <text class="settlement-value">¥{{pendingAmount}}</text>
+      </view>
+      <view class="settlement-row">
+        <view class="settlement-name"><view class="status-dot settled"></view><text>已结算</text></view>
+        <text class="settlement-value">¥{{settledAmount}}</text>
+      </view>
+    </view>
+
     <view class="chart-box">
-      <view class="chart-title">近 7 日配送收入（元）</view>
-      <view class="bar-chart">
+      <view class="chart-head">
+        <view><text class="section-kicker">LAST 7 DAYS</text><text class="section-title">近 7 日配送收入</text></view>
+        <text class="chart-unit">元</text>
+      </view>
+      <view wx:if="{{hasChartData}}" class="bar-chart">
         <view class="bar-col" wx:for="{{bars}}" wx:key="label">
           <text class="bv">{{item.value}}</text>
           <view class="bar {{item.hot ? 'hot' : ''}}" style="height: {{item.height}}rpx;"></view>
           <text class="bl">{{item.label}}</text>
         </view>
       </view>
+      <view wx:else class="chart-empty">
+        <view class="empty-chart-icon"><view></view><view></view><view></view></view>
+        <text>近 7 日暂无已结算收入</text>
+        <text class="chart-empty-note">完成配送并结算后，收入会显示在这里</text>
+      </view>
     </view>
 
     <view style="height: 32rpx;"></view>
   </scroll-view>
 
-  <!-- 骑手端自定义底栏 -->
   <view class="m-tabbar">
     <view class="m-tab {{active === 'tasks' ? 'on' : ''}}" catchtap="goTab" data-key="tasks" data-url="/pages/r-tasks/r-tasks">
       <image class="m-tab-ic" src="/assets/tab/r-tasks{{active === 'tasks' ? '-on' : ''}}.png" />

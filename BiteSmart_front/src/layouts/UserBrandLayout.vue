@@ -4,6 +4,8 @@ import { useRoute, useRouter } from 'vue-router'
 import { Search, ShoppingBag, Bell, User, ArrowDown } from '@element-plus/icons-vue'
 import { useUserStore } from '../stores/user'
 import { getCartList } from '../api/user/cart'
+import { getCurrentUser } from '../api/user/profile'
+import { resolveFileUrl } from '../utils/fileUrl'
 
 const route = useRoute(), router = useRouter(), userStore = useUserStore()
 const userName = computed(() => userStore.userInfo?.nickname || '我的账户')
@@ -18,9 +20,18 @@ const loadCartCount = async () => {
   }
 }
 const handleCartUpdated = () => { loadCartCount() }
+const refreshUser = async () => {
+  try {
+    const res = await getCurrentUser()
+    if (res.code === 200 && res.data) userStore.setUserInfo(res.data)
+  } catch (_) {
+    // Keep the cached profile available when the API is temporarily unavailable.
+  }
+}
 watch(() => route.path, loadCartCount)
 onMounted(() => {
   loadCartCount()
+  refreshUser()
   window.addEventListener('cart-updated', handleCartUpdated)
 })
 onUnmounted(() => window.removeEventListener('cart-updated', handleCartUpdated))
@@ -60,7 +71,10 @@ const logout = () => { userStore.logout(); router.push('/login') }
           </button>
           <el-dropdown>
             <button class="account">
-              <span class="avatar">{{ userName[0] }}</span>
+              <span class="avatar">
+                <img v-if="userStore.userInfo?.avatar" :src="resolveFileUrl(userStore.userInfo.avatar)" alt="用户头像" @error="$event.currentTarget.style.display = 'none'" />
+                <span v-else>{{ userName[0] }}</span>
+              </span>
               <span class="account-name">{{ userName }}</span>
               <ArrowDown />
             </button>
@@ -251,6 +265,23 @@ const logout = () => { userStore.logout(); router.push('/login') }
   color: #fff;
   font-size: 13px;
   font-weight: 600;
+}
+
+.avatar img,
+.avatar > span {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+}
+
+.avatar img {
+  display: block;
+  object-fit: cover;
+}
+
+.avatar > span {
+  display: grid;
+  place-items: center;
 }
 
 .account-name {

@@ -12,8 +12,8 @@
         <view class="oc-t">营业状态</view>
         <view class="oc-s">{{open ? '用户可正常下单' : '打烊后用户端将暂停接单'}}</view>
       </view>
-      <view class="oc-state {{open ? 'on' : ''}}">{{open ? '营业中' : '已打烊'}}</view>
-      <view class="switch {{open ? 'on' : ''}}" bindtap="toggleOpen" hover-class="tap"></view>
+      <view class="oc-state {{open ? 'on' : ''}}">{{openKnown ? (open ? '营业中' : '已打烊') : '状态未知'}}</view>
+      <view wx:if="{{openKnown}}" class="switch {{open ? 'on' : ''}}" bindtap="toggleOpen" hover-class="tap"></view>
     </view>
 
     <!-- 基本信息 -->
@@ -23,6 +23,30 @@
       <view class="line"></view>
     </view>
     <view class="card form-card">
+      <view class="form-row logo-row">
+        <view class="f-lab">店铺头像</view>
+        <view class="logo-picker" bindtap="chooseShopLogo" hover-class="tap">
+          <image wx:if="{{shopLogoUrl}}" class="shop-logo" src="{{shopLogoUrl}}" mode="aspectFill" />
+          <view wx:else class="logo-placeholder">店</view>
+          <view class="logo-copy">
+            <view class="logo-title">更换头像</view>
+            <view class="logo-sub">建议使用清晰的方形图片</view>
+          </view>
+          <text class="location-arrow">›</text>
+        </view>
+      </view>
+      <view class="form-row logo-row">
+        <view class="f-lab">账号头像</view>
+        <view class="logo-picker" bindtap="chooseUserAvatar" hover-class="tap">
+          <image wx:if="{{userAvatarUrl}}" class="shop-logo personal-avatar" src="{{userAvatarUrl}}" mode="aspectFill" />
+          <view wx:else class="logo-placeholder personal-avatar">我</view>
+          <view class="logo-copy">
+            <view class="logo-title">更换账号头像</view>
+            <view class="logo-sub">用于商家端个人身份展示</view>
+          </view>
+          <text class="location-arrow">›</text>
+        </view>
+      </view>
       <view class="form-row">
         <view class="f-lab">店铺名称 <text class="req">*</text></view>
         <input class="f-input" placeholder="店铺名称" placeholder-class="ph-txt" value="{{shopName}}" data-field="shopName" bindinput="onInput" />

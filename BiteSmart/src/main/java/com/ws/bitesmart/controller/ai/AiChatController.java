@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.MediaType;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.util.List;
 import java.util.Map;
@@ -48,14 +50,41 @@ public class AiChatController {
     }
 
     /**
+     * 流式 AI 对话。每个 token 通过 SSE 推送到前端，完整答案仍会保存到会话记录。
+     */
+    @PostMapping(value = "/chat/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter chatStream(
+            @AuthenticationPrincipal LoginUser loginUser,
+            @RequestParam String question,
+            @RequestParam(required = false) String sessionId) {
+        SseEmitter emitter = new SseEmitter(180_000L);
+        if (loginUser == null) {
+            emitter.completeWithError(new IllegalStateException("未登录"));
+            return emitter;
+        }
+        aiChatService.chatStream(loginUser.getUserId(), sessionId, question, emitter);
+        return emitter;
+    }
+
+    /**
      * 获取某个会话的历史记录
      * GET /api/ai/chat/history?sessionId=xxx
      */
     @GetMapping("/chat/history")
     public ResultVO<List<AiConversation>> getHistory(
+            @AuthenticationPrincipal LoginUser loginUser,
             @RequestParam String sessionId) {
-        List<AiConversation> history = aiChatService.getHistory(sessionId);
+        if (loginUser == null) return ResultVO.error(401, "未登录");
+        List<AiConversation> history = aiChatService.getHistory(loginUser.getUserId(), sessionId);
         return ResultVO.success(history);
+    }
+
+    /** 获取当前登录用户的历史会话消息，前端按 sessionId 聚合为会话列表。 */
+    @GetMapping("/chat/sessions")
+    public ResultVO<List<AiConversation>> getSessions(
+            @AuthenticationPrincipal LoginUser loginUser) {
+        if (loginUser == null) return ResultVO.error(401, "未登录");
+        return ResultVO.success(aiChatService.getUserMessages(loginUser.getUserId()));
     }
 
 }

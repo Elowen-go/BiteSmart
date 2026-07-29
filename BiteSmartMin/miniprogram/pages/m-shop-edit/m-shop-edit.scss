@@ -29,6 +29,36 @@
 .form-card { padding: 32rpx; }
 .form-row { margin-bottom: 28rpx; }
 .form-row:last-child { margin-bottom: 0; }
+.logo-picker {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  min-height: 112rpx;
+  padding: 12rpx 20rpx;
+  border: 1rpx solid var(--hair);
+  border-radius: 12rpx;
+  background: #FBFCFA;
+  box-sizing: border-box;
+}
+.shop-logo, .logo-placeholder {
+  width: 88rpx;
+  height: 88rpx;
+  border-radius: 20rpx;
+  flex: none;
+}
+.personal-avatar { border-radius: 50%; }
+.logo-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--green-soft);
+  color: var(--green-deep);
+  font-size: 34rpx;
+  font-weight: 800;
+}
+.logo-copy { flex: 1; min-width: 0; }
+.logo-title { font-size: 26rpx; font-weight: 700; color: var(--ink); }
+.logo-sub { margin-top: 8rpx; font-size: 20rpx; color: var(--faint); }
 .f-lab { font-size: 22rpx; color: var(--sub); margin-bottom: 14rpx; font-weight: 600; }
 .f-lab .req { color: var(--orange); }
 .f-input {

@@ -8,6 +8,7 @@ import com.ws.bitesmart.entity.user.SysUser;
 import com.ws.bitesmart.exception.BusinessException;
 import com.ws.bitesmart.mapper.merchant.MerchantAuditLogMapper;
 import com.ws.bitesmart.mapper.merchant.MerchantMapper;
+import com.ws.bitesmart.mapper.review.ReviewMapper;
 import com.ws.bitesmart.mapper.user.SysUserMapper;
 import com.ws.bitesmart.service.system.OperateLogService;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +17,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 
 /**
@@ -30,6 +33,7 @@ import java.util.List;
 public class MerchantService {
 
     private final MerchantMapper merchantMapper;
+    private final ReviewMapper reviewMapper;
     private final MerchantAuditLogMapper auditLogMapper;
     private final SysUserMapper sysUserMapper;
     private final OperateLogService operateLogService;
@@ -101,6 +105,10 @@ public class MerchantService {
         if (merchant == null) {
             throw new BusinessException("你还未提交入驻申请");
         }
+        BigDecimal averageRating = reviewMapper.averageOverallByMerchantId(merchant.getId());
+        merchant.setAvgRating(averageRating == null
+                ? BigDecimal.ZERO
+                : averageRating.setScale(1, RoundingMode.HALF_UP));
         return merchant;
     }
 

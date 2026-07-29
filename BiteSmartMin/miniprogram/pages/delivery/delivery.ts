@@ -108,7 +108,7 @@ const buildView = (tracking: TrackingInfo): TrackView => {
     phone: driver.phone || '',
     hasDriver: Boolean(driverName),
     pickupCode: tracking.pickupCode || '',
-    eta: tracking.estimatedDeliveryTime || '',
+    eta: tracking.estimatedDeliveryTime || (status === 10 ? '待骑手接单' : ''),
     progress: progressOf(tracking.taskStatus),
     steps,
     hasLocation,

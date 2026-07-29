@@ -83,6 +83,10 @@ public class WechatIdentityAuthService {
         }
     }
 
+    public boolean isBound(Long userId) {
+        return identityMapper.findByUserIdAndProvider(userId, PROVIDER) != null;
+    }
+
     private SysUser createMiniProgramUser() {
         SysUser user = new SysUser();
         user.setId(SnowflakeUtil.generate());

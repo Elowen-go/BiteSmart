@@ -6,7 +6,11 @@
     <view class="status-pad" style="height: {{padTop}}px;"></view>
     <view class="profile-hero-brand">BiteSmart · HEALTHY LIVING</view>
     <view class="profile-hero-user">
-      <view class="hero-avatar">{{initial}}</view>
+      <view class="hero-avatar" bindtap="chooseAvatar" hover-class="tap">
+        <image wx:if="{{avatar}}" class="hero-avatar-image" src="{{avatar}}" mode="aspectFill" binderror="onAvatarError" />
+        <text wx:else>{{initial}}</text>
+        <view class="avatar-edit">更换</view>
+      </view>
       <view class="hero-user-info">
         <view class="hero-name">{{nickname}} <text class="hero-vip">{{isVip ? 'PRO 会员' : '开通会员'}}</text></view>
         <view class="hero-goal"><view class="hero-goal-dot"></view>目标：{{goal}}</view>

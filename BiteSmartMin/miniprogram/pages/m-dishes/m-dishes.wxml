@@ -21,7 +21,8 @@
   <scroll-view class="body" scroll-y enhanced show-scrollbar="{{false}}">
     <view class="card dish-card" wx:if="{{list.length}}">
       <view class="dish-row" wx:for="{{list}}" wx:key="id">
-        <image class="ph" src="{{item.image}}" mode="aspectFill" />
+        <image wx:if="{{item.image}}" class="ph" src="{{item.image}}" mode="aspectFill" />
+        <view wx:else class="ph ph-placeholder">暂无图片</view>
         <view class="dish-main">
           <view class="nm">{{item.name}}<text wx:if="{{item.stock === 0}}" class="pill red">售罄</text><text wx:elif="{{item.low}}" class="pill orange">库存紧张</text></view>
           <view class="sub">¥{{item.price}} · {{item.kcal}} kcal · 月售 {{item.sold}}</view>

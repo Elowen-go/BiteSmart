@@ -6,6 +6,7 @@ import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
 import java.util.List;
+import java.math.BigDecimal;
 
 /**
  * 评价 Mapper
@@ -23,6 +24,10 @@ public interface ReviewMapper {
 
     /** 查某商家的评价列表 */
     List<Review> findByMerchantId(@Param("merchantId") Long merchantId);
+
+    @Select("SELECT COALESCE(AVG(overall_rating), 0) FROM review "
+            + "WHERE merchant_id = #{merchantId} AND deleted = 0 AND overall_rating IS NOT NULL")
+    BigDecimal averageOverallByMerchantId(@Param("merchantId") Long merchantId);
 
     /** 查某用户的评价列表 */
     List<Review> findByUserId(@Param("userId") Long userId);

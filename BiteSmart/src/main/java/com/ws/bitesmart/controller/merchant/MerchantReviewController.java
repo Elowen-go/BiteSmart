@@ -4,6 +4,7 @@ import com.ws.bitesmart.common.PageResultVO;
 import com.ws.bitesmart.common.ResultVO;
 import com.ws.bitesmart.entity.review.Review;
 import com.ws.bitesmart.security.LoginUser;
+import com.ws.bitesmart.service.merchant.MerchantService;
 import com.ws.bitesmart.service.review.ReviewService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,6 +30,7 @@ import java.util.List;
 public class MerchantReviewController {
 
     private final ReviewService reviewService;
+    private final MerchantService merchantService;
 
     /** 商家收到的评价列表 */
     @GetMapping
@@ -36,10 +38,11 @@ public class MerchantReviewController {
                             @RequestParam(required = false) Integer page,
                             @RequestParam(defaultValue = "10") int size) {
         if (loginUser == null) return ResultVO.error(401, "未登录");
+        Long merchantId = merchantService.getMerchantId(loginUser.getUserId());
         if (page != null) {
-            return ResultVO.success(PageResultVO.success(reviewService.findByMerchantId(loginUser.getUserId(), page, size)));
+            return ResultVO.success(PageResultVO.success(reviewService.findByMerchantId(merchantId, page, size)));
         }
-        return ResultVO.success(reviewService.getMerchantReviews(loginUser.getUserId()));
+        return ResultVO.success(reviewService.getMerchantReviews(merchantId));
     }
 
     /** 商家回复评价 */
@@ -48,7 +51,7 @@ public class MerchantReviewController {
                                  @PathVariable Long id,
                                  @RequestParam String content) {
         if (loginUser == null) return ResultVO.error(401, "未登录");
-        reviewService.replyReview(id, loginUser.getUserId(), content);
+        reviewService.replyReview(id, merchantService.getMerchantId(loginUser.getUserId()), content);
         return ResultVO.ok("回复成功");
     }
 

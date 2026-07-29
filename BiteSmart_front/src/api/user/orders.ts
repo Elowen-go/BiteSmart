@@ -8,6 +8,8 @@ export interface Order {
   totalAmount: number
   discountAmount: number
   payAmount: number
+  deliveryType?: number
+  deliveryFee?: number
   couponId?: number | string
   couponDiscount?: number
   platformSubsidy?: number
@@ -53,6 +55,9 @@ export const createBatchOrder = (data: {
   address: string
   receiverName: string
   receiverPhone: string
+  deliveryType?: number
+  latitude?: number
+  longitude?: number
   merchantOrders: MerchantOrderRemark[]
 }): Promise<any> => {
   return request.post('/orders/batch', data)

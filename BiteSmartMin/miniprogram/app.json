@@ -44,7 +44,8 @@
     "pages/r-stats/r-stats",
     "pages/r-me/r-me",
     "pages/r-reviews/r-reviews",
-    "pages/r-profile/r-profile"
+    "pages/r-profile/r-profile",
+    "pages/r-feedback/r-feedback"
   ],
   "permission": {
     "scope.userLocation": {

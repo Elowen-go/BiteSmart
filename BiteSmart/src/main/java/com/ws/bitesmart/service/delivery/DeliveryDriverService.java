@@ -192,4 +192,17 @@ public class DeliveryDriverService {
         stats.put("settledAmount", settledAmount);
         return stats;
     }
+
+    /** 管理员查询骑手内部结算记录。 */
+    public List<DriverSettlement> getAllSettlements(Integer settlementStatus) {
+        return driverSettlementMapper.findAll(settlementStatus);
+    }
+
+    /** 管理员完成骑手内部结算，暂不触发真实第三方转账。 */
+    @Transactional(rollbackFor = Exception.class)
+    public void completeSettlement(Long settlementId) {
+        if (driverSettlementMapper.transitionStatus(settlementId, 10, 20) != 1) {
+            throw new BusinessException("结算记录不存在或已经处理");
+        }
+    }
 }

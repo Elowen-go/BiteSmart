@@ -53,8 +53,10 @@ const fetchList = async () => {
   try {
     const res = await getOrderList({ page: page.value, size: size.value })
     if (res.code === 200) {
-      orderList.value = res.data.list || []
-      total.value = res.data.total || 0
+      // 当前后端分页接口返回 ResultVO<PageResultVO>，兼容 data.data 与直接分页数据两种结构。
+      const pageData = res.data?.data || res.data || {}
+      orderList.value = pageData.list || []
+      total.value = pageData.total || 0
     }
   } catch (e) {
     console.error('获取订单列表失败', e)

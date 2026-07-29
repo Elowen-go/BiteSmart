@@ -1,0 +1,52 @@
+.pg { display: flex; flex-direction: column; height: 100vh; background: var(--bg); }
+.nav { display: flex; align-items: center; padding: 0 32rpx; flex: none; }
+.nav-back {
+  width: 68rpx;
+  height: 68rpx;
+  border: 1rpx solid var(--hair);
+  border-radius: 20rpx;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.nav-back .chev { font-size: 44rpx; color: var(--ink); line-height: 1; margin-top: -4rpx; }
+.nav-t { font-size: 32rpx; font-weight: 800; margin-left: 24rpx; }
+.nav-ph { width: 68rpx; margin-left: auto; }
+.body { flex: 1; padding: 0 32rpx; box-sizing: border-box; }
+.page-intro { display: flex; flex-direction: column; gap: 8rpx; padding: 34rpx 4rpx 8rpx; }
+.intro-kicker { color: var(--orange); font-size: 18rpx; font-weight: 800; letter-spacing: 3rpx; }
+.intro-title { color: var(--ink); font-size: 34rpx; font-weight: 800; }
+.intro-sub { color: var(--sub); font-size: 21rpx; }
+.form-card { padding: 32rpx 28rpx 12rpx; margin-top: 18rpx; }
+.form-row { margin-bottom: 28rpx; }
+.f-lab { font-size: 22rpx; color: var(--sub); margin-bottom: 14rpx; font-weight: 600; }
+.f-lab .req { color: var(--orange); }
+.chips { display: flex; flex-wrap: wrap; gap: 16rpx; }
+.chip {
+  border: 1rpx solid var(--hair);
+  background: #fff;
+  color: var(--sub);
+  font-size: 22rpx;
+  border-radius: 12rpx;
+  padding: 14rpx 24rpx;
+}
+.chip.on { border-color: var(--green); background: var(--green-soft); color: var(--green-deep); font-weight: 700; }
+.ta {
+  width: 100%;
+  min-height: 220rpx;
+  border: 1rpx solid var(--hair);
+  border-radius: 12rpx;
+  padding: 20rpx 24rpx;
+  font-size: 24rpx;
+  background: #FBFCFA;
+  color: var(--ink);
+  box-sizing: border-box;
+}
+.ph-txt { color: var(--faint); }
+.count { text-align: right; font-size: 20rpx; color: var(--faint); margin-top: 12rpx; }
+.order-hint { padding: 20rpx 0; color: var(--faint); font-size: 20rpx; text-align: center; }
+.bbar { flex: none; background: #fff; border-top: 1rpx solid var(--hair); padding: 20rpx 40rpx calc(20rpx + env(safe-area-inset-bottom)); }
+.bbar-btn { width: 100%; }
+.bbar-btn.disabled { background: #E4E8E3; color: var(--faint); }
+.foot-space { height: 40rpx; }

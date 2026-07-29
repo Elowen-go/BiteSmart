@@ -1,6 +1,7 @@
 import { getSafeArea } from '../../utils/safe-area'
 import {
   getDriverSettlements,
+  getSettlementStats,
   getDriverReviewStats,
   type DriverSettlement
 } from '../../api/delivery'
@@ -26,7 +27,11 @@ Page({
     weekAmount: '0',
     monthAmount: '0',
     monthCount: 0,
-    bars: [] as BarVM[]
+    pendingAmount: '0',
+    settledAmount: '0',
+    totalAmount: '0',
+    bars: [] as BarVM[],
+    hasChartData: false
   },
 
   onLoad() {
@@ -55,8 +60,8 @@ Page({
     }
 
     // 收入统计：送达后生成的结算记录，按结算/创建日期聚合
-    getDriverSettlements()
-      .then((rows) => {
+    Promise.all([getDriverSettlements(), getSettlementStats()])
+      .then(([rows, stats]) => {
         const byDate: Record<string, number> = {}
         let todayAmount = 0
         let todayCount = 0
@@ -86,7 +91,11 @@ Page({
           weekAmount: money(weekAmount),
           monthAmount: money(monthAmount),
           monthCount,
-          bars
+          pendingAmount: money(stats.pendingAmount),
+          settledAmount: money(stats.settledAmount),
+          totalAmount: money(stats.totalAmount),
+          bars,
+          hasChartData: values.some((value) => value > 0)
         })
       })
       .catch((error: Error) => {

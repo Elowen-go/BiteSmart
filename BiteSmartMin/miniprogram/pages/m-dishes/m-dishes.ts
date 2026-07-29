@@ -1,10 +1,8 @@
 import { getSafeArea } from '../../utils/safe-area'
 import { getMerchantCategories, getMerchantDishes, updateMerchantDish, type MerchantCategory } from '../../api/merchant'
 import type { Dish } from '../../api/catalog'
-import { uimg } from '../../mock/catalog'
 import { LOW_STOCK_THRESHOLD } from '../../utils/merchant-vm'
-
-const FALLBACK_IMG = uimg('1512621776951-a57141f2eefd', 200)
+import { resolveFileUrl } from '../../api/file'
 
 interface DishVM {
   id: number | string
@@ -25,7 +23,7 @@ const buildVM = (d: Dish): DishVM => {
     id: d.id || 0,
     categoryId: d.categoryId || 0,
     name: d.dishName || '菜品',
-    image: d.dishImage || FALLBACK_IMG,
+    image: resolveFileUrl(d.dishImage),
     price: String(d.price != null ? d.price : 0),
     kcal: Number(d.calories || 0),
     sold: Number(d.salesCount || 0),

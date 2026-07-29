@@ -77,6 +77,7 @@ Page({
       receiverName: (address && address.receiverName) || '',
       receiverPhone: (address && address.receiverPhone) || '',
       remark: this.data.remark,
+      deliveryType: this.data.delivery === 0 ? 10 : 20,
       latitude: this.data.delivery === 0 && address && address.latitude ? address.latitude : undefined,
       longitude: this.data.delivery === 0 && address && address.longitude ? address.longitude : undefined
     })

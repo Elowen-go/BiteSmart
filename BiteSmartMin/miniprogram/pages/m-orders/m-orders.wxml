@@ -74,6 +74,7 @@
     </view>
     <view class="s-body">
       <view class="kv"><text class="k">订单编号</text><text class="v">{{dNo}}</text></view>
+      <view class="kv pickup-code-row" wx:if="{{dPickupCode}}"><text class="k">取餐码</text><text class="v pickup-code">{{dPickupCode}}</text></view>
       <view class="kv"><text class="k">下单时间</text><text class="v">{{dTime}}</text></view>
       <view class="kv"><text class="k">收货地址</text><text class="v addr">{{dAddr}}</text></view>
       <view class="kv"><text class="k">备注</text><text class="v">{{dRemark}}</text></view>

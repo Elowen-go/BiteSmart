@@ -256,7 +256,8 @@ const loadTodayStats = async () => {
 const loadOrders = async () => {
   const res = await getOrderList({ page: 1, size: ORDER_SCAN_SIZE })
   if (res.code !== 200) return
-  const list = res.data?.list || res.data || []
+  const pageData = res.data?.data || res.data || {}
+  const list = pageData.list || (Array.isArray(pageData) ? pageData : [])
   preparingCount.value = list.filter((item: any) => item.orderStatus === STATUS_PREPARING).length
   await enrichAndSetPending(list)
 }
@@ -275,14 +276,17 @@ const fetchAll = async () => {
       loadOrders(),
       getDishList({ page: 1, size: 100 }).then((res) => {
         if (res.code !== 200) return
-        const list = res.data?.list || res.data || []
+        const pageData = res.data?.data || res.data || {}
+        const list = pageData.list || (Array.isArray(pageData) ? pageData : [])
         lowStocks.value = list
           .filter((item: any) => Number(item.stock ?? 0) <= LOW_STOCK_THRESHOLD)
           .sort((a: any, b: any) => Number(a.stock ?? 0) - Number(b.stock ?? 0))
           .slice(0, 3)
       }),
       getReviewList({ page: 1, size: 2 }).then((res) => {
-        if (res.code === 200) latestReviews.value = res.data?.list || res.data || []
+        if (res.code !== 200) return
+        const pageData = res.data?.data || res.data || {}
+        latestReviews.value = pageData.list || (Array.isArray(pageData) ? pageData : [])
       })
     ])
     results.forEach((result) => {

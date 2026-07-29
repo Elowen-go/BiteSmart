@@ -21,6 +21,14 @@ public interface DriverSettlementMapper {
     List<DriverSettlement> findByDriverIdAndStatus(@Param("driverId") Long driverId,
                                                    @Param("settlementStatus") Integer settlementStatus);
 
+    /** 管理员查询全部骑手结算记录 */
+    List<DriverSettlement> findAll(@Param("settlementStatus") Integer settlementStatus);
+
     /** 新增结算记录 */
     int insert(DriverSettlement settlement);
+
+    /** 管理员完成内部结算：10-待结算 -> 20-已结算 */
+    int transitionStatus(@Param("id") Long id,
+                         @Param("expectedStatus") Integer expectedStatus,
+                         @Param("newStatus") Integer newStatus);
 }

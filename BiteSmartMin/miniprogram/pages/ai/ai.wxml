@@ -7,7 +7,11 @@
         <text class="brand-title">AI 营养师</text>
       </view>
     </view>
-    <view class="status"><view class="status-dot"></view><text>在线</text></view>
+    <view class="top-actions">
+      <view class="top-action" bindtap="startNewChat">新对话</view>
+      <view class="top-action" bindtap="openHistory">历史</view>
+      <view class="status"><view class="status-dot"></view><text>在线</text></view>
+    </view>
   </view>
 
   <scroll-view class="body" scroll-y enhanced show-scrollbar="{{false}}" scroll-into-view="{{toView}}" scroll-with-animation="true">
@@ -68,17 +72,42 @@
       </view>
       <view class="message-row" wx:if="{{item.answer}}">
         <view class="message-avatar"><image class="ai-avatar-image" src="/assets/ai/ai-avatar.png" mode="aspectFill" /></view>
-        <view class="bubble ai-bubble">{{item.answer}}</view>
+        <view class="ai-message-stack">
+          <view class="bubble ai-bubble"><text class="ai-answer">{{item.formattedAnswer}}</text></view>
+          <scroll-view wx:if="{{item.dishCards.length}}" class="ai-dish-row" scroll-x enhanced show-scrollbar="{{false}}">
+            <view wx:for="{{item.dishCards}}" wx:key="id" class="ai-dish-card">
+              <image class="ai-dish-image" src="{{item.image}}" mode="aspectFill" />
+              <view class="ai-dish-body">
+                <text class="ai-dish-name">{{item.name}}</text>
+                <text class="ai-dish-meta">{{item.calories}} kcal · 蛋白质 {{item.protein}}g</text>
+                <view class="ai-dish-foot"><text class="ai-dish-price">¥{{item.price}}</text><view class="ai-dish-add" catchtap="addRecommendedDish" data-id="{{item.id}}">+</view></view>
+              </view>
+            </view>
+          </scroll-view>
+        </view>
       </view>
     </block>
 
-    <view class="message-row" wx:if="{{loading}}">
+    <view class="message-row" wx:if="{{loading && !streamingAnswer}}">
       <view class="message-avatar"><image class="ai-avatar-image" src="/assets/ai/ai-avatar.png" mode="aspectFill" /></view>
       <view class="bubble ai-bubble typing"><text class="dot"></text><text class="dot"></text><text class="dot"></text></view>
     </view>
 
     <view class="foot-space"></view>
   </scroll-view>
+
+  <view wx:if="{{historyOpen}}" class="history-mask" catchtap="closeHistory">
+    <view class="history-panel" catchtap="noop">
+      <view class="history-head"><text>历史对话</text><text class="history-close" bindtap="closeHistory">×</text></view>
+      <scroll-view class="history-list" scroll-y>
+        <view wx:if="{{!sessions.length}}" class="history-empty">暂无历史对话</view>
+        <view wx:for="{{sessions}}" wx:key="sessionId" class="history-item" bindtap="selectHistory" data-session-id="{{item.sessionId}}">
+          <text class="history-title">{{item.title}}</text>
+          <text class="history-time">{{item.time}}</text>
+        </view>
+      </scroll-view>
+    </view>
+  </view>
 
   <view class="composer">
     <view class="composer-inner">

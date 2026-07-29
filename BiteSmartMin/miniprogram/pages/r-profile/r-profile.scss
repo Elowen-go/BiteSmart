@@ -21,6 +21,11 @@
 .form-card { padding: 32rpx; }
 .form-row { margin-bottom: 28rpx; }
 .form-row:last-child { margin-bottom: 0; }
+.profile-avatar-picker { display: flex; align-items: center; gap: 20rpx; }
+.profile-avatar, .profile-avatar-fallback { width: 96rpx; height: 96rpx; border-radius: 50%; }
+.profile-avatar { display: block; }
+.profile-avatar-fallback { display: flex; align-items: center; justify-content: center; background: var(--green-soft); color: var(--green-deep); font-size: 34rpx; font-weight: 800; }
+.avatar-change { color: var(--green-deep); font-size: 24rpx; }
 .f-lab { font-size: 22rpx; color: var(--sub); margin-bottom: 14rpx; font-weight: 600; }
 .f-lab .req { color: var(--orange); }
 .f-input {

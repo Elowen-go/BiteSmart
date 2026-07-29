@@ -8,7 +8,7 @@
  *
  * 后端轨迹坐标为 GCJ-02（高德系），无需转换直接渲染。
  */
-export const AMAP_JS_KEY = ''
+export const AMAP_JS_KEY = 'bc3954f0e03f08b6b638165c501a026e'
 
 /** 高德 JS API 脚本地址（2.0 版本） */
 export const AMAP_SCRIPT_URL = `https://webapi.amap.com/maps?v=2.0&key=${AMAP_JS_KEY}`

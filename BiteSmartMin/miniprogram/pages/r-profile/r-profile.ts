@@ -1,10 +1,15 @@
 import { getSafeArea } from '../../utils/safe-area'
 import { getDriverProfile, updateDriverProfile } from '../../api/delivery'
+import { getCurrentUser, updateCurrentUser } from '../../api/user'
+import { getUserInfo, setUserInfo } from '../../utils/auth'
+import { resolveFileUrl, uploadFile } from '../../api/file'
 
 Page({
   data: {
     menuTop: 26,
     menuH: 32,
+    avatar: '',
+    avatarUploading: false,
     realName: '',
     phone: '',
     serviceArea: '',
@@ -17,6 +22,12 @@ Page({
   onLoad() {
     const sa = getSafeArea()
     this.setData({ menuTop: sa.menuTop, menuH: sa.menuH })
+    const user = getUserInfo()
+    this.setData({ avatar: resolveFileUrl(user && user.avatar) })
+    getCurrentUser().then((currentUser) => {
+      setUserInfo(currentUser)
+      this.setData({ avatar: resolveFileUrl(currentUser.avatar) })
+    }).catch(() => {})
     // 预填：GET /api/driver/profile（后端已实现；失败静默，表单仍可填写提交）
     getDriverProfile()
       .then((p) => {
@@ -35,6 +46,33 @@ Page({
   onInput(e: WechatMiniprogram.CustomEvent) {
     const field = e.currentTarget.dataset.field as string
     this.setData({ [field]: e.detail.value, err: '' } as Record<string, string>)
+  },
+
+  chooseAvatar() {
+    if (this.data.avatarUploading) return
+    wx.chooseImage({
+      count: 1,
+      sizeType: ['compressed'],
+      sourceType: ['album', 'camera'],
+      success: (result) => {
+        const filePath = result.tempFilePaths && result.tempFilePaths[0]
+        if (!filePath) return
+        this.setData({ avatarUploading: true })
+        uploadFile(filePath, 'avatar')
+          .then((url) => updateCurrentUser({ avatar: url }))
+          .then((currentUser) => {
+            setUserInfo(currentUser)
+            this.setData({ avatar: resolveFileUrl(currentUser.avatar) })
+            wx.showToast({ title: '澶村儚宸叉洿鎹?', icon: 'success' })
+          })
+          .catch((error: Error) => wx.showToast({ title: error.message || '澶村儚涓婁紶澶辫触', icon: 'none' }))
+          .finally(() => this.setData({ avatarUploading: false }))
+      }
+    })
+  },
+
+  onAvatarError() {
+    this.setData({ avatar: '' })
   },
 
   pickVehicle(e: WechatMiniprogram.CustomEvent) {

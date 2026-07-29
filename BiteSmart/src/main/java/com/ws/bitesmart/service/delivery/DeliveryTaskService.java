@@ -57,6 +57,10 @@ public class DeliveryTaskService {
      */
     @Transactional(rollbackFor = Exception.class)
     public void createTask(Orders order) {
+        if (Integer.valueOf(20).equals(order.getDeliveryType())) {
+            log.info("到店自取订单不创建配送任务: orderNo={}", order.getOrderNo());
+            return;
+        }
         // 检查是否已存在配送任务
         DeliveryTask existing = deliveryTaskMapper.findByOrderId(order.getId());
         if (existing != null) {
@@ -87,7 +91,8 @@ public class DeliveryTaskService {
         // 生成4位随机取餐码
         task.setPickupCode(String.valueOf((int) ((Math.random() * 9000) + 1000)));
         task.setTaskStatus(10); // 待接单
-        task.setEstimatedDeliveryTime(LocalDateTime.now().plusMinutes(30));
+        // The delivery clock starts when a driver accepts the task.
+        task.setEstimatedDeliveryTime(null);
 
         deliveryTaskMapper.insert(task);
         log.info("配送任务创建成功: orderNo={}, taskId={}", order.getOrderNo(), task.getId());
@@ -228,14 +233,15 @@ public class DeliveryTaskService {
 
         // 原子更新配送员当前订单数
         deliveryDriverMapper.decrementOrders(driver.getId());
-        createSettlement(task, driver.getId());
+        Orders completedOrder = ordersMapper.findById(task.getOrderId());
+        createSettlement(task, driver.getId(), completedOrder);
         importCompletedOrderDietRecords(task.getOrderId());
 
         // 同步更新订单状态：配送中(40) → 已完成(50)，并写入完成时间和配送状态(已送达)
         ordersMapper.updateStatusWithLock(
                 task.getOrderId(), 40, 50,
                 null, null, null, null, null, LocalDateTime.now(), 40);
-        Orders completedOrder = ordersMapper.findById(task.getOrderId());
+        completedOrder = ordersMapper.findById(task.getOrderId());
         if (completedOrder != null) {
             merchantFinanceService.releasePendingIncome(completedOrder);
         }
@@ -244,16 +250,19 @@ public class DeliveryTaskService {
     }
 
     /** 送达成功后生成待结算收入记录，状态锁保证同一任务只会生成一次。 */
-    private void createSettlement(DeliveryTask task, Long driverId) {
+    private void createSettlement(DeliveryTask task, Long driverId, Orders order) {
         DriverSettlement settlement = new DriverSettlement();
         settlement.setId(SnowflakeUtil.generate());
         settlement.setDriverId(driverId);
         settlement.setDeliveryTaskId(task.getId());
         settlement.setOrderId(task.getOrderId());
-        settlement.setDeliveryFee(DEFAULT_DELIVERY_FEE);
+        BigDecimal deliveryFee = order == null || order.getDeliveryFee() == null
+                || order.getDeliveryFee().compareTo(BigDecimal.ZERO) <= 0
+                ? DEFAULT_DELIVERY_FEE : order.getDeliveryFee();
+        settlement.setDeliveryFee(deliveryFee);
         settlement.setBonus(BigDecimal.ZERO);
         settlement.setPenalty(BigDecimal.ZERO);
-        settlement.setSettlementAmount(DEFAULT_DELIVERY_FEE);
+        settlement.setSettlementAmount(deliveryFee);
         settlement.setSettlementStatus(10);
         driverSettlementMapper.insert(settlement);
     }

@@ -18,8 +18,13 @@
 
 .body { flex: 1; padding: 0 32rpx; box-sizing: border-box; }
 
+.page-intro { display: flex; flex-direction: column; gap: 8rpx; padding: 34rpx 4rpx 8rpx; }
+.intro-kicker { color: var(--orange); font-size: 18rpx; font-weight: 800; letter-spacing: 4rpx; }
+.intro-title { color: var(--ink); font-size: 34rpx; font-weight: 800; }
+.intro-sub { color: var(--sub); font-size: 21rpx; }
+
 /* ---------- 表单卡 ---------- */
-.form-card { padding: 32rpx 28rpx 12rpx; margin-top: 20rpx; }
+.form-card { padding: 32rpx 28rpx 12rpx; margin-top: 18rpx; }
 .form-row { margin-bottom: 28rpx; }
 .f-lab { font-size: 22rpx; color: var(--sub); margin-bottom: 14rpx; font-weight: 600; }
 .f-lab .req { color: var(--orange); }
@@ -49,7 +54,7 @@
 .ph-txt { color: var(--faint); }
 .count { text-align: right; font-size: 20rpx; color: var(--faint); margin-top: 12rpx; }
 
-.tip { font-size: 20rpx; color: var(--faint); text-align: center; margin-top: 24rpx; }
+.order-hint { padding: 20rpx 0; color: var(--faint); font-size: 20rpx; text-align: center; }
 
 /* ---------- 提交 ---------- */
 .bbar {

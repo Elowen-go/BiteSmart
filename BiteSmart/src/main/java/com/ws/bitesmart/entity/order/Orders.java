@@ -34,6 +34,12 @@ public class Orders {
     /** 实付金额 */
     private BigDecimal payAmount;
 
+    /** 配送方式：10-外卖配送，20-到店自取 */
+    private Integer deliveryType;
+
+    /** 配送费：外卖配送默认 5 元，到店自取为 0 元 */
+    private BigDecimal deliveryFee;
+
     /** 支付方式：10-支付宝 20-微信 */
     private Integer payMethod;
 

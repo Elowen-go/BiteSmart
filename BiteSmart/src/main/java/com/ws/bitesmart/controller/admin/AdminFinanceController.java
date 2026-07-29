@@ -7,6 +7,8 @@ import com.ws.bitesmart.mapper.merchant.MerchantFundAccountMapper;
 import com.ws.bitesmart.mapper.merchant.MerchantSettlementMapper;
 import com.ws.bitesmart.security.LoginUser;
 import com.ws.bitesmart.service.merchant.MerchantFinanceService;
+import com.ws.bitesmart.service.delivery.DeliveryDriverService;
+import com.ws.bitesmart.entity.delivery.DriverSettlement;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -27,6 +29,7 @@ public class AdminFinanceController {
     private final MerchantFundAccountMapper accountMapper;
     private final MerchantSettlementMapper settlementMapper;
     private final MerchantFinanceService financeService;
+    private final DeliveryDriverService deliveryDriverService;
 
     @GetMapping("/accounts")
     public ResultVO<List<MerchantFundAccount>> accounts(@AuthenticationPrincipal LoginUser loginUser) {
@@ -75,5 +78,22 @@ public class AdminFinanceController {
         if (loginUser == null) return ResultVO.error(401, "未登录");
         financeService.rejectSettlement(id, loginUser.getUserId(), remark);
         return ResultVO.ok("Settlement rejected");
+    }
+
+    /** 骑手内部结算记录。当前为平台内部记账，不调用支付宝转账。 */
+    @GetMapping("/driver-settlements")
+    public ResultVO<List<DriverSettlement>> driverSettlements(
+            @AuthenticationPrincipal LoginUser loginUser,
+            @RequestParam(required = false) Integer status) {
+        if (loginUser == null) return ResultVO.error(401, "未登录");
+        return ResultVO.success(deliveryDriverService.getAllSettlements(status));
+    }
+
+    @PutMapping("/driver-settlements/{id}/complete")
+    public ResultVO<Void> completeDriverSettlement(@AuthenticationPrincipal LoginUser loginUser,
+                                                    @PathVariable Long id) {
+        if (loginUser == null) return ResultVO.error(401, "未登录");
+        deliveryDriverService.completeSettlement(id);
+        return ResultVO.ok("骑手结算已完成");
     }
 }

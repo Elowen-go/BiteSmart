@@ -32,6 +32,13 @@
         WHERE status = 10 AND end_time > NOW() AND deleted = 0
     </select>
 
+    <select id="findByOrderId" resultType="com.ws.bitesmart.entity.user.UserMembership">
+        SELECT <include refid="BaseColumns"/>
+        FROM user_membership
+        WHERE order_id = #{orderId} AND deleted = 0
+        LIMIT 1
+    </select>
+
     <insert id="insert" parameterType="com.ws.bitesmart.entity.user.UserMembership">
         INSERT INTO user_membership (id, user_id, plan_id, membership_type, status,
                                       start_time, end_time, order_id, pay_amount,

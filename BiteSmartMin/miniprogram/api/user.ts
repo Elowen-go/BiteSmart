@@ -1,4 +1,11 @@
 import { request } from '../utils/request'
+import type { MiniUserInfo } from '../utils/auth'
+
+export const getCurrentUser = (): Promise<MiniUserInfo> =>
+  request<MiniUserInfo>({ url: '/users/me' })
+
+export const updateCurrentUser = (data: Partial<Pick<MiniUserInfo, 'nickname' | 'avatar'>>): Promise<MiniUserInfo> =>
+  request<MiniUserInfo>({ url: '/users/me', method: 'PUT', data })
 
 /** 健康档案（后端 user_profile 表字段）：dietPreference / allergyInfo / diseaseHistory 均为 JSON 字符串列 */
 export interface UserProfile {

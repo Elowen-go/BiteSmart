@@ -16,6 +16,13 @@
         ORDER BY create_time ASC
     </select>
 
+    <select id="findBySessionIdAndUserId" resultType="com.ws.bitesmart.entity.ai.AiConversation">
+        SELECT <include refid="BaseColumns"/>
+        FROM ai_conversation
+        WHERE session_id = #{sessionId} AND user_id = #{userId} AND deleted = 0
+        ORDER BY create_time ASC
+    </select>
+
     <!-- 查用户的所有会话列表（取每个会话最新的一条作为摘要） -->
     <select id="findSessionsByUserId" resultType="com.ws.bitesmart.entity.ai.AiConversation">
         SELECT <include refid="BaseColumns"/>

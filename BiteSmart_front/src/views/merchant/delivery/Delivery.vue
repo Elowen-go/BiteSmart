@@ -76,6 +76,10 @@ const formatText = (value?: string) => {
   return value || '-'
 }
 
+const formatEta = (task: Partial<DeliveryTask>) => {
+  return task.estimatedDeliveryTime || (task.taskStatus === 10 ? '待骑手接单' : '-')
+}
+
 onMounted(() => {
   fetchData()
 })
@@ -132,7 +136,7 @@ onMounted(() => {
           </el-table-column>
           <el-table-column prop="pickupCode" label="取餐码" width="120" />
           <el-table-column prop="estimatedDeliveryTime" label="预计送达" min-width="170">
-            <template #default="{ row }">{{ formatText(row.estimatedDeliveryTime) }}</template>
+            <template #default="{ row }">{{ formatEta(row) }}</template>
           </el-table-column>
           <el-table-column prop="pickupTime" label="取餐时间" min-width="170">
             <template #default="{ row }">{{ formatText(row.pickupTime) }}</template>
@@ -175,7 +179,7 @@ onMounted(() => {
           </div>
           <div class="detail-row">
             <span>预计送达</span>
-            <strong>{{ formatText(currentTask.estimatedDeliveryTime) }}</strong>
+            <strong>{{ formatEta(currentTask) }}</strong>
           </div>
           <div class="detail-row">
             <span>取餐时间</span>

@@ -13,6 +13,7 @@ public class AlipayProperties {
     private String gatewayUrl;
     private String notifyUrl;
     private String returnUrl;
+    private String membershipReturnUrl;
     private String signType = "RSA2";
     private String charset = "UTF-8";
     private String format = "json";

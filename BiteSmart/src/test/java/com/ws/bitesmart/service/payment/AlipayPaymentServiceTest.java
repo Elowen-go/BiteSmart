@@ -3,6 +3,7 @@ package com.ws.bitesmart.service.payment;
 import com.alipay.api.AlipayClient;
 import com.ws.bitesmart.config.AlipayProperties;
 import com.ws.bitesmart.service.order.PaymentService;
+import com.ws.bitesmart.service.user.MembershipService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -33,6 +34,7 @@ class AlipayPaymentServiceTest {
 
     @Mock private ObjectProvider<AlipayClient> clientProvider;
     @Mock private PaymentService paymentService;
+    @Mock private MembershipService membershipService;
 
     @Test
     void callbackVerificationKeepsTheSignParameterForSdkVerification() throws Exception {
@@ -55,11 +57,40 @@ class AlipayPaymentServiceTest {
         params.put("sign_type", "RSA2");
         params.put("sign", sign(params, keyPair));
 
-        AlipayPaymentService service = new AlipayPaymentService(clientProvider, properties, paymentService);
+        AlipayPaymentService service = new AlipayPaymentService(clientProvider, properties, paymentService, membershipService);
 
         assertThatCode(() -> service.handleNotify(params)).doesNotThrowAnyException();
         verify(paymentService).payWithExternalResult(
                 eq("ORD-1"), eq(10), eq("TRADE-1"), eq(new BigDecimal("10.00")), any(LocalDateTime.class));
+    }
+
+    @Test
+    void membershipCallbackIsRoutedToMembershipService() throws Exception {
+        KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
+        generator.initialize(2048);
+        KeyPair keyPair = generator.generateKeyPair();
+
+        AlipayProperties properties = new AlipayProperties();
+        properties.setEnabled(true);
+        properties.setPublicKey(Base64.getEncoder().encodeToString(keyPair.getPublic().getEncoded()));
+        properties.setCharset("UTF-8");
+        properties.setSignType("RSA2");
+        when(clientProvider.getIfAvailable()).thenReturn(mock(AlipayClient.class));
+
+        Map<String, String> params = new LinkedHashMap<>();
+        params.put("out_trade_no", "MEMBER-1");
+        params.put("trade_no", "TRADE-MEMBER");
+        params.put("total_amount", "19.90");
+        params.put("trade_status", "TRADE_SUCCESS");
+        params.put("sign_type", "RSA2");
+        params.put("sign", sign(params, keyPair));
+
+        AlipayPaymentService service = new AlipayPaymentService(clientProvider, properties, paymentService, membershipService);
+
+        service.handleNotify(params);
+
+        verify(membershipService).completePayment(
+                eq("MEMBER-1"), eq("TRADE-MEMBER"), eq(new BigDecimal("19.90")), any(LocalDateTime.class));
     }
 
     private String sign(Map<String, String> params, KeyPair keyPair) throws Exception {

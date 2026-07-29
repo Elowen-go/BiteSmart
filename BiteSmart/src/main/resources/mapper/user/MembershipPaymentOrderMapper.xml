@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ws.bitesmart.mapper.user.MembershipPaymentOrderMapper">
+
+    <sql id="BaseColumns">
+        id, order_no, user_id, plan_id, pay_amount, status,
+        transaction_no, pay_time, create_time, update_time, deleted
+    </sql>
+
+    <select id="findByOrderNo" resultType="com.ws.bitesmart.entity.user.MembershipPaymentOrder">
+        SELECT <include refid="BaseColumns"/>
+        FROM membership_payment_order
+        WHERE order_no = #{orderNo} AND deleted = 0
+    </select>
+
+    <insert id="insert" parameterType="com.ws.bitesmart.entity.user.MembershipPaymentOrder">
+        INSERT INTO membership_payment_order
+            (id, order_no, user_id, plan_id, pay_amount, status,
+             transaction_no, pay_time, create_time, update_time)
+        VALUES
+            (#{id}, #{orderNo}, #{userId}, #{planId}, #{payAmount}, #{status},
+             #{transactionNo}, #{payTime}, NOW(), NOW())
+    </insert>
+
+    <update id="markPaidIfPending">
+        UPDATE membership_payment_order
+        SET status = 20,
+            transaction_no = #{transactionNo},
+            pay_time = NOW(),
+            update_time = NOW()
+        WHERE order_no = #{orderNo}
+          AND status = 10
+          AND deleted = 0
+    </update>
+
+</mapper>

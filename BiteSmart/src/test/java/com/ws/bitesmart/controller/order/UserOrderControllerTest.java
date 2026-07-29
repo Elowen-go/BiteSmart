@@ -60,7 +60,7 @@ class UserOrderControllerTest {
         merchantOrder.setMerchantId(20L);
         merchantOrder.setRemark("不要香菜");
         request.setMerchantOrders(java.util.List.of(merchantOrder));
-        when(orderService.createOrders(org.mockito.ArgumentMatchers.eq(88L), org.mockito.ArgumentMatchers.eq("园区一号楼"), org.mockito.ArgumentMatchers.eq("张三"), org.mockito.ArgumentMatchers.eq("13800000000"), org.mockito.ArgumentMatchers.anyMap()))
+        when(orderService.createOrders(org.mockito.ArgumentMatchers.eq(88L), org.mockito.ArgumentMatchers.eq("园区一号楼"), org.mockito.ArgumentMatchers.eq("张三"), org.mockito.ArgumentMatchers.eq("13800000000"), org.mockito.ArgumentMatchers.isNull(), org.mockito.ArgumentMatchers.isNull(), org.mockito.ArgumentMatchers.anyMap()))
                 .thenReturn(java.util.List.of("ORD-2"));
 
         var result = controller().createBatch(new LoginUser(88L, 10), request);
@@ -68,7 +68,7 @@ class UserOrderControllerTest {
         assertThat(result.getCode()).isEqualTo(200);
         assertThat(result.getData()).containsEntry("orderCount", 1);
         org.mockito.ArgumentCaptor<java.util.Map<Long, String>> captor = org.mockito.ArgumentCaptor.forClass(java.util.Map.class);
-        verify(orderService).createOrders(org.mockito.ArgumentMatchers.eq(88L), org.mockito.ArgumentMatchers.eq("园区一号楼"), org.mockito.ArgumentMatchers.eq("张三"), org.mockito.ArgumentMatchers.eq("13800000000"), captor.capture());
+        verify(orderService).createOrders(org.mockito.ArgumentMatchers.eq(88L), org.mockito.ArgumentMatchers.eq("园区一号楼"), org.mockito.ArgumentMatchers.eq("张三"), org.mockito.ArgumentMatchers.eq("13800000000"), org.mockito.ArgumentMatchers.isNull(), org.mockito.ArgumentMatchers.isNull(), captor.capture());
         assertThat(captor.getValue()).containsEntry(20L, "不要香菜");
     }
 

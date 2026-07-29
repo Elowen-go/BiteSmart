@@ -7,6 +7,7 @@ import {
 } from '../../api/merchant'
 import type { Dish } from '../../api/catalog'
 import { fmtDateTime } from '../../utils/json'
+import { resolveFileUrl } from '../../api/file'
 
 interface WarningVM {
   id: number | string
@@ -39,7 +40,7 @@ const changeTypeText = (type?: number): string => ({
   80: '盘亏'
 } as Record<number, string>)[type || 0] || '库存变动'
 
-const imageOf = (dish: Dish): string => dish.dishImage || ''
+const imageOf = (dish: Dish): string => resolveFileUrl(dish.dishImage)
 
 const buildWarning = (dish: Dish): WarningVM => {
   const stock = Number(dish.stock || 0)

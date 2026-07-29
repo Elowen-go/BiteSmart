@@ -9,6 +9,8 @@ export interface UserAddress {
   city: string
   district: string
   detailAddress: string
+  latitude?: number
+  longitude?: number
   isDefault: number
   createTime: string
   updateTime: string

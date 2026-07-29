@@ -18,10 +18,13 @@ import {
   HelpFilled,
   Location,
   ChatDotRound,
-  Shop
+  Shop,
+  Heart
 } from '@element-plus/icons-vue'
 import { useUserStore } from '../stores/user'
 import { getNoticeList } from '../api/user/notices'
+import { getCurrentUser } from '../api/user/profile'
+import { resolveFileUrl } from '../utils/fileUrl'
 
 const route = useRoute()
 const router = useRouter()
@@ -97,7 +100,19 @@ const handleLogout = () => {
   router.push('/login')
 }
 
-onMounted(loadNotificationCount)
+const refreshUser = async () => {
+  try {
+    const res = await getCurrentUser()
+    if (res.code === 200 && res.data) userStore.setUserInfo(res.data)
+  } catch (_) {
+    // Keep the cached profile available when the API is temporarily unavailable.
+  }
+}
+
+onMounted(() => {
+  loadNotificationCount()
+  refreshUser()
+})
 </script>
 
 <template>
@@ -159,7 +174,10 @@ onMounted(loadNotificationCount)
             <HelpFilled />
           </button>
           <div class="user-info">
-            <div class="avatar">{{ (userStore.userInfo?.nickname || 'U')[0] }}</div>
+            <div class="avatar">
+              <img v-if="userStore.userInfo?.avatar" :src="resolveFileUrl(userStore.userInfo.avatar)" alt="用户头像" @error="$event.currentTarget.style.display = 'none'" />
+              <span v-else>{{ (userStore.userInfo?.nickname || 'U')[0] }}</span>
+            </div>
             <span v-if="!collapsed">{{ userStore.userInfo?.nickname || '用户' }}</span>
             <button class="logout-btn" @click="handleLogout">退出</button>
           </div>
@@ -490,6 +508,24 @@ onMounted(loadNotificationCount)
   justify-content: center;
   font-weight: 600;
   font-size: var(--bs-font-size-sm);
+}
+
+.avatar img,
+.avatar span {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+}
+
+.avatar img {
+  display: block;
+  object-fit: cover;
+}
+
+.avatar span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .logout-btn {

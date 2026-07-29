@@ -4,12 +4,14 @@ import com.ws.bitesmart.common.PageResultVO;
 import com.ws.bitesmart.common.ResultVO;
 import com.ws.bitesmart.entity.order.OrderItem;
 import com.ws.bitesmart.entity.order.Orders;
+import com.ws.bitesmart.entity.delivery.DeliveryTask;
 import com.ws.bitesmart.security.LoginUser;
 import com.ws.bitesmart.service.order.OrderService;
 import com.ws.bitesmart.service.merchant.MerchantService;
 import com.ws.bitesmart.mapper.merchant.MerchantMapper;
 import com.ws.bitesmart.mapper.user.SysUserMapper;
 import com.ws.bitesmart.mapper.order.OrderStatusLogMapper;
+import com.ws.bitesmart.mapper.delivery.DeliveryTaskMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -41,6 +43,7 @@ public class MerchantOrderController {
     private final MerchantMapper merchantMapper;
     private final OrderStatusLogMapper orderStatusLogMapper;
     private final MerchantService merchantService;
+    private final DeliveryTaskMapper deliveryTaskMapper;
 
     /** 商家ID取 merchant.id（不是 userId），与套餐/菜品管理接口保持一致 */
     private Long getMerchantId(LoginUser loginUser) {
@@ -73,6 +76,8 @@ public class MerchantOrderController {
         result.put("buyer", sysUserMapper.findById(order.getUserId()));
         result.put("merchant", merchantMapper.findById(order.getMerchantId()));
         result.put("statusTimeline", orderStatusLogMapper.findByOrderId(id));
+        DeliveryTask deliveryTask = deliveryTaskMapper.findByOrderId(id);
+        result.put("pickupCode", deliveryTask == null ? null : deliveryTask.getPickupCode());
         return ResultVO.success(result);
     }
 

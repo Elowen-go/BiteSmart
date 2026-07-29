@@ -1,10 +1,9 @@
 import { getSafeArea } from '../../utils/safe-area'
-import { clearAuth } from '../../utils/auth'
+import { clearAuth, getUserInfo, setUserInfo } from '../../utils/auth'
 import { getMerchantShop, getMerchantTodayStats, type MerchantShop } from '../../api/merchant'
 import { money } from '../../utils/merchant-vm'
-import { uimg } from '../../mock/catalog'
-
-const FALLBACK_LOGO = uimg('1543353071-873f17a7a088', 200)
+import { resolveFileUrl } from '../../api/file'
+import { getCurrentUser } from '../../api/user'
 
 const formatBusinessHours = (value: unknown): string => {
   if (!value) return ''
@@ -29,8 +28,9 @@ Page({
   data: {
     padTop: 44,
     active: 'me',
-    shopName: 'BiteSmart 门店',
-    shopLogo: FALLBACK_LOGO,
+    shopName: '',
+    shopLogo: '',
+    userAvatar: '',
     shopSub: '',
     rating: '—',
     orderCount: 0,
@@ -39,11 +39,28 @@ Page({
 
   onLoad() {
     this.setData({ padTop: getSafeArea().padTop })
+    this.refreshAccount()
     this.loadAll()
   },
 
   onShow() {
+    this.refreshAccount()
     this.loadAll()
+  },
+
+  refreshAccount() {
+    const cached = getUserInfo()
+    this.setData({ userAvatar: resolveFileUrl(cached && cached.avatar) })
+    getCurrentUser()
+      .then((user) => {
+        setUserInfo(user)
+        this.setData({ userAvatar: resolveFileUrl(user.avatar) })
+      })
+      .catch(() => {})
+  },
+
+  onAvatarError() {
+    this.setData({ userAvatar: '' })
   },
 
   loadAll() {
@@ -53,8 +70,8 @@ Page({
         const hoursText = formatBusinessHours(shop.businessHours)
         const hours = hoursText ? ` · ${hoursText}` : ''
         this.setData({
-          shopName: shop.shopName || 'BiteSmart 门店',
-          shopLogo: shop.shopLogo || FALLBACK_LOGO,
+          shopName: shop.shopName || '',
+          shopLogo: resolveFileUrl(shop.shopLogo),
           shopSub: `评分 ${shop.avgRating != null ? shop.avgRating : '—'}${hours}`,
           rating: shop.avgRating != null ? String(shop.avgRating) : '—'
         })

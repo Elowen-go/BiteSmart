@@ -1,0 +1,37 @@
+<view class="pg">
+  <view class="nav" style="margin-top: {{menuTop}}px; height: {{menuH}}px;">
+    <view class="nav-back" bindtap="back" hover-class="tap"><text class="chev">‹</text></view>
+    <view class="nav-t">骑手意见反馈</view>
+    <view class="nav-ph"></view>
+  </view>
+
+  <scroll-view class="body" scroll-y enhanced show-scrollbar="{{false}}">
+    <view class="page-intro">
+      <text class="intro-kicker">RIDER FEEDBACK</text>
+      <text class="intro-title">把配送中的问题告诉平台</text>
+      <text class="intro-sub">你的反馈将用于改进配送和骑手服务</text>
+    </view>
+
+    <view class="card form-card">
+      <view class="form-row">
+        <view class="f-lab">反馈分类 <text class="req">*</text></view>
+        <view class="chips">
+          <text class="chip {{category === item ? 'on' : ''}}" wx:for="{{categories}}" wx:key="*this" bindtap="setCategory" data-value="{{item}}">{{item}}</text>
+        </view>
+      </view>
+
+      <view class="form-row description-row">
+        <view class="f-lab">反馈内容 <text class="req">*</text></view>
+        <textarea class="ta" placeholder="请描述配送中遇到的问题或建议" placeholder-class="ph-txt" value="{{content}}" bindinput="onInput" maxlength="300" />
+        <view class="count">{{content.length}}/300</view>
+      </view>
+    </view>
+
+    <view class="order-hint">关联配送订单 #{{orderId}}</view>
+    <view class="foot-space"></view>
+  </scroll-view>
+
+  <view class="bbar">
+    <view class="btn-ink green bbar-btn {{submitting ? 'disabled' : ''}}" bindtap="submit" hover-class="tap">{{submitting ? '提交中...' : '提交反馈'}}</view>
+  </view>
+</view>

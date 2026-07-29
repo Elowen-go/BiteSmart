@@ -12,8 +12,10 @@ import com.ws.bitesmart.config.AlipayProperties;
 import com.ws.bitesmart.entity.order.Orders;
 import com.ws.bitesmart.entity.order.PaymentLog;
 import com.ws.bitesmart.entity.refund.RefundApplication;
+import com.ws.bitesmart.entity.user.MembershipPaymentOrder;
 import com.ws.bitesmart.exception.BusinessException;
 import com.ws.bitesmart.service.order.PaymentService;
+import com.ws.bitesmart.service.user.MembershipService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
@@ -28,24 +30,37 @@ public class AlipayPaymentService {
     private final ObjectProvider<AlipayClient> clientProvider;
     private final AlipayProperties properties;
     private final PaymentService paymentService;
+    private final MembershipService membershipService;
 
     public boolean isEnabled() {
         return properties.isEnabled() && clientProvider.getIfAvailable() != null;
     }
 
     public String createPagePay(Orders order) {
+        return createPagePay(order.getOrderNo(), order.getPayAmount(),
+                "BiteSmart order " + order.getOrderNo(), properties.getReturnUrl());
+    }
+
+    public String createPagePay(MembershipPaymentOrder order) {
+        return createPagePay(order.getOrderNo(), order.getPayAmount(),
+                "BiteSmart membership " + order.getOrderNo(), properties.getMembershipReturnUrl());
+    }
+
+    private String createPagePay(String outTradeNo, BigDecimal totalAmount,
+                                 String subject, String returnUrl) {
         AlipayClient client = clientProvider.getIfAvailable();
         if (!isEnabled() || client == null) {
             throw new BusinessException("Alipay sandbox is not configured");
         }
         AlipayTradePagePayModel model = new AlipayTradePagePayModel();
-        model.setOutTradeNo(order.getOrderNo());
-        model.setTotalAmount(order.getPayAmount().toPlainString());
-        model.setSubject("BiteSmart order " + order.getOrderNo());
+        model.setOutTradeNo(outTradeNo);
+        model.setTotalAmount(totalAmount.toPlainString());
+        model.setSubject(subject);
         model.setProductCode("FAST_INSTANT_TRADE_PAY");
         AlipayTradePagePayRequest request = new AlipayTradePagePayRequest();
         request.setBizModel(model);
-        request.setReturnUrl(properties.getReturnUrl());
+        request.setReturnUrl(returnUrl == null || returnUrl.isBlank()
+                ? properties.getReturnUrl() : returnUrl);
         if (properties.getNotifyUrl() != null && !properties.getNotifyUrl().isBlank()) {
             request.setNotifyUrl(properties.getNotifyUrl());
         }
@@ -73,9 +88,14 @@ public class AlipayPaymentService {
         if (!"TRADE_SUCCESS".equals(tradeStatus) && !"TRADE_FINISHED".equals(tradeStatus)) {
             return;
         }
+        String outTradeNo = params.get("out_trade_no");
+        BigDecimal paidAmount = new BigDecimal(params.get("total_amount"));
+        if (outTradeNo != null && outTradeNo.startsWith(MembershipService.PAYMENT_ORDER_PREFIX)) {
+            membershipService.completePayment(outTradeNo, params.get("trade_no"), paidAmount, LocalDateTime.now());
+            return;
+        }
         paymentService.payWithExternalResult(
-                params.get("out_trade_no"), 10, params.get("trade_no"),
-                new BigDecimal(params.get("total_amount")), LocalDateTime.now());
+                outTradeNo, 10, params.get("trade_no"), paidAmount, LocalDateTime.now());
     }
 
     public void refund(Orders order, RefundApplication refund, PaymentLog paymentLog) {

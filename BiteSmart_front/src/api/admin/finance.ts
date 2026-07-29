@@ -6,3 +6,6 @@ export const createSettlement = (data: { merchantId: number; amount: number; pay
 export const approveSettlement = (id: number, remark?: string): Promise<any> => request.put(`/admin/finance/settlements/${id}/approve`, null, { params: { remark } }) as any
 export const completeSettlement = (id: number, remark?: string): Promise<any> => request.put(`/admin/finance/settlements/${id}/complete`, null, { params: { remark } }) as any
 export const rejectSettlement = (id: number, remark?: string): Promise<any> => request.put(`/admin/finance/settlements/${id}/reject`, null, { params: { remark } }) as any
+
+export const getDriverSettlements = (status?: number): Promise<any> => request.get('/admin/finance/driver-settlements', { params: { status } }) as any
+export const completeDriverSettlement = (id: number | string): Promise<any> => request.put(`/admin/finance/driver-settlements/${id}/complete`) as any

@@ -1,22 +1,25 @@
 <view class="pg">
-  <!-- 自定义导航 -->
   <view class="nav" style="margin-top: {{menuTop}}px; height: {{menuH}}px;">
     <view class="nav-back" bindtap="back" hover-class="tap"><text class="chev">‹</text></view>
-    <view class="nav-t">投诉与反馈</view>
+    <view class="nav-t">投诉反馈</view>
     <view class="nav-ph"></view>
   </view>
 
   <scroll-view class="body" scroll-y enhanced show-scrollbar="{{false}}">
+    <view class="page-intro">
+      <text class="intro-kicker">FEEDBACK</text>
+      <text class="intro-title">告诉我们遇到的问题</text>
+      <text class="intro-sub">我们会尽快核实并处理你的反馈</text>
+    </view>
+
     <view class="card form-card">
-      <!-- 投诉对象 -->
       <view class="form-row">
-        <view class="f-lab">投诉对象 <text class="req">*</text></view>
+        <view class="f-lab">反馈对象 <text class="req">*</text></view>
         <view class="chips">
           <text class="chip {{targetType === item.v ? 'on' : ''}}" wx:for="{{targets}}" wx:key="v" bindtap="setTarget" data-v="{{item.v}}">{{item.label}}</text>
         </view>
       </view>
 
-      <!-- 问题类型 -->
       <view class="form-row">
         <view class="f-lab">问题类型 <text class="req">*</text></view>
         <view class="chips">
@@ -24,21 +27,18 @@
         </view>
       </view>
 
-      <!-- 问题描述 -->
-      <view class="form-row">
+      <view class="form-row description-row">
         <view class="f-lab">问题描述 <text class="req">*</text></view>
-        <textarea class="ta" placeholder="请描述遇到的问题，客服将在 24 小时内处理" placeholder-class="ph-txt" value="{{desc}}" bindinput="onInput" maxlength="300" />
+        <textarea class="ta" placeholder="请详细描述遇到的问题" placeholder-class="ph-txt" value="{{desc}}" bindinput="onInput" maxlength="300" />
         <view class="count">{{desc.length}}/300</view>
       </view>
     </view>
 
-    <view class="tip">关联订单 #{{orderId}} · 提交后客服将尽快与你联系</view>
-
+    <view class="order-hint">关联配送订单 #{{orderId}}</view>
     <view class="foot-space"></view>
   </scroll-view>
 
-  <!-- 提交 -->
   <view class="bbar">
-    <view class="btn-ink green bbar-btn {{submitting ? 'disabled' : ''}}" bindtap="submit" hover-class="tap">{{submitting ? '提交中…' : '提交反馈'}}</view>
+    <view class="btn-ink green bbar-btn {{submitting ? 'disabled' : ''}}" bindtap="submit" hover-class="tap">{{submitting ? '提交中...' : '提交反馈'}}</view>
   </view>
 </view>

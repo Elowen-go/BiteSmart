@@ -4,13 +4,30 @@ import { getAddressList, addAddress, updateAddress, deleteAddress } from '../../
 import type { UserAddress } from '../../../api/user/addresses'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useRoute, useRouter } from 'vue-router'
+import { AMAP_JS_KEY, AMAP_SCRIPT_URL } from '../../../config/amap'
 
 const loading = ref(false)
 const addressList = ref<UserAddress[]>([])
 const dialogVisible = ref(false)
 const isEdit = ref(false)
 const formRef = ref()
-const form = ref({
+const locating = ref(false)
+let amapLoading: Promise<any> | null = null
+
+interface AddressForm {
+  id: number
+  receiverName: string
+  receiverPhone: string
+  province: string
+  city: string
+  district: string
+  detailAddress: string
+  latitude?: number
+  longitude?: number
+  isDefault: number
+}
+
+const form = ref<AddressForm>({
   id: 0,
   receiverName: '',
   receiverPhone: '',
@@ -18,6 +35,8 @@ const form = ref({
   city: '',
   district: '',
   detailAddress: '',
+  latitude: undefined as number | undefined,
+  longitude: undefined as number | undefined,
   isDefault: 0
 })
 const route = useRoute()
@@ -47,7 +66,7 @@ const fetchAddresses = async () => {
 
 const handleAdd = () => {
   isEdit.value = false
-  form.value = { id: 0, receiverName: '', receiverPhone: '', province: '', city: '', district: '', detailAddress: '', isDefault: 0 }
+  form.value = { id: 0, receiverName: '', receiverPhone: '', province: '', city: '', district: '', detailAddress: '', latitude: undefined, longitude: undefined, isDefault: 0 }
   dialogVisible.value = true
 }
 
@@ -84,6 +103,51 @@ const handleSubmit = async () => {
     fetchAddresses()
   } catch (e) {
     ElMessage.error('操作失败')
+  }
+}
+
+const loadAmap = (): Promise<any> => {
+  const current = (window as any).AMap
+  if (current) return Promise.resolve(current)
+  if (!AMAP_JS_KEY) return Promise.reject(new Error('未配置高德地图 Key'))
+  if (!amapLoading) {
+    amapLoading = new Promise((resolve, reject) => {
+      const script = document.createElement('script')
+      script.src = `${AMAP_SCRIPT_URL}&plugin=AMap.Geocoder`
+      script.onload = () => resolve((window as any).AMap)
+      script.onerror = () => { amapLoading = null; reject(new Error('地图服务加载失败')) }
+      document.head.appendChild(script)
+    })
+  }
+  return amapLoading
+}
+
+const locateAddress = async () => {
+  const text = [form.value.province, form.value.city, form.value.district, form.value.detailAddress]
+    .filter(Boolean).join('')
+  if (!text) return ElMessage.warning('请先填写完整地址')
+  locating.value = true
+  try {
+    const AMap = await loadAmap()
+    const result = await new Promise<any>((resolve, reject) => {
+      const run = () => {
+        const geocoder = new AMap.Geocoder({ city: form.value.city || undefined })
+        geocoder.getLocation(text, (status: string, response: any) => {
+          if (status === 'complete' && response?.geocodes?.length) resolve(response.geocodes[0])
+          else reject(new Error('地址未解析到地图位置'))
+        })
+      }
+      if (AMap.Geocoder) run()
+      else AMap.plugin('AMap.Geocoder', run)
+    })
+    const location = result.location
+    form.value.latitude = Number(location.lat)
+    form.value.longitude = Number(location.lng)
+    ElMessage.success('地图位置已获取')
+  } catch (error: any) {
+    ElMessage.error(error?.message || '地址解析失败，请检查地址')
+  } finally {
+    locating.value = false
   }
 }
 
@@ -179,6 +243,13 @@ const backToCart = () => router.push('/user/cart')
             placeholder="请输入详细地址"
           />
         </el-form-item>
+        <el-form-item label="地图位置">
+          <div class="location-row">
+            <el-button type="primary" link :loading="locating" @click="locateAddress">解析地图位置</el-button>
+            <span v-if="form.latitude && form.longitude" class="location-ok">已设置，可用于骑手导航</span>
+            <span v-else class="location-missing">未设置坐标</span>
+          </div>
+        </el-form-item>
         <el-form-item label="设为默认">
           <el-switch
             v-model="form.isDefault"
@@ -229,6 +300,21 @@ const backToCart = () => router.push('/user/cart')
   display: flex;
   gap: 10px;
 }
+
+.location-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 32px;
+}
+
+.location-ok,
+.location-missing {
+  font-size: 12px;
+}
+
+.location-ok { color: var(--bs-green, #1e9e62); }
+.location-missing { color: var(--bs-text-muted, #8b958f); }
 
 .address-card {
   display: flex;

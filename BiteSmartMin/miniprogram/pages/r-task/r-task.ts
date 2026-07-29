@@ -86,7 +86,9 @@ Page({
       receiverInitial: (task.receiverName || '客').slice(0, 1),
       receiverPhone: task.receiverPhone || '',
       address: task.deliveryAddress || '—',
-      eta: fmtDateTime(task.estimatedDeliveryTime),
+      eta: task.estimatedDeliveryTime
+        ? fmtDateTime(task.estimatedDeliveryTime)
+        : task.taskStatus === 10 ? '待骑手接单' : '—',
       remark: task.orderRemark || '',
       statusText: riderTaskStatusText(task.taskStatus),
       status: task.taskStatus || 0,
@@ -157,11 +159,15 @@ Page({
   /* ---------- 导航（wx.openLocation 调起手机地图 App，无需 key；后续可用 config/amap.ts 的 key 接高德 SDK 做页内路线规划） ---------- */
 
   navTo(lat: number, lng: number, name: string, address: string) {
-    if (!lat || !lng) {
+    const latitude = Number(lat)
+    const longitude = Number(lng)
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)
+      || latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180
+      || (latitude === 0 && longitude === 0)) {
       wx.showToast({ title: '地址坐标缺失，暂无法导航', icon: 'none' })
       return
     }
-    wx.openLocation({ latitude: lat, longitude: lng, name, address, scale: 16 })
+    wx.openLocation({ latitude, longitude, name, address, scale: 16 })
   },
 
   navMerchant() {

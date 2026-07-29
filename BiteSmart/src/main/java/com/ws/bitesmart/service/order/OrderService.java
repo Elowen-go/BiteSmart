@@ -25,6 +25,7 @@ import com.ws.bitesmart.mapper.order.ShoppingCartMapper;
 import com.ws.bitesmart.mapper.refund.RefundApplicationMapper;
 import com.ws.bitesmart.service.delivery.DeliveryTaskService;
 import com.ws.bitesmart.service.dish.ComboService;
+import com.ws.bitesmart.service.merchant.MerchantFinanceService;
 import com.ws.bitesmart.service.system.OperateLogService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -69,6 +70,11 @@ public class OrderService {
     private final DeliveryTaskService deliveryTaskService;
     private final MerchantMapper merchantMapper;
     private final RefundApplicationMapper refundApplicationMapper;
+    private final MerchantFinanceService merchantFinanceService;
+
+    private static final int DELIVERY_TYPE_DELIVERY = 10;
+    private static final int DELIVERY_TYPE_PICKUP = 20;
+    private static final BigDecimal DEFAULT_DELIVERY_FEE = new BigDecimal("5.00");
 
     /** 订单号序列计数器（确保同一毫秒内不重复） */
     private static final AtomicLong ORDER_NO_SEQ = new AtomicLong(0);
@@ -110,13 +116,23 @@ public class OrderService {
     @Transactional(rollbackFor = Exception.class)
     public String createOrder(Long userId, String address, String receiverName,
                               String receiverPhone, String remark) {
-        return createOrder(userId, address, receiverName, receiverPhone, remark, null, null);
+        return createOrder(userId, address, receiverName, receiverPhone, remark,
+                DELIVERY_TYPE_DELIVERY, null, null);
     }
 
     /** 创建订单并保存收货地址坐标，供配送任务导航使用。 */
     @Transactional(rollbackFor = Exception.class)
     public String createOrder(Long userId, String address, String receiverName,
                               String receiverPhone, String remark,
+                              BigDecimal deliveryLat, BigDecimal deliveryLng) {
+        return createOrder(userId, address, receiverName, receiverPhone, remark,
+                DELIVERY_TYPE_DELIVERY, deliveryLat, deliveryLng);
+    }
+
+    /** 创建订单并明确指定配送方式。 */
+    @Transactional(rollbackFor = Exception.class)
+    public String createOrder(Long userId, String address, String receiverName,
+                              String receiverPhone, String remark, Integer deliveryType,
                               BigDecimal deliveryLat, BigDecimal deliveryLng) {
         List<ShoppingCart> selectedItems = shoppingCartMapper.findSelectedByUserId(userId);
         if (selectedItems == null || selectedItems.isEmpty()) {
@@ -128,13 +144,41 @@ public class OrderService {
         }
         Map.Entry<Long, List<ShoppingCart>> group = grouped.entrySet().iterator().next();
         return createOrderForItems(userId, address, receiverName, receiverPhone, remark,
-                deliveryLat, deliveryLng, group.getKey(), group.getValue());
+                deliveryType, deliveryLat, deliveryLng, group.getKey(), group.getValue());
     }
 
     /** 一次结算按商家拆成多个订单，整个过程保持在同一事务中。 */
     @Transactional(rollbackFor = Exception.class)
     public List<String> createOrders(Long userId, String address, String receiverName,
                                      String receiverPhone, Map<Long, String> remarksByMerchant) {
+        return createOrders(userId, address, receiverName, receiverPhone,
+                DELIVERY_TYPE_DELIVERY, null, null, remarksByMerchant);
+    }
+
+    /** 一次结算外卖订单并保存收货坐标，供配送任务导航使用。 */
+    @Transactional(rollbackFor = Exception.class)
+    public List<String> createOrders(Long userId, String address, String receiverName,
+                                     String receiverPhone, BigDecimal deliveryLat,
+                                     BigDecimal deliveryLng, Map<Long, String> remarksByMerchant) {
+        return createOrders(userId, address, receiverName, receiverPhone,
+                DELIVERY_TYPE_DELIVERY, deliveryLat, deliveryLng, remarksByMerchant);
+    }
+
+    /** 一次结算并明确指定配送方式，按商家拆分为多个订单。 */
+    @Transactional(rollbackFor = Exception.class)
+    public List<String> createOrders(Long userId, String address, String receiverName,
+                                     String receiverPhone, Integer deliveryType,
+                                     Map<Long, String> remarksByMerchant) {
+        return createOrders(userId, address, receiverName, receiverPhone, deliveryType,
+                null, null, remarksByMerchant);
+    }
+
+    /** 一次结算并明确指定配送方式及收货坐标，按商家拆分为多个订单。 */
+    @Transactional(rollbackFor = Exception.class)
+    public List<String> createOrders(Long userId, String address, String receiverName,
+                                     String receiverPhone, Integer deliveryType,
+                                     BigDecimal deliveryLat, BigDecimal deliveryLng,
+                                     Map<Long, String> remarksByMerchant) {
         List<ShoppingCart> selectedItems = shoppingCartMapper.findSelectedByUserId(userId);
         if (selectedItems == null || selectedItems.isEmpty()) {
             throw new BusinessException("请先选择要购买的商品");
@@ -144,7 +188,7 @@ public class OrderService {
         for (Map.Entry<Long, List<ShoppingCart>> entry : grouped.entrySet()) {
             String remark = remarksByMerchant == null ? null : remarksByMerchant.get(entry.getKey());
             orderNos.add(createOrderForItems(userId, address, receiverName, receiverPhone,
-                    remark, null, null, entry.getKey(), entry.getValue()));
+                    remark, deliveryType, deliveryLat, deliveryLng, entry.getKey(), entry.getValue()));
         }
         shoppingCartMapper.deleteByUserId(userId);
         return orderNos;
@@ -164,6 +208,7 @@ public class OrderService {
 
     private String createOrderForItems(Long userId, String address, String receiverName,
                                        String receiverPhone, String remark,
+                                       Integer deliveryType,
                                        BigDecimal deliveryLat, BigDecimal deliveryLng,
                                        Long merchantId,
                                        List<ShoppingCart> selectedItems) {
@@ -250,6 +295,11 @@ public class OrderService {
             orderItems.add(item);
         }
 
+        int normalizedDeliveryType = normalizeDeliveryType(deliveryType);
+        BigDecimal deliveryFee = normalizedDeliveryType == DELIVERY_TYPE_DELIVERY
+                ? DEFAULT_DELIVERY_FEE : BigDecimal.ZERO.setScale(2);
+        BigDecimal orderAmount = totalAmount.add(deliveryFee);
+
         // 4. 生成订单号
         String orderNo = generateOrderNo();
 
@@ -259,9 +309,11 @@ public class OrderService {
         order.setOrderNo(orderNo);
         order.setUserId(userId);
         order.setMerchantId(merchantId);
-        order.setTotalAmount(totalAmount);
+        order.setTotalAmount(orderAmount);
         order.setDiscountAmount(BigDecimal.ZERO);
-        order.setPayAmount(totalAmount);
+        order.setPayAmount(orderAmount);
+        order.setDeliveryType(normalizedDeliveryType);
+        order.setDeliveryFee(deliveryFee);
         order.setOrderStatus(10); // 待支付
         order.setDeliveryStatus(0);
         order.setChannel("PC");
@@ -287,6 +339,14 @@ public class OrderService {
         log.info("订单创建成功: orderNo={}, userId={}, merchantId={}, amount={}",
                 orderNo, userId, merchantId, totalAmount);
         return orderNo;
+    }
+
+    private int normalizeDeliveryType(Integer deliveryType) {
+        int type = deliveryType == null ? DELIVERY_TYPE_DELIVERY : deliveryType;
+        if (type != DELIVERY_TYPE_DELIVERY && type != DELIVERY_TYPE_PICKUP) {
+            throw new BusinessException("配送方式不合法");
+        }
+        return type;
     }
 
     /**
@@ -496,6 +556,18 @@ public class OrderService {
         if (order.getOrderStatus() != 30) {
             throw new BusinessException(ResultCodeEnum.ORDER_STATUS_ERROR, "当前订单状态不允许操作");
         }
+        if (Integer.valueOf(DELIVERY_TYPE_PICKUP).equals(order.getDeliveryType())) {
+            int affected = ordersMapper.updateStatusWithLock(
+                    id, 30, 50, null, null, null,
+                    null, null, LocalDateTime.now(), 40);
+            if (affected == 0) {
+                throw new BusinessException(ResultCodeEnum.ORDER_STATUS_ERROR, "订单状态已变更，出餐失败");
+            }
+            merchantFinanceService.releasePendingIncome(order);
+            log.info("到店自取订单完成: orderNo={}, merchantId={}", order.getOrderNo(), merchantId);
+            return;
+        }
+
         // 乐观锁更新：仅当当前状态为备餐中(30)时才更新为配送中(40)，同时设置配送状态为待取餐
         int affected = ordersMapper.updateStatusWithLock(
                 id, 30, 40,

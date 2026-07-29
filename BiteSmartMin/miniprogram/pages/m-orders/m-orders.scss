@@ -93,6 +93,8 @@
 .kv { display: flex; justify-content: space-between; padding: 14rpx 0; font-size: 24rpx; }
 .kv .k { color: var(--sub); flex: none; }
 .kv .v { font-weight: 700; }
+.pickup-code-row { margin: 4rpx 0; padding: 16rpx 18rpx; border-radius: 12rpx; background: #f3f7f1; }
+.pickup-code { color: var(--green-deep); font-size: 32rpx; letter-spacing: 6rpx; }
 .kv .v.addr { max-width: 420rpx; text-align: right; }
 .d-items { border-top: 1rpx solid var(--hair); margin-top: 16rpx; padding-top: 8rpx; }
 .d-item { display: flex; justify-content: space-between; font-size: 24rpx; padding: 12rpx 0; color: var(--ink); }

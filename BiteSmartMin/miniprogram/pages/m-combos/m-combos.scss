@@ -23,6 +23,7 @@
 .combo-row { display: flex; align-items: center; gap: 20rpx; padding: 24rpx 0; border-top: 1rpx solid var(--hair); }
 .combo-row:first-child { border-top: none; }
 .combo-row .ph { width: 96rpx; height: 96rpx; border-radius: 16rpx; flex: none; background: var(--bg); }
+.combo-row .ph-placeholder { display: flex; align-items: center; justify-content: center; color: var(--sub); font-size: 20rpx; }
 .combo-main { flex: 1; min-width: 0; }
 .combo-main .nm { font-size: 26rpx; font-weight: 800; }
 .combo-main .sub { font-size: 20rpx; color: var(--sub); margin-top: 6rpx; }

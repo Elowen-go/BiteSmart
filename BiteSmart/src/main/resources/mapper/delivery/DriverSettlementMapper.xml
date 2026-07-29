@@ -25,6 +25,21 @@
         ORDER BY create_time DESC
     </select>
 
+    <select id="findAll" resultType="com.ws.bitesmart.entity.delivery.DriverSettlement">
+        SELECT s.id, s.driver_id, s.delivery_task_id, s.order_id,
+               s.delivery_fee, s.bonus, s.penalty, s.settlement_amount,
+               s.settlement_status, s.settlement_time,
+               s.create_time, s.update_time, s.deleted,
+               d.real_name AS driver_name
+        FROM driver_settlement s
+        LEFT JOIN delivery_driver d ON d.id = s.driver_id
+        WHERE s.deleted = 0
+        <if test="settlementStatus != null">
+            AND s.settlement_status = #{settlementStatus}
+        </if>
+        ORDER BY s.create_time DESC
+    </select>
+
     <!-- 新增结算记录 -->
     <insert id="insert" parameterType="com.ws.bitesmart.entity.delivery.DriverSettlement">
         INSERT INTO driver_settlement (id, driver_id, delivery_task_id, order_id,
@@ -36,5 +51,15 @@
                 #{settlementStatus}, #{settlementTime},
                 NOW(), NOW())
     </insert>
+
+    <update id="transitionStatus">
+        UPDATE driver_settlement
+        SET settlement_status = #{newStatus},
+            settlement_time = CASE WHEN #{newStatus} = 20 THEN NOW() ELSE settlement_time END,
+            update_time = NOW()
+        WHERE id = #{id}
+          AND settlement_status = #{expectedStatus}
+          AND deleted = 0
+    </update>
 
 </mapper>

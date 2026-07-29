@@ -1,8 +1,9 @@
-import { getUserInfo } from '../../utils/auth'
+import { getUserInfo, setUserInfo } from '../../utils/auth'
 import { getSafeArea } from '../../utils/safe-area'
 import { addToCart } from '../../api/cart'
 import { getDietRecords, getExerciseRecords } from '../../api/health'
-import { getProfile } from '../../api/user'
+import { getCurrentUser, getProfile } from '../../api/user'
+import { resolveFileUrl } from '../../api/file'
 import { getCurrentPlan } from '../../api/plan'
 import { getNotices } from '../../api/notice'
 import { MOCK_COMBOS, MOCK_DISHES, MOCK_HEALTH, MOCK_MEALS, uimg } from '../../mock/catalog'
@@ -58,6 +59,7 @@ interface PlanMealView {
 Page({
   data: {
     padTop: 44,
+    avatar: '',
     hasUnreadNotice: false,
     latestNoticeAt: 0,
     heroBanners: [
@@ -126,15 +128,32 @@ Page({
         return { id: d.id, name: d.name, kcal: d.kcal, tags: d.tags.join(' · '), price: d.price, image: uimg(d.img, 400) }
       })
     })
+    this.setData({ avatar: resolveFileUrl(user.avatar) })
+    this.loadToday()
+    this.loadPlanCard()
+    this.loadNoticeBadge()
+    this.refreshAccount()
+  },
+
+  onShow() {
+    this.refreshAccount()
     this.loadToday()
     this.loadPlanCard()
     this.loadNoticeBadge()
   },
 
-  onShow() {
-    this.loadToday()
-    this.loadPlanCard()
-    this.loadNoticeBadge()
+  refreshAccount() {
+    getCurrentUser()
+      .then((user) => {
+        setUserInfo(user)
+        const nickname = user.nickname || user.username || this.data.nickname
+        this.setData({ nickname, initial: nickname.slice(0, 1), avatar: resolveFileUrl(user.avatar) })
+      })
+      .catch(() => {})
+  },
+
+  onAvatarError() {
+    this.setData({ avatar: '' })
   },
 
   loadNoticeBadge() {

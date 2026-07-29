@@ -1,11 +1,21 @@
 .pg { display: flex; flex-direction: column; height: 100vh; background: var(--bg); }
 .body { flex: 1; padding: 0 32rpx; box-sizing: border-box; }
+.account-avatar { display: flex; align-items: center; justify-content: center; width: 64rpx; height: 64rpx; flex: none; overflow: hidden; border-radius: 50%; background: var(--green-soft); color: var(--green-deep); font-size: 26rpx; font-weight: 800; }
+.account-avatar image { display: block; width: 100%; height: 100%; }
 
 /* ---------- 功能组（复刻原型 m-group / m-row） ---------- */
 .m-group { padding: 0 32rpx; margin-top: 28rpx; }
 .m-row { display: flex; align-items: center; gap: 24rpx; padding: 30rpx 8rpx; border-top: 1rpx solid var(--hair); font-size: 26rpx; font-weight: 600; }
 .m-row:first-child { border-top: none; }
 .m-row .arrow { margin-left: auto; color: var(--faint); font-size: 32rpx; }
+.logout-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 30rpx 0 36rpx;
+  color: var(--sub);
+  font-size: 26rpx;
+}
 .m-ic {
   width: 64rpx;
   height: 64rpx;

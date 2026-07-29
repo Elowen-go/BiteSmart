@@ -48,3 +48,10 @@ export const bindWechat = (code: string): Promise<void> => {
     data: { code }
   })
 }
+
+export const getWechatBindingStatus = (): Promise<boolean> => {
+  return request<boolean>({
+    url: '/auth/wechat-binding',
+    method: 'GET'
+  })
+}

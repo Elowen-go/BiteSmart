@@ -16,6 +16,7 @@ import com.ws.bitesmart.mapper.order.ShoppingCartMapper;
 import com.ws.bitesmart.mapper.merchant.MerchantMapper;
 import com.ws.bitesmart.service.delivery.DeliveryTaskService;
 import com.ws.bitesmart.service.dish.ComboService;
+import com.ws.bitesmart.service.merchant.MerchantFinanceService;
 import com.ws.bitesmart.service.system.OperateLogService;
 import com.ws.bitesmart.mapper.refund.RefundApplicationMapper;
 import org.junit.jupiter.api.Test;
@@ -28,6 +29,8 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentCaptor.forClass;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -44,6 +47,7 @@ class OrderServiceTest {
     @Mock private DeliveryTaskService deliveryTaskService;
     @Mock private MerchantMapper merchantMapper;
     @Mock private RefundApplicationMapper refundApplicationMapper;
+    @Mock private MerchantFinanceService merchantFinanceService;
 
     @Test
     void createOrderReportsSpecificStockShortage() {
@@ -91,6 +95,31 @@ class OrderServiceTest {
     }
 
     @Test
+    void deliveryOrderIncludesFiveYuanFeeInPayAmount() {
+        ShoppingCart cart = new ShoppingCart();
+        cart.setItemType(10);
+        cart.setDishId(7L);
+        cart.setQuantity(1);
+        Dish dish = new Dish();
+        dish.setId(7L);
+        dish.setMerchantId(11L);
+        dish.setDishName("鸡胸沙拉");
+        dish.setPrice(BigDecimal.TEN);
+        when(shoppingCartMapper.findSelectedByUserId(88L)).thenReturn(List.of(cart));
+        when(dishMapper.findById(7L)).thenReturn(dish);
+        when(dishMapper.lockStock(7L, 1)).thenReturn(1);
+
+        service().createOrder(88L, "地址", "张三", "13800000000", null,
+                10, null, null);
+
+        var captor = forClass(Orders.class);
+        verify(ordersMapper).insert(captor.capture());
+        assertThat(captor.getValue().getDeliveryType()).isEqualTo(10);
+        assertThat(captor.getValue().getDeliveryFee()).isEqualByComparingTo("5.00");
+        assertThat(captor.getValue().getPayAmount()).isEqualByComparingTo("15.00");
+    }
+
+    @Test
     void pagedUserOrdersIncludeTheirSnapshotItems() {
         Orders order = new Orders();
         order.setId(101L);
@@ -109,6 +138,6 @@ class OrderServiceTest {
     private OrderService service() {
         return new OrderService(ordersMapper, orderItemMapper, shoppingCartMapper, dishMapper,
                 comboMapper, comboDishRelMapper, comboService, operateLogService, deliveryTaskService,
-                merchantMapper, refundApplicationMapper);
+                merchantMapper, refundApplicationMapper, merchantFinanceService);
     }
 }

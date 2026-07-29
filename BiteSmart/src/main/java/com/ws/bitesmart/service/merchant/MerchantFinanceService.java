@@ -50,7 +50,7 @@ public class MerchantFinanceService {
         }
 
         MerchantFundAccount account = lockOrCreateAccount(order.getMerchantId());
-        BigDecimal gross = money(order.getPayAmount());
+        BigDecimal gross = merchantOrderAmount(order);
         BigDecimal commission = calculateCommission(gross);
         BigDecimal pendingBefore = money(account.getPendingBalance());
         BigDecimal pendingAfterIncome = pendingBefore.add(gross);
@@ -76,7 +76,8 @@ public class MerchantFinanceService {
         }
 
         MerchantFundAccount account = lockOrCreateAccount(order.getMerchantId());
-        BigDecimal net = money(order.getPayAmount()).subtract(calculateCommission(order.getPayAmount()));
+        BigDecimal merchantAmount = merchantOrderAmount(order);
+        BigDecimal net = merchantAmount.subtract(calculateCommission(merchantAmount));
         BigDecimal pendingBefore = money(account.getPendingBalance());
         if (pendingBefore.compareTo(net) < 0) {
             throw new BusinessException("Insufficient pending merchant balance");
@@ -104,6 +105,9 @@ public class MerchantFinanceService {
 
         MerchantFundAccount account = lockOrCreateAccount(order.getMerchantId());
         BigDecimal gross = money(refund.getRefundAmount());
+        if (order.getDeliveryFee() != null) {
+            gross = gross.subtract(money(order.getDeliveryFee())).max(BigDecimal.ZERO);
+        }
         BigDecimal commission = calculateCommission(gross);
         BigDecimal net = gross.subtract(commission);
         boolean completed = order.getOrderStatus() != null && order.getOrderStatus() >= 50;
@@ -280,6 +284,15 @@ public class MerchantFinanceService {
 
     private BigDecimal calculateCommission(BigDecimal amount) {
         return money(amount).multiply(commissionRate).setScale(2, RoundingMode.HALF_UP);
+    }
+
+    /** 配送费属于平台/骑手结算，不计入商家餐品收入。 */
+    private BigDecimal merchantOrderAmount(Orders order) {
+        BigDecimal amount = money(order.getPayAmount());
+        if (order.getDeliveryFee() != null) {
+            amount = amount.subtract(money(order.getDeliveryFee()));
+        }
+        return amount.max(BigDecimal.ZERO);
     }
 
     private void insertLedger(Orders order, PaymentLog paymentLog, int type, int direction,

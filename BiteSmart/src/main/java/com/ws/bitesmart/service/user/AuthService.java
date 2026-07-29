@@ -163,6 +163,10 @@ public class AuthService {
         wechatIdentityAuthService.bind(userId, request);
     }
 
+    public boolean isWechatBound(Long userId) {
+        return wechatIdentityAuthService.isBound(userId);
+    }
+
     /** 完善微信临时账号，使同一用户可以使用 PC 账号密码登录。 */
     @Transactional
     public void setupCredentials(Long userId, UserCredentialSetupRequestDTO request) {

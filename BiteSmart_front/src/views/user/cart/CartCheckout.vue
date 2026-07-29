@@ -17,11 +17,14 @@ const cartItems = ref<any[]>([])
 const addresses = ref<any[]>([])
 const checkoutVisible = ref(false)
 const selectedAddressId = ref<number | string | undefined>()
+const deliveryType = ref(10)
 const merchantRemarks = ref<Record<string, string>>({})
 const checkoutStateKey = 'bitesmart-cart-checkout-state'
 const selectedItems = computed(() => cartItems.value.filter(i => i.selected !== 0))
 const selectedQuantity = computed(() => selectedItems.value.reduce((sum, item) => sum + Number(item.quantity || 0), 0))
 const totalAmount = computed(() => selectedItems.value.reduce((sum, i) => sum + Number(i.price || i.itemPrice || 0) * i.quantity, 0))
+const deliveryFee = computed(() => deliveryType.value === 10 && selectedItems.value.length ? 5 : 0)
+const payableAmount = computed(() => totalAmount.value + deliveryFee.value)
 const merchantGroups = computed(() => {
   // merchantId 是雪花 ID（字符串），不可 Number() 强转，否则丢精度后传给后端会下错商家
   const groups = new Map<string, { merchantId: string, shopName: string, items: any[], total: number }>()
@@ -75,6 +78,7 @@ const fetchData = async () => {
     if (saved) {
       const state = JSON.parse(saved)
       selectedAddressId.value = state.selectedAddressId
+      deliveryType.value = state.deliveryType === 20 ? 20 : 10
       merchantRemarks.value = state.merchantRemarks || {}
       if (state.open && selectedItems.value.length) checkoutVisible.value = true
       sessionStorage.removeItem(checkoutStateKey)
@@ -92,11 +96,18 @@ const changeQuantity = async (item: any, value: number | undefined) => { if (!va
 const removeItem = async (item: any) => { try { await ElMessageBox.confirm('确定删除该商品吗？', '提示'); await deleteCartItem(item.id); cartItems.value = cartItems.value.filter(i => i.id !== item.id); ElMessage.success('已删除') } catch {} }
 const openCheckout = () => { if (!cartItems.value.some(i => i.selected !== 0)) return ElMessage.warning('请先选择要结算的商品'); selectedAddressId.value = addresses.value.find(a => a.isDefault === 1)?.id || addresses.value[0]?.id; checkoutVisible.value = true }
 const goToAddresses = () => {
-  sessionStorage.setItem(checkoutStateKey, JSON.stringify({ open: true, selectedAddressId: selectedAddressId.value, merchantRemarks: merchantRemarks.value }))
+  sessionStorage.setItem(checkoutStateKey, JSON.stringify({
+    open: true,
+    selectedAddressId: selectedAddressId.value,
+    deliveryType: deliveryType.value,
+    merchantRemarks: merchantRemarks.value
+  }))
   router.push({ path: '/user/addresses', query: { from: 'cart' } })
 }
 const submitOrder = async () => {
-  const address = addresses.value.find(a => a.id === selectedAddressId.value)
+  const address = deliveryType.value === 20
+    ? { province: '门店自取', city: '', district: '', detailAddress: '', receiverName: '', receiverPhone: '' }
+    : addresses.value.find(a => a.id === selectedAddressId.value)
   if (!address) return ElMessage.warning('请选择收货地址')
   const addressText = `${address.province}${address.city}${address.district}${address.detailAddress}`
   try {
@@ -104,6 +115,9 @@ const submitOrder = async () => {
       address: addressText,
       receiverName: address.receiverName,
       receiverPhone: address.receiverPhone,
+      deliveryType: deliveryType.value,
+      latitude: deliveryType.value === 10 ? address.latitude : undefined,
+      longitude: deliveryType.value === 10 ? address.longitude : undefined,
       merchantOrders: merchantGroups.value.map(group => ({ merchantId: group.merchantId, remark: merchantRemarks.value[String(group.merchantId)] || '' }))
     })
     if (res.code !== 200) throw new Error(res.message || '创建订单失败')
@@ -149,13 +163,19 @@ onMounted(fetchData)
       <aside class="cart-summary">
         <span>ORDER SUMMARY</span><h2>本次合计</h2>
         <div class="summary-row"><span>已选商品</span><strong>{{ selectedQuantity }} 件</strong></div>
-        <div class="summary-total"><span>应付金额</span><strong>¥{{ totalAmount.toFixed(2) }}</strong></div>
+        <div class="summary-total"><span>应付金额（含配送费）</span><strong>¥{{ payableAmount.toFixed(2) }}</strong></div>
         <button class="checkout-button" :disabled="!cartItems.length" @click="openCheckout">去结算 <ArrowRight /></button>
       </aside>
     </div>
     <el-dialog v-model="checkoutVisible" title="确认订单" width="560px">
       <el-form label-width="84px">
-        <el-form-item label="收货地址">
+        <el-form-item label="配送方式">
+          <el-radio-group v-model="deliveryType">
+            <el-radio :value="10">外卖配送</el-radio>
+            <el-radio :value="20">到店自取</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item v-if="deliveryType === 10" label="收货地址">
           <el-radio-group v-model="selectedAddressId">
             <el-radio v-for="address in addresses" :key="address.id" :value="address.id" class="address-option">{{ address.receiverName }} {{ address.receiverPhone }} {{ address.province }}{{ address.city }}{{ address.district }}{{ address.detailAddress }}</el-radio>
           </el-radio-group>
@@ -169,8 +189,11 @@ onMounted(fetchData)
             <el-input v-model="merchantRemarks[String(group.merchantId)]" type="textarea" :rows="2" maxlength="200" show-word-limit placeholder="给该商家留言" />
           </section>
         </div>
-        <el-form-item label="应付金额"><strong class="amount">¥{{ totalAmount.toFixed(2) }}</strong></el-form-item>
+        <el-form-item label="商品金额"><strong class="amount">¥{{ totalAmount.toFixed(2) }}</strong></el-form-item>
+        <el-form-item label="配送费"><strong class="amount">¥{{ deliveryFee.toFixed(2) }}</strong></el-form-item>
+        <el-form-item label="应付金额"><strong class="amount">¥{{ payableAmount.toFixed(2) }}</strong></el-form-item>
       </el-form>
+      <el-alert v-if="deliveryType === 20" type="info" :closable="false" title="到店自取，提交订单后请按商家提示到店取餐" />
       <template #footer><el-button @click="checkoutVisible = false">返回</el-button><el-button type="primary" @click="submitOrder">提交订单</el-button></template>
     </el-dialog>
   </div>

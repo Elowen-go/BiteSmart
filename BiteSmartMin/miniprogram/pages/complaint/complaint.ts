@@ -1,6 +1,6 @@
 import { createComplaint } from '../../api/feedback'
 import { getSafeArea } from '../../utils/safe-area'
-import { requireUser } from '../../utils/user-route'
+import { getUserInfo } from '../../utils/auth'
 
 const TARGETS = [
   { v: 10, label: '商家' },
@@ -11,7 +11,6 @@ const REASONS = ['餐品质量问题', '配送超时', '少送 / 错送', '服�
 
 Page({
   data: {
-    // 订单 id 为雪花字符串，原样透传禁止 Number() 强转
     orderId: '' as number | string,
     targetType: 10,
     reason: REASONS[0],
@@ -22,16 +21,33 @@ Page({
     menuTop: 0,
     menuH: 32
   },
+
   onLoad(options: Record<string, string>) {
-    if (!requireUser()) return
+    if (!getUserInfo()) {
+      wx.reLaunch({ url: '/pages/login/login' })
+      return
+    }
     const { menuTop, menuH } = getSafeArea()
     this.setData({ menuTop, menuH })
     if (options && options.orderId) this.setData({ orderId: options.orderId })
   },
-  back() { wx.navigateBack() },
-  setTarget(event: WechatMiniprogram.CustomEvent) { this.setData({ targetType: Number(event.currentTarget.dataset.v) }) },
-  setReason(event: WechatMiniprogram.CustomEvent) { this.setData({ reason: String(event.currentTarget.dataset.v) }) },
-  onInput(event: WechatMiniprogram.Input) { this.setData({ desc: event.detail.value }) },
+
+  back() {
+    wx.navigateBack()
+  },
+
+  setTarget(event: WechatMiniprogram.CustomEvent) {
+    this.setData({ targetType: Number(event.currentTarget.dataset.v) })
+  },
+
+  setReason(event: WechatMiniprogram.CustomEvent) {
+    this.setData({ reason: String(event.currentTarget.dataset.v) })
+  },
+
+  onInput(event: WechatMiniprogram.Input) {
+    this.setData({ desc: event.detail.value })
+  },
+
   submit() {
     if (this.data.submitting) return
     if (!this.data.orderId) {
@@ -42,6 +58,7 @@ Page({
       wx.showToast({ title: '请填写问题描述', icon: 'none' })
       return
     }
+
     this.setData({ submitting: true })
     createComplaint({
       orderId: this.data.orderId,

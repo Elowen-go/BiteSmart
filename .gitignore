@@ -53,7 +53,10 @@ appendonlydir/
 dist
 dist-ssr
 coverage
+outputs/
 *.local
+BiteSmart/src/main/resources/application-local.yml
+!BiteSmart/src/main/resources/application-local.example.yml
 
 *.tsbuildinfo
 .eslintcache

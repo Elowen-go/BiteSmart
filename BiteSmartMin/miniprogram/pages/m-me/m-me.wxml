@@ -2,10 +2,14 @@
   <scroll-view class="body" scroll-y enhanced show-scrollbar="{{false}}">
     <!-- 店铺头 -->
     <view class="shop-head" style="padding-top: {{padTop}}px;">
-      <view class="logo"><image src="{{shopLogo}}" mode="aspectFill" /></view>
+      <view class="logo"><image wx:if="{{shopLogo}}" src="{{shopLogo}}" mode="aspectFill" /><text wx:else class="shop-logo-placeholder">店</text></view>
       <view class="shop-main">
-        <view class="nm">{{shopName}}</view>
+        <view class="nm">{{shopName || '店铺名称未设置'}}</view>
         <view class="st"><text>{{shopSub}}</text></view>
+      </view>
+      <view class="account-avatar" bindtap="shopInfo" hover-class="tap">
+        <image wx:if="{{userAvatar}}" src="{{userAvatar}}" mode="aspectFill" binderror="onAvatarError" />
+        <text wx:else>我</text>
       </view>
     </view>
 
@@ -43,13 +47,9 @@
         <text>店铺信息</text>
         <text class="arrow">›</text>
       </view>
-      <view class="m-row" bindtap="logout" hover-class="tap">
-        <view class="m-ic ic-exit"></view>
-        <text>退出商家端</text>
-        <text class="arrow">›</text>
-      </view>
     </view>
 
+    <view class="logout-link" bindtap="logout" hover-class="tap">退出登录</view>
     <view style="height: 32rpx;"></view>
   </scroll-view>
 

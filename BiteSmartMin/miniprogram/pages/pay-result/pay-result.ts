@@ -15,14 +15,7 @@ Page({
     getOrderDetail(id).then((detail) => {
       const order: Partial<Order> = detail.order || {}
       const amount = order.totalAmount != null ? Number(order.totalAmount).toFixed(2).replace(/\.00$/, '') : ''
-      let eta = ''
-      if (order.createTime) {
-        const created = new Date(String(order.createTime).replace(/-/g, '/'))
-        if (!isNaN(created.getTime())) {
-          const arrive = new Date(created.getTime() + 40 * 60 * 1000)
-          eta = `${String(arrive.getHours()).padStart(2, '0')}:${String(arrive.getMinutes()).padStart(2, '0')}`
-        }
-      }
+      const eta = Number(order.deliveryType) === 20 ? '' : '待骑手接单'
       this.setData({ orderNo: order.orderNo || '', totalAmount: amount, eta })
     }).catch(() => {})
   },

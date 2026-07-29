@@ -60,14 +60,30 @@ public class UserOrderController {
                                                  @RequestParam String receiverName,
                                                  @RequestParam String receiverPhone,
                                                  @RequestParam(required = false) String remark,
+                                                 @RequestParam(defaultValue = "10") Integer deliveryType,
                                                  @RequestParam(required = false) BigDecimal latitude,
                                                  @RequestParam(required = false) BigDecimal longitude) {
         if (loginUser == null) return ResultVO.error(401, "未登录");
-        String orderNo = orderService.createOrder(loginUser.getUserId(), address,
+        String orderNo = Integer.valueOf(20).equals(deliveryType)
+                ? orderService.createOrder(loginUser.getUserId(), address,
+                receiverName, receiverPhone, remark, deliveryType, latitude, longitude)
+                : orderService.createOrder(loginUser.getUserId(), address,
                 receiverName, receiverPhone, remark, latitude, longitude);
         Map<String, String> result = new HashMap<>();
         result.put("orderNo", orderNo);
         return ResultVO.success(result);
+    }
+
+    /** 兼容已有服务端调用方：未指定配送方式时按外卖配送处理。 */
+    public ResultVO<Map<String, String>> create(LoginUser loginUser,
+                                                 String address,
+                                                 String receiverName,
+                                                 String receiverPhone,
+                                                 String remark,
+                                                 BigDecimal latitude,
+                                                 BigDecimal longitude) {
+        return create(loginUser, address, receiverName, receiverPhone, remark,
+                10, latitude, longitude);
     }
 
     /** 一次结算，按商家拆分为多个订单。 */
@@ -83,8 +99,12 @@ public class UserOrderController {
             if (merchantOrder.getMerchantId() == null) return ResultVO.error(400, "商家信息不能为空");
             remarks.put(merchantOrder.getMerchantId(), merchantOrder.getRemark());
         }
-        List<String> orderNos = orderService.createOrders(loginUser.getUserId(), request.getAddress(),
-                request.getReceiverName(), request.getReceiverPhone(), remarks);
+        List<String> orderNos = Integer.valueOf(20).equals(request.getDeliveryType())
+                ? orderService.createOrders(loginUser.getUserId(), request.getAddress(),
+                request.getReceiverName(), request.getReceiverPhone(), request.getDeliveryType(), remarks)
+                : orderService.createOrders(loginUser.getUserId(), request.getAddress(),
+                request.getReceiverName(), request.getReceiverPhone(), request.getLatitude(),
+                request.getLongitude(), remarks);
         Map<String, Object> result = new HashMap<>();
         result.put("orderNos", orderNos);
         result.put("orderCount", orderNos.size());

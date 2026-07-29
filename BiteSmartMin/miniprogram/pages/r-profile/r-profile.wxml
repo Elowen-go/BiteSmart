@@ -7,6 +7,14 @@
 
   <scroll-view class="body" scroll-y enhanced show-scrollbar="{{false}}">
     <view class="card form-card">
+      <view class="form-row avatar-row">
+        <view class="f-lab">个人头像</view>
+        <view class="profile-avatar-picker" bindtap="chooseAvatar" hover-class="tap">
+          <image wx:if="{{avatar}}" class="profile-avatar" src="{{avatar}}" mode="aspectFill" binderror="onAvatarError" />
+          <text wx:else class="profile-avatar-fallback">骑</text>
+          <text class="avatar-change">更换头像</text>
+        </view>
+      </view>
       <view class="form-row">
         <view class="f-lab">姓名 <text class="req">*</text></view>
         <input class="f-input" placeholder="真实姓名" placeholder-class="ph-txt" value="{{realName}}" data-field="realName" bindinput="onInput" />

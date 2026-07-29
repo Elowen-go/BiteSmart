@@ -25,6 +25,9 @@ public class DriverSettlement {
     /** 订单ID */
     private Long orderId;
 
+    /** 管理员结算列表联表带出的骑手姓名 */
+    private String driverName;
+
     /** 配送费 */
     private BigDecimal deliveryFee;
 

@@ -9,7 +9,8 @@
   <scroll-view class="body" scroll-y enhanced show-scrollbar="{{false}}">
     <view class="card combo-card" wx:if="{{list.length}}">
       <view class="combo-row" wx:for="{{list}}" wx:key="id">
-        <image class="ph" src="{{item.image}}" mode="aspectFill" />
+        <image wx:if="{{item.image}}" class="ph" src="{{item.image}}" mode="aspectFill" />
+        <view wx:else class="ph ph-placeholder">暂无图片</view>
         <view class="combo-main" bindtap="editCombo" data-id="{{item.id}}">
           <view class="nm">{{item.name}}</view>
           <view class="sub">¥{{item.price}} · {{item.kcal}} kcal · 蛋白质 {{item.protein}}g</view>

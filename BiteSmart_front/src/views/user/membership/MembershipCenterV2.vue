@@ -50,14 +50,28 @@ const load = async () => {
   }
 }
 
+const submitAlipayForm = (html: string) => {
+  const wrapper = document.createElement('div')
+  wrapper.innerHTML = html
+  const form = wrapper.querySelector('form') as HTMLFormElement | null
+  if (!form) throw new Error('支付宝支付表单生成失败')
+  form.style.display = 'none'
+  document.body.appendChild(form)
+  form.submit()
+}
+
 const buy = async (plan: any) => {
   try {
-    // 后端 buyMembership 支持续期：已有有效会员时在当前有效期基础上顺延；当前无支付环节（测试环境）
+    // 已有有效会员时，支付成功后会在当前有效期基础上顺延。
     const renewTip = hasActiveMembership.value ? '，有效期将在当前基础上顺延' : ''
-    await ElMessageBox.confirm(`确认购买${plan.planName}吗？价格 ¥${plan.price}${renewTip}。当前为免支付开通（测试环境），不会产生真实扣款。`, '购买确认')
-    await buyMembership(plan.id)
-    ElMessage.success(hasActiveMembership.value ? '续费成功，有效期已顺延' : '会员购买成功')
-    await load()
+    await ElMessageBox.confirm(`确认购买${plan.planName}吗？价格 ¥${plan.price}${renewTip}。确认后将跳转支付宝沙箱完成支付。`, '购买确认')
+    const response = await buyMembership(plan.id)
+    const payment = response?.data || response
+    if (payment?.paymentMode !== 'alipay-sandbox' || !payment.form) {
+      throw new Error('支付宝支付订单创建失败')
+    }
+    ElMessage.info('正在跳转支付宝沙箱，请完成支付')
+    submitAlipayForm(String(payment.form))
   } catch { /* 用户取消购买 */ }
 }
 
@@ -76,10 +90,9 @@ onMounted(load)
     </section>
 
     <section class="plans-section">
-      <div class="section-heading"><div><span class="section-kicker">CHOOSE YOUR PLAN</span><h2>选择适合你的会员方案</h2></div><span class="heading-note">当前为免支付开通（测试环境），不会产生真实扣款</span></div>
+      <div class="section-heading"><div><span class="section-kicker">CHOOSE YOUR PLAN</span><h2>选择适合你的会员方案</h2></div><span class="heading-note">支付宝沙箱支付，支付成功后自动开通</span></div>
       <div v-loading="loading" class="plans-grid">
-        <article v-for="(plan, index) in plans" :key="plan.id" class="plan-card" :class="{ featured: index === 1 }">
-          <span v-if="index === 1" class="featured-label">更受欢迎</span>
+        <article v-for="plan in plans" :key="plan.id" class="plan-card">
           <span class="plan-type">{{ getPlanName(plan.planType) }}</span>
           <h3>{{ plan.planName }}</h3>
           <div class="plan-price"><small>¥</small>{{ plan.price }}</div>

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, nextTick } from 'vue'
-import { aiChat } from '../../../api/user/ai'
+import { aiChatStream } from '../../../api/user/ai'
 import { ElMessage } from 'element-plus'
 import { ChatDotRound } from '@element-plus/icons-vue'
 
@@ -9,6 +9,7 @@ const messages = ref<{ role: string; content: string }[]>([])
 const inputText = ref('')
 const chatContainer = ref<HTMLElement | null>(null)
 const sessionId = ref('')
+let sendInProgress = false
 
 const scrollToBottom = async () => {
   await nextTick()
@@ -19,32 +20,35 @@ const scrollToBottom = async () => {
 
 const sendMessage = async () => {
   const text = inputText.value.trim()
-  if (!text || loading.value) return
+  if (!text || loading.value || sendInProgress) return
 
-  messages.value.push({ role: 'user', content: text })
-  inputText.value = ''
+  sendInProgress = true
   loading.value = true
+  messages.value.push({ role: 'user', content: text })
+  const assistantIndex = messages.value.length
+  messages.value.push({ role: 'assistant', content: '' })
+  inputText.value = ''
   scrollToBottom()
 
   try {
-    const res = await aiChat(text, sessionId.value || undefined)
-    const answer = res.data?.answer || res.data || '抱歉，我暂时无法回答这个问题'
-    sessionId.value = res.data?.sessionId || sessionId.value
-    messages.value.push({ role: 'assistant', content: answer })
+    await aiChatStream(text, sessionId.value || undefined, (token) => {
+      const assistantMessage = messages.value[assistantIndex]
+      if (!assistantMessage) return
+      assistantMessage.content += token
+      scrollToBottom()
+    })
+    const assistantMessage = messages.value[assistantIndex]
+    if (assistantMessage && !assistantMessage.content) {
+      assistantMessage.content = '抱歉，我暂时无法回答这个问题'
+    }
   } catch (e) {
-    messages.value.push({ role: 'assistant', content: '连接失败，请稍后再试' })
+    const assistantMessage = messages.value[assistantIndex]
+    if (assistantMessage) assistantMessage.content = '连接失败，请稍后再试'
     ElMessage.error('对话请求失败')
   } finally {
+    sendInProgress = false
     loading.value = false
     scrollToBottom()
-  }
-}
-
-const handleKeydown = (e: Event) => {
-  const keyboardEvent = e as KeyboardEvent
-  if (keyboardEvent.key === 'Enter' && !keyboardEvent.shiftKey) {
-    keyboardEvent.preventDefault()
-    sendMessage()
   }
 }
 
@@ -98,7 +102,7 @@ onMounted(() => {
           v-model="inputText"
           placeholder="输入问题..."
           :disabled="loading"
-          @keydown="handleKeydown"
+          @keydown.enter.exact.prevent="sendMessage"
         />
         <el-button type="primary" :loading="loading" @click="sendMessage">发送</el-button>
       </div>

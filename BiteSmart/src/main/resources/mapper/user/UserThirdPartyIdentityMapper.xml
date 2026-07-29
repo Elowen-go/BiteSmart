@@ -13,6 +13,14 @@
           AND open_id = #{openId}
     </select>
 
+    <select id="findByUserIdAndProvider" resultType="com.ws.bitesmart.entity.user.UserThirdPartyIdentity">
+        SELECT <include refid="BaseColumns"/>
+        FROM user_third_party_identity
+        WHERE user_id = #{userId}
+          AND provider = #{provider}
+        LIMIT 1
+    </select>
+
     <insert id="insert" parameterType="com.ws.bitesmart.entity.user.UserThirdPartyIdentity">
         INSERT INTO user_third_party_identity
             (id, user_id, provider, open_id, union_id, create_time, update_time)

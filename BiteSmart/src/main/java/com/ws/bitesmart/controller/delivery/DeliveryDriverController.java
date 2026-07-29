@@ -1,6 +1,7 @@
 package com.ws.bitesmart.controller.delivery;
 
 import com.ws.bitesmart.common.ResultVO;
+import com.ws.bitesmart.dto.request.DriverFeedbackRequest;
 import com.ws.bitesmart.dto.request.RiderLocationRequest;
 import com.ws.bitesmart.entity.delivery.DeliveryDriver;
 import com.ws.bitesmart.entity.delivery.DeliveryTask;
@@ -8,6 +9,7 @@ import com.ws.bitesmart.entity.delivery.DriverSettlement;
 import com.ws.bitesmart.entity.review.Review;
 import com.ws.bitesmart.security.LoginUser;
 import com.ws.bitesmart.service.delivery.DeliveryDriverService;
+import com.ws.bitesmart.service.delivery.DriverFeedbackService;
 import com.ws.bitesmart.service.delivery.DeliveryTaskService;
 import com.ws.bitesmart.service.review.ReviewService;
 import lombok.RequiredArgsConstructor;
@@ -39,6 +41,7 @@ public class DeliveryDriverController {
     private final DeliveryDriverService deliveryDriverService;
     private final DeliveryTaskService deliveryTaskService;
     private final ReviewService reviewService;
+    private final DriverFeedbackService driverFeedbackService;
 
     /**
      * 注册为配送员
@@ -223,6 +226,17 @@ public class DeliveryDriverController {
         if (loginUser == null) return ResultVO.error(401, "未登录");
         deliveryTaskService.reportException(loginUser.getUserId(), id, reason);
         return ResultVO.ok("异常上报成功");
+    }
+
+    // ==================== 骑手反馈 ====================
+
+    /** 骑手端独立意见反馈，后台统一进入工单列表。 */
+    @PostMapping("/feedback")
+    public ResultVO<Void> feedback(@AuthenticationPrincipal LoginUser loginUser,
+                                   @RequestBody DriverFeedbackRequest request) {
+        if (loginUser == null) return ResultVO.error(401, "未登录");
+        driverFeedbackService.submit(loginUser.getUserId(), request);
+        return ResultVO.ok("反馈已提交");
     }
 
     // ==================== 评价查看 ====================

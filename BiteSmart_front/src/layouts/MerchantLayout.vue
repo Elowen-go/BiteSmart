@@ -152,10 +152,11 @@ const fetchUserInfo = async () => {
   try {
     const res = await getProfile()
     if (res.code === 200) {
-      if (userStore.userInfo) {
-        userStore.userInfo.nickname = res.data.nickname
-        userStore.userInfo.avatar = res.data.avatar
-      }
+      userStore.setUserInfo({
+        ...(userStore.userInfo || {}),
+        nickname: res.data.nickname,
+        avatar: res.data.avatar
+      })
     }
   } catch (e) {
     console.error('获取用户信息失败', e)
@@ -177,11 +178,11 @@ onMounted(() => {
       <div class="sidebar-logo">
         <img v-if="logoUrl" :src="logoUrl" class="logo-img" alt="店铺Logo" />
         <Shop v-else class="logo-icon" />
-        <span v-if="!collapsed">商家后台</span>
+        <span class="sidebar-title" :class="{ hidden: collapsed }">商家后台</span>
       </div>
       
       <!-- 店铺选择器 -->
-      <div class="shop-selector" v-if="!collapsed && shopList.length > 0">
+      <div v-if="shopList.length > 0" class="shop-selector" :class="{ hidden: collapsed }">
         <el-select 
           v-model="currentShopId" 
           @change="switchShop" 
@@ -203,14 +204,14 @@ onMounted(() => {
       
       <ul class="sidebar-menu">
         <template v-for="group in menuItems" :key="group.label">
-          <li class="menu-label" v-if="!collapsed">{{ group.label }}</li>
+          <li class="menu-label" :class="{ hidden: collapsed }">{{ group.label }}</li>
           <li v-for="item in group.items" :key="item.path">
             <router-link
               :to="item.path"
               :class="{ active: isActive(item.path) }"
             >
               <component :is="item.icon" />
-              <span v-if="!collapsed">{{ item.label }}</span>
+              <span class="menu-item-label" :class="{ hidden: collapsed }">{{ item.label }}</span>
             </router-link>
             <span class="tooltip">{{ item.label }}</span>
           </li>
@@ -218,10 +219,8 @@ onMounted(() => {
       </ul>
       
       <div class="sidebar-footer">
-        <template v-if="!collapsed">
-          <Shop />
-          <span class="footer-shop-name">{{ shopName || '商家后台' }}</span>
-        </template>
+        <Shop class="footer-shop-icon" :class="{ hidden: collapsed }" />
+        <span class="footer-shop-name" :class="{ hidden: collapsed }">{{ shopName || '商家后台' }}</span>
         <button class="collapse-btn" @click="collapsed = !collapsed" :title="collapsed ? '展开侧边栏' : '收起侧边栏'">
           <ArrowLeft v-if="!collapsed" />
           <ArrowRight v-else />
@@ -264,7 +263,11 @@ onMounted(() => {
       </header>
       
       <div class="content-body">
-        <router-view />
+        <router-view v-slot="{ Component }">
+          <Transition name="merchant-page" mode="out-in">
+            <component :is="Component" />
+          </Transition>
+        </router-view>
       </div>
     </div>
   </div>
@@ -288,7 +291,8 @@ onMounted(() => {
   overflow: hidden;
   padding: 24px 0 0 0;
   position: relative;
-  transition: width 0.2s;
+  transition: width 0.28s cubic-bezier(.22, 1, .36, 1), padding 0.28s ease;
+  will-change: width;
 }
 
 
@@ -306,6 +310,28 @@ onMounted(() => {
   font-size: var(--bs-font-size-2xl);
   font-weight: 600;
   color: #FFFFFF;
+  transition: padding 0.28s ease;
+}
+
+.sidebar-title,
+.menu-item-label,
+.footer-shop-name {
+  overflow: hidden;
+  white-space: nowrap;
+  opacity: 1;
+  transition: max-width 0.22s ease, opacity 0.14s ease;
+}
+
+.sidebar-title {
+  display: block;
+  max-width: 160px;
+}
+
+.sidebar-title.hidden,
+.menu-item-label.hidden,
+.footer-shop-name.hidden {
+  max-width: 0;
+  opacity: 0;
 }
 
 .logo-icon {
@@ -328,6 +354,18 @@ onMounted(() => {
 
 .shop-selector {
   padding: 0 16px 16px 16px;
+  max-height: 56px;
+  overflow: hidden;
+  opacity: 1;
+  transition: max-height 0.24s ease, padding 0.24s ease, opacity 0.14s ease;
+}
+
+.shop-selector.hidden {
+  max-height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .shop-selector .el-select {
@@ -405,7 +443,7 @@ onMounted(() => {
   text-decoration: none;
   font-size: var(--bs-font-size-md);
   font-weight: 500;
-  transition: 0.15s;
+  transition: gap 0.22s ease, padding 0.22s ease, background-color 0.16s ease, color 0.16s ease;
 }
 
 .sidebar-menu a svg {
@@ -415,6 +453,7 @@ onMounted(() => {
 
 .sidebar.collapsed .sidebar-menu a {
   justify-content: center;
+  gap: 0;
   padding: 12px;
 }
 
@@ -431,11 +470,23 @@ onMounted(() => {
 }
 
 .menu-label {
+  max-height: 40px;
   padding: 16px 16px 8px 16px;
   color: #5E7A6C;
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 2px;
+  overflow: hidden;
+  opacity: 1;
+  transition: max-height 0.22s ease, padding 0.22s ease, opacity 0.14s ease;
+}
+
+.menu-label.hidden {
+  max-height: 0;
+  margin-bottom: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  opacity: 0;
 }
 
 .sidebar-footer {
@@ -448,6 +499,7 @@ onMounted(() => {
   align-items: center;
   gap: 8px;
   flex-shrink: 0;
+  transition: padding 0.24s ease, gap 0.22s ease;
 }
 
 .sidebar-footer svg {
@@ -457,9 +509,19 @@ onMounted(() => {
 }
 
 .footer-shop-name {
-  overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  max-width: 130px;
+}
+
+.footer-shop-icon {
+  max-width: 20px;
+  opacity: 1;
+  transition: max-width 0.22s ease, opacity 0.14s ease;
+}
+
+.footer-shop-icon.hidden {
+  max-width: 0;
+  opacity: 0;
 }
 
 .sidebar.collapsed .sidebar-footer {
@@ -532,6 +594,16 @@ onMounted(() => {
   flex-direction: column;
   height: 100vh;
   overflow: hidden;
+}
+
+.merchant-page-enter-active,
+.merchant-page-leave-active {
+  transition: opacity 0.14s ease;
+}
+
+.merchant-page-enter-from,
+.merchant-page-leave-to {
+  opacity: 0;
 }
 
 .header {

@@ -5,13 +5,12 @@ import { requireUser } from '../../utils/user-route'
 interface PlanView { id: number | string; name: string; price: string; org: string; days: string; best: boolean }
 
 const BENEFITS = [
-  { ic: '免', t: '全场免配送费', s: '会员期间所有外卖订单 0 配送费' },
-  { ic: '折', t: '会员专享 95 折', s: '套餐与单品均可叠加使用' },
-  { ic: 'AI', t: 'AI 私人定制餐单', s: '每周一份专属 7 日膳食计划' },
+  { ic: '免', t: '全场免配送费', s: '会员期间外卖订单免配送费' },
+  { ic: '折', t: '会员专享折扣', s: '套餐与单品均可叠加使用' },
+  { ic: 'AI', t: 'AI 私人定制餐单', s: '每周一份专属饮食计划' },
   { ic: '积', t: '生日双倍积分', s: '积分可兑换招牌菜品' }
 ]
 
-/** 后端 UserMembership：status 10 生效中 / 20 已过期 / 30 已退款 */
 const MEMBER_TYPE: Record<number, string> = { 10: '月卡', 20: '季卡', 30: '年卡' }
 
 const toPlanView = (plan: MembershipPlan, index: number, all: MembershipPlan[]): PlanView => ({
@@ -34,6 +33,7 @@ Page({
     menuTop: 0,
     menuH: 32
   },
+
   onLoad() {
     if (!requireUser()) return
     const { menuTop, menuH } = getSafeArea()
@@ -43,6 +43,7 @@ Page({
       .catch(() => {})
     this.refreshStatus()
   },
+
   refreshStatus() {
     getMembershipStatus()
       .then((status) => this.setData({
@@ -52,9 +53,10 @@ Page({
       }))
       .catch(() => {})
   },
+
   back() { wx.navigateBack() },
+
   buy(event: WechatMiniprogram.CustomEvent) {
-    // 套餐 id 原样透传（可能是雪花字符串），禁止 Number() 强转
     const id = String(event.currentTarget.dataset.id || '')
     if (!id || this.data.buying) return
     const plan = this.data.plans.find((item) => String(item.id) === id)
@@ -68,7 +70,17 @@ Page({
         if (!result.confirm) return
         this.setData({ buying: true })
         buyMembership(id)
-          .then(() => { wx.showToast({ title: '会员购买成功', icon: 'none' }); this.refreshStatus() })
+          .then((payment) => {
+            if (payment && payment.paymentMode === 'alipay-sandbox') {
+              wx.showModal({
+                title: '请使用电脑完成支付',
+                content: '当前支付宝沙箱采用电脑网页支付，请在 PC 端会员中心完成支付。',
+                showCancel: false
+              })
+              return
+            }
+            throw new Error('支付宝支付订单创建失败')
+          })
           .catch((error: Error) => wx.showToast({ title: error.message || '购买失败', icon: 'none' }))
           .finally(() => this.setData({ buying: false }))
       }

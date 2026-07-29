@@ -51,7 +51,7 @@
     <select id="sumQuantityByMerchant" resultType="java.util.Map">
         SELECT oi.dish_id AS dishId,
                COALESCE(d.dish_name, oi.snapshot_name, 'Unknown dish') AS dishName,
-               SUM(oi.quantity) AS soldCount,
+               SUM(oi.quantity) AS totalQuantity,
                SUM(oi.sub_total) AS revenue
         FROM order_item oi
         JOIN orders o ON oi.order_id = o.id
@@ -62,7 +62,7 @@
           AND o.deleted = 0
           AND oi.deleted = 0
           GROUP BY oi.dish_id, COALESCE(d.dish_name, oi.snapshot_name, 'Unknown dish')
-          ORDER BY soldCount DESC, revenue DESC
+          ORDER BY totalQuantity DESC, revenue DESC
         LIMIT #{limit}
     </select>
 

@@ -9,7 +9,7 @@
   <scroll-view class="body" scroll-y enhanced show-scrollbar="{{false}}">
     <view class="card set-card">
       <view class="set-row" bindtap="action" data-label="账号信息" hover-class="tap">账号信息<text class="v">已登录 ›</text></view>
-      <view class="set-row" bindtap="action" data-label="已绑定微信" hover-class="tap">绑定微信<text class="v">已绑定 ›</text></view>
+      <view class="set-row" bindtap="bindWechat" hover-class="tap">绑定微信<text class="v">{{wechatBound ? '已绑定' : '点击绑定'}} ›</text></view>
       <view class="set-row" bindtap="action" data-label="缓存已清除" hover-class="tap">清除缓存<text class="v">›</text></view>
       <view class="set-row" bindtap="action" data-label="BiteSmart v1.0.0" hover-class="tap">关于 BiteSmart<text class="v">v1.0.0 ›</text></view>
     </view>

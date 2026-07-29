@@ -11,18 +11,18 @@ import {
   type MerchantShop
 } from '../../api/merchant'
 import { buildOrderVM, money, LOW_STOCK_THRESHOLD, type DishPriceMap, type MOrderVM } from '../../utils/merchant-vm'
-import { uimg } from '../../mock/catalog'
-
-const FALLBACK_LOGO = uimg('1543353071-873f17a7a088', 200)
+import { resolveFileUrl } from '../../api/file'
 
 Page({
   data: {
     padTop: 44,
     active: 'home',
-    shopName: 'BiteSmart 门店',
-    shopLogo: FALLBACK_LOGO,
-    open: true,
-    openText: '营业中',
+    shopName: '',
+    shopLogo: '',
+    shopLoaded: false,
+    openKnown: false,
+    open: false,
+    openText: '加载中',
     orderCount: 0,
     revenue: '0',
     pendingCount: 0,
@@ -46,14 +46,19 @@ Page({
       .then((shop: MerchantShop | null) => {
         if (!shop) return
         this.setData({
-          shopName: shop.shopName || 'BiteSmart 门店',
-          shopLogo: shop.shopLogo || FALLBACK_LOGO,
-          // 营业状态：openStatus 10 营业中 / 20 打烊；后端并行开发中，缺省时按营业中兜底
-          open: shop.openStatus !== 20,
-          openText: shop.openStatus === 20 ? '已打烊' : '营业中'
+          shopName: shop.shopName || '',
+          shopLogo: resolveFileUrl(shop.shopLogo),
+          shopLoaded: true,
+          openKnown: shop.openStatus === 10 || shop.openStatus === 20,
+          // 营业状态只接受后端明确返回的 10（营业中）或 20（打烊）
+          open: shop.openStatus === 10,
+          openText: shop.openStatus === 10 ? '营业中' : shop.openStatus === 20 ? '已打烊' : '状态未知'
         })
       })
-      .catch((error: Error) => console.warn('[m-home] 店铺信息加载失败：', error && error.message))
+      .catch((error: Error) => {
+        console.warn('[m-home] 店铺信息加载失败：', error && error.message)
+        this.setData({ shopLoaded: true, openText: '店铺信息加载失败' })
+      })
 
     getMerchantTodayStats()
       .then((s) => {
@@ -97,6 +102,7 @@ Page({
 
   /** 营业开关：PUT /merchant/shop { openStatus }（10 营业中 / 20 打烊），失败回滚 */
   toggleOpen() {
+    if (!this.data.shopLoaded || !this.data.openKnown) return
     const open = !this.data.open
     updateMerchantShop({ openStatus: open ? 10 : 20 })
       .then(() => {

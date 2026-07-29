@@ -38,6 +38,21 @@ export const setAuth = (token: string, user: MiniUserInfo): void => {
 
 export const getUserInfo = (): MiniUserInfo | null => normalizeUser(wx.getStorageSync(USER_KEY))
 
+export const setUserInfo = (user: MiniUserInfo): void => {
+  const normalizedUser = normalizeUser(user)
+  if (!normalizedUser) return
+  wx.setStorageSync(USER_KEY, normalizedUser)
+}
+
+export const mergeUserInfo = (patch: Partial<MiniUserInfo>): MiniUserInfo | null => {
+  const current = getUserInfo()
+  if (!current) return null
+  const merged = normalizeUser({ ...current, ...patch })
+  if (!merged) return current
+  setUserInfo(merged)
+  return merged
+}
+
 export const clearAuth = (): void => {
   wx.removeStorageSync(TOKEN_KEY)
   wx.removeStorageSync(USER_KEY)

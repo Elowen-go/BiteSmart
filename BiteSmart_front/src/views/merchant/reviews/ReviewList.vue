@@ -57,8 +57,9 @@ const fetchList = async () => {
   try {
     const res = await getReviewList({ page: page.value, size: size.value })
     if (res.code === 200) {
-      reviewList.value = res.data.list || []
-      total.value = res.data.total || 0
+      const pageData = res.data?.data || res.data || {}
+      reviewList.value = pageData.list || []
+      total.value = pageData.total || 0
     }
   } catch (e) {
     console.error('获取评价列表失败', e)

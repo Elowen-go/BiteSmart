@@ -4,7 +4,6 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Upload, Delete } from '@element-plus/icons-vue'
 import { getProfile, updateProfile, uploadFile } from '../../../api/merchant/profile'
 import { useUserStore } from '../../../stores/user'
-import { setUserInfo } from '../../../utils/auth'
 import { resolveFileUrl } from '../../../utils/fileUrl'
 
 const loading = ref(false)
@@ -27,6 +26,10 @@ const formRules = {
 
 const imageUrl = ref('')
 const userStore = useUserStore()
+
+const syncUserStore = (patch: Record<string, any>) => {
+  userStore.setUserInfo({ ...(userStore.userInfo || {}), ...patch })
+}
 
 const fetchProfile = async () => {
   loading.value = true
@@ -56,7 +59,11 @@ const handleAvatarUpload = async (file: any) => {
     try {
       const res = await uploadFile(file.raw, 'avatar')
       if (res.code === 200) {
-        form.value.avatar = res.data.url
+        const avatar = res.data.url
+        const saveRes = await updateProfile({ avatar })
+        if (saveRes.code !== 200) throw new Error(saveRes.message || '头像保存失败')
+        form.value.avatar = avatar
+        syncUserStore({ avatar })
         ElMessage.success('头像上传成功')
       } else {
         ElMessage.error(res.message || '上传失败')
@@ -84,10 +91,7 @@ const handleRemoveAvatar = () => {
       if (res.code === 200) {
         form.value.avatar = ''
         imageUrl.value = ''
-        if (userStore.userInfo) {
-          userStore.userInfo.avatar = ''
-          setUserInfo(userStore.userInfo)
-        }
+        syncUserStore({ avatar: '' })
         ElMessage.success('头像已移除')
       } else {
         ElMessage.error(res.message || '移除失败')
@@ -112,11 +116,7 @@ const handleSave = async () => {
     const res = await updateProfile(submitData as any)
     if (res.code === 200) {
       ElMessage.success('保存成功')
-      if (userStore.userInfo) {
-        userStore.userInfo.nickname = form.value.nickname
-        userStore.userInfo.avatar = form.value.avatar
-        setUserInfo(userStore.userInfo)
-      }
+      syncUserStore({ nickname: form.value.nickname, avatar: form.value.avatar })
     } else {
       ElMessage.error(res.message || '保存失败')
     }

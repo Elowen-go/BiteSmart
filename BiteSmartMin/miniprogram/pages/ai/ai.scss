@@ -42,6 +42,17 @@
 .brand-title { margin-top: 3rpx; color: #17251F; font-size: 30rpx; font-weight: 800; }
 .status { display: flex; align-items: center; color: #6C8774; font-size: 19rpx; font-weight: 700; }
 .status-dot { width: 10rpx; height: 10rpx; margin-right: 8rpx; border-radius: 50%; background: #5D9A70; box-shadow: 0 0 0 5rpx #E4F0E4; }
+.top-actions { display: flex; align-items: center; gap: 10rpx; }
+.top-action { padding: 10rpx 14rpx; border: 1rpx solid #D7DED6; border-radius: 12rpx; color: #31543F; background: #FFFDF9; font-size: 19rpx; }
+.history-mask { position: fixed; z-index: 30; top: 0; right: 0; bottom: 0; left: 0; background: rgba(23, 37, 31, .24); }
+.history-panel { position: absolute; top: 0; right: 0; bottom: 0; width: 78%; padding: 34rpx 24rpx; box-sizing: border-box; background: #FFFDF9; box-shadow: -8rpx 0 24rpx rgba(23, 37, 31, .12); }
+.history-head { display: flex; align-items: center; justify-content: space-between; padding: 18rpx 8rpx 26rpx; color: #26372D; font-size: 30rpx; font-weight: 800; }
+.history-close { color: #8D988F; font-size: 42rpx; font-weight: 400; line-height: 1; }
+.history-list { height: calc(100vh - 110rpx); }
+.history-item { padding: 22rpx 16rpx; border-bottom: 1rpx solid #E5E8E1; }
+.history-title { display: block; overflow: hidden; color: #26372D; font-size: 23rpx; line-height: 1.45; text-overflow: ellipsis; white-space: nowrap; }
+.history-time { display: block; margin-top: 8rpx; color: #A1AAA1; font-size: 18rpx; }
+.history-empty { padding: 90rpx 20rpx; color: #A1AAA1; font-size: 22rpx; text-align: center; }
 
 .body {
   flex: 1;
@@ -72,6 +83,7 @@
 
 .day-label { padding: 24rpx 0 28rpx; color: #A1AAA1; font-size: 18rpx; text-align: center; }
 .message-row { display: flex; align-items: flex-start; gap: 14rpx; margin-bottom: 24rpx; }
+.ai-message-stack { min-width: 0; max-width: 76%; }
 .me-row { justify-content: flex-end; }
 .message-avatar {
   display: flex;
@@ -102,8 +114,18 @@
 }
 .user-avatar-image { display: block; width: 100%; height: 100%; }
 .mini-spark { width: 14rpx; height: 14rpx; border: 2rpx solid #F8F2E8; border-radius: 4rpx; transform: rotate(45deg); }
-.bubble { max-width: 76%; padding: 19rpx 22rpx; font-size: 24rpx; line-height: 1.72; }
+.bubble { max-width: 100%; padding: 19rpx 22rpx; font-size: 24rpx; line-height: 1.72; }
 .ai-bubble { color: #27352D; background: #EAEDE6; border-radius: 4rpx 18rpx 18rpx 18rpx; }
+.ai-answer { white-space: pre-wrap; }
+.ai-dish-row { width: 100%; margin-top: 14rpx; white-space: nowrap; }
+.ai-dish-card { display: inline-flex; vertical-align: top; flex-direction: column; width: 260rpx; margin-right: 12rpx; overflow: hidden; border: 1rpx solid #E0E8E0; border-radius: 16rpx; background: #FFFDF9; }
+.ai-dish-image { width: 100%; height: 142rpx; background: #EEF2ED; }
+.ai-dish-body { padding: 12rpx 14rpx 14rpx; }
+.ai-dish-name { display: block; overflow: hidden; color: #26372D; font-size: 22rpx; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
+.ai-dish-meta { display: block; margin-top: 8rpx; overflow: hidden; color: #8A978D; font-size: 18rpx; text-overflow: ellipsis; white-space: nowrap; }
+.ai-dish-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 12rpx; }
+.ai-dish-price { color: #E9792E; font-size: 24rpx; font-weight: 800; }
+.ai-dish-add { display: flex; align-items: center; justify-content: center; width: 38rpx; height: 38rpx; border-radius: 50%; color: #fff; background: #49AD59; font-size: 28rpx; line-height: 1; }
 .me-bubble { color: #FFFDF8; background: #2E5541; border-radius: 18rpx 4rpx 18rpx 18rpx; }
 .typing { display: flex; align-items: center; gap: 8rpx; min-width: 72rpx; }
 .dot { width: 9rpx; height: 9rpx; border-radius: 50%; background: #8D9B8D; animation: blink 1s infinite; }

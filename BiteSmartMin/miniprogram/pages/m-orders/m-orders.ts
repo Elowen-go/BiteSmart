@@ -50,6 +50,7 @@ Page({
     dTime: '',
     dAddr: '',
     dRemark: '',
+    dPickupCode: '',
     dItems: [] as DetailItem[],
     dTotal: '',
     dStatus: 0,
@@ -140,6 +141,7 @@ Page({
           dTime: fmtDateTime(order.createTime),
           dAddr: order.deliveryAddress || '到店自取',
           dRemark: order.remark || '无',
+          dPickupCode: d.pickupCode || '',
           dItems: items,
           dTotal: money(Number(order.payAmount != null ? order.payAmount : order.totalAmount) || 0),
           dStatus: order.orderStatus || 0
