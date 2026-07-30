@@ -60,6 +60,11 @@ public class AuthService {
      */
     @Transactional
     public LoginResponseDTO register(RegisterRequestDTO request) {
+        Integer requestedRole = request.getRoleType();
+        if (requestedRole != null && requestedRole != 10 && requestedRole != 20) {
+            throw new BusinessException(1003, "公开注册仅支持普通用户或商家账号");
+        }
+
         // 1. 检查用户名唯一性（业务层先查一次）
         SysUser existUser = sysUserMapper.findByUsernameOrPhone(request.getUsername());
         if (existUser != null) {
@@ -76,7 +81,7 @@ public class AuthService {
         user.setPassword(encodedPassword);
         user.setNickname(request.getNickname() != null ? request.getNickname() : request.getUsername());
         user.setPhone(request.getPhone());
-        user.setRoleType(request.getRoleType() != null ? request.getRoleType() : 10);
+        user.setRoleType(requestedRole != null ? requestedRole : 10);
         user.setStatus(Constant.STATUS_NORMAL);
         user.setRegisterSource(10); // PC端注册
 

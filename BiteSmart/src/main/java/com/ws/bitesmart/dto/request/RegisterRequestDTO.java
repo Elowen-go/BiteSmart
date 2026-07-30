@@ -8,7 +8,7 @@ import lombok.Data;
  *
  * 注意：
  * - roleType 如果不传，默认注册为普通用户（10）
- * - 商家注册走专门的商家入驻流程，不走这个接口
+ * - 商家可以通过这个接口创建商家账号，随后提交店铺入驻资料
  */
 @Data
 public class RegisterRequestDTO {
@@ -26,8 +26,8 @@ public class RegisterRequestDTO {
     private String phone;
 
     /**
-     * 角色类型：10-普通用户 20-商家 30-配送员 40-管理员
-     * 前端不传时默认注册为普通用户
+     * 角色类型：10-普通用户 20-商家
+     * 前端不传时默认注册为普通用户，配送员和管理员账号由平台创建
      */
     private Integer roleType;
 

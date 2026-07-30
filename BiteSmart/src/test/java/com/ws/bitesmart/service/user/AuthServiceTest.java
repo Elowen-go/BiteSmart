@@ -4,6 +4,7 @@ import com.ws.bitesmart.common.constant.Constant;
 import com.ws.bitesmart.common.enums.ResultCodeEnum;
 import com.ws.bitesmart.common.util.JwtTokenUtil;
 import com.ws.bitesmart.dto.request.LoginRequestDTO;
+import com.ws.bitesmart.dto.request.RegisterRequestDTO;
 import com.ws.bitesmart.dto.request.UserCredentialSetupRequestDTO;
 import com.ws.bitesmart.entity.user.SysUser;
 import com.ws.bitesmart.mapper.user.SysUserMapper;
@@ -63,6 +64,17 @@ class AuthServiceTest {
 
         assertThatThrownBy(() -> service().login(request, servletRequest))
                 .hasMessage(ResultCodeEnum.ROLE_NOT_MATCH.getMessage());
+    }
+
+    @Test
+    void registerRejectsPrivilegedRoles() {
+        RegisterRequestDTO request = new RegisterRequestDTO();
+        request.setUsername("admin-attempt");
+        request.setPassword("secret");
+        request.setRoleType(40);
+
+        assertThatThrownBy(() -> service().register(request))
+                .hasMessage("公开注册仅支持普通用户或商家账号");
     }
 
     @Test

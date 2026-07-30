@@ -8,6 +8,7 @@ import com.ws.bitesmart.entity.merchant.MerchantAuditLog;
 import com.ws.bitesmart.exception.BusinessException;
 import com.ws.bitesmart.mapper.merchant.MerchantAuditLogMapper;
 import com.ws.bitesmart.mapper.merchant.MerchantMapper;
+import com.ws.bitesmart.mapper.user.SysUserMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -28,6 +29,7 @@ public class AdminMerchantService {
 
     private final MerchantMapper merchantMapper;
     private final MerchantAuditLogMapper auditLogMapper;
+    private final SysUserMapper sysUserMapper;
 
     /**
      * 分页查询商家列表
@@ -62,6 +64,10 @@ public class AdminMerchantService {
         int affected = merchantMapper.updateStatus(merchantId, status, auditRemark);
         if (affected == 0) {
             throw new BusinessException("审核失败，商家状态已变更");
+        }
+
+        if (status == 20) {
+            sysUserMapper.updateRoleType(merchant.getUserId(), 20);
         }
 
         // 记录审核日志

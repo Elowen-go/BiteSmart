@@ -50,6 +50,9 @@ public interface SysUserMapper {
                           @Param("phone") String phone,
                           @Param("password") String password);
 
+    /** 商家入驻审核通过后同步用户角色。 */
+    int updateRoleType(@Param("id") Long id, @Param("roleType") Integer roleType);
+
     /**
      * 更新最后登录时间
      */

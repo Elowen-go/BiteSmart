@@ -6,6 +6,14 @@ export interface LoginRequest {
   roleType?: number
 }
 
+export interface RegisterRequest {
+  username: string
+  password: string
+  nickname?: string
+  phone?: string
+  roleType?: number
+}
+
 export interface LoginResponse {
   code: number
   message: string
@@ -27,7 +35,7 @@ export const login = (data: LoginRequest): Promise<LoginResponse> => {
   return request.post('/auth/login', data)
 }
 
-export const register = (data: any): Promise<any> => {
+export const register = (data: RegisterRequest): Promise<LoginResponse> => {
   return request.post('/auth/register', data)
 }
 
