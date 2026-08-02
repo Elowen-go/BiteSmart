@@ -75,6 +75,13 @@ __screenshots__/
 *.sql.bak
 *.sql.backup
 *.rdb
+/bitesmart_data_mysql57.sql
+
+# Internal project notes and test helpers
+/docs/
+/tools/
+/开发流程与阶段.md
+/详细开发文档.md
 
 # OS
 Thumbs.db
