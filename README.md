@@ -1,108 +1,200 @@
-# BiteSmart 智能健康膳食管理平台
+<div align="center">
+  <h1>BiteSmart</h1>
+  <p>AI 驱动的智能营养与健康餐饮平台</p>
+  <p>
+    <a href="https://gitee.com/vibe-wave/bite-smart">Gitee</a>
+    ·
+    <a href="https://github.com/Elowen-go/BiteSmart">GitHub</a>
+  </p>
+</div>
 
 ## 项目简介
 
-BiteSmart 是一个基于人工智能的智能健康膳食管理平台，通过 AI 技术为用户提供个性化的饮食推荐、健康管理和在线订餐服务。平台涵盖 PC 端管理后台、微信小程序用户端，支持用户、商家、配送员、管理员四种角色协同运作。
+BiteSmart 将健康档案、营养分析、AI 饮食建议、健康餐购买和配送服务连接在一起，覆盖用户端、商家端、骑手端和管理员端。
+
+项目由 Spring Boot 后端、Vue 3 PC 管理端和微信小程序组成，支持账号体系、会员服务、支付宝沙箱支付、地图定位、实时配送和 AI 对话等核心流程。
+
+## 产品预览
+
+### 微信小程序
+
+<table>
+  <tr>
+    <td align="center">
+      <img src="assets/readme/miniprogram/home.png" width="190" alt="小程序首页" /><br />
+      <sub>首页与今日营养</sub>
+    </td>
+    <td align="center">
+      <img src="assets/readme/miniprogram/profile.png" width="190" alt="个人中心" /><br />
+      <sub>个人中心与会员</sub>
+    </td>
+    <td align="center">
+      <img src="assets/readme/miniprogram/catalog.png" width="190" alt="菜品商城" /><br />
+      <sub>菜品浏览与购物</sub>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="assets/readme/miniprogram/exercise.png" width="190" alt="运动库" /><br />
+      <sub>运动库与消耗记录</sub>
+    </td>
+    <td align="center">
+      <img src="assets/readme/miniprogram/ai-assistant.png" width="190" alt="AI 营养师" /><br />
+      <sub>AI 营养师与餐品推荐</sub>
+    </td>
+    <td></td>
+  </tr>
+</table>
+
+### PC Web
+
+#### 登录与用户端
+
+<table>
+  <tr>
+    <td align="center">
+      <img src="assets/readme/pc/login.png" width="430" alt="PC 登录页" /><br />
+      <sub>统一登录入口与角色选择</sub>
+    </td>
+    <td align="center">
+      <img src="assets/readme/pc/user-home.png" width="430" alt="PC 用户首页" /><br />
+      <sub>用户首页与今日饮食</sub>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="assets/readme/pc/user-meal-plans.png" width="430" alt="PC 健康套餐" /><br />
+      <sub>健康套餐与营养方案</sub>
+    </td>
+    <td align="center">
+      <img src="assets/readme/pc/user-profile.png" width="430" alt="PC 健康档案" /><br />
+      <sub>用户账户与健康档案</sub>
+    </td>
+  </tr>
+</table>
+
+#### 管理员端
+
+<p align="center">
+  <img src="assets/readme/pc/admin-dashboard.png" width="860" alt="管理员仪表盘" />
+</p>
+
+#### 商家端
+
+<table>
+  <tr>
+    <td align="center">
+      <img src="assets/readme/pc/merchant-dashboard.png" width="430" alt="商家工作台" /><br />
+      <sub>商家工作台与订单处理</sub>
+    </td>
+    <td align="center">
+      <img src="assets/readme/pc/merchant-finance.png" width="430" alt="商家资金中心" /><br />
+      <sub>资金中心与收入趋势</sub>
+    </td>
+  </tr>
+  <tr>
+    <td colspan="2" align="center">
+      <img src="assets/readme/pc/merchant-ledgers.png" width="860" alt="商家资金流水" /><br />
+      <sub>资金流水与结算记录</sub>
+    </td>
+  </tr>
+</table>
+
+## 功能概览
+
+| 端 | 主要角色 | 核心能力 |
+| --- | --- | --- |
+| 微信小程序 | 用户 | 微信登录、健康档案、饮食与运动记录、AI 营养师、菜品与套餐、购物车、下单支付、配送跟踪、会员中心 |
+| 微信小程序 | 商家 | 店铺资料、菜品与套餐、库存、订单处理、销售统计、评价管理 |
+| 微信小程序 | 骑手 | 接单、取餐码、配送状态、实时定位、导航、配送收入、异常上报、投诉反馈 |
+| PC 管理端 | 用户 | 健康数据、AI 对话、饮食计划、菜品购买、订单与会员服务 |
+| PC 管理端 | 商家与管理员 | 商家入驻、菜品管理、订单管理、配送管理、营养标准、公告、投诉和数据统计 |
 
 ## 技术栈
 
-| 层级 | 技术 | 版本 |
-|------|------|------|
-| 后端框架 | Spring Boot | 4.0.8-SNAPSHOT |
-| 编程语言 | Java | 17 |
-| 数据库 | MySQL | 8.0+ |
-| 缓存 | Redis | 7.0+ |
-| ORM | MyBatis | 4.0.1 |
-| 认证授权 | Spring Security + JWT | - |
-| 实时通信 | WebSocket | - |
-| PC端前端 | Vue 3 + TypeScript | Vue 3.5.38 |
-| 小程序端 | 微信小程序原生 + TypeScript | - |
-| 构建工具 | Maven / Vite | Maven 3.9+ / Vite 8.0+ |
+| 模块 | 技术 |
+| --- | --- |
+| 后端 | Java 17、Spring Boot、Spring Security、JWT、MyBatis |
+| PC 前端 | Vue 3、TypeScript、Vite、Element Plus、ECharts |
+| 小程序 | 微信小程序原生框架、TypeScript、WXSS |
+| 数据库 | MySQL 5.7.17 及以上，兼容 MySQL 8.0 |
+| 缓存与实时能力 | Redis、WebSocket |
+| 第三方服务 | 微信小程序、支付宝沙箱、高德地图、AI API |
 
 ## 项目结构
 
+```text
+BiteSmart/
+├── BiteSmart/             Spring Boot 后端
+├── BiteSmart_front/       Vue 3 PC 管理端
+├── BiteSmartMin/          微信小程序
+├── bitesmart_mysql57.sql  MySQL 5.7 兼容的数据库结构
+├── bitesmart.sql          原始数据库结构
+├── test_data.sql          示例测试数据
+└── README.md              项目说明
 ```
-d:\demo\BiteSmart/
-├── BiteSmart/               # Spring Boot 后端
-│   ├── src/main/java/       # Java 源代码
-│   ├── src/main/resources/  # 配置文件
-│   └── pom.xml             # Maven 依赖管理
-├── BiteSmartMin/            # 微信小程序
-│   └── miniprogram/         # 小程序源码
-├── BiteSmart_front/         # Vue 3 前端管理后台
-│   └── src/                # 前端源代码
-├── bitesmart.sql           # 数据库设计脚本（43张表）
-├── 开发流程与阶段.md        # 开发流程与阶段规划文档
-├── 详细开发文档.md          # 详细技术开发文档
-└── README.md               # 本文件
-```
-
-## 功能概览（70项）
-
-### PC端（37项）
-
-| 角色 | 功能数 | 核心功能 |
-|------|--------|----------|
-| 用户端 | 15项 | 注册登录、AI食谱生成、AI智能问答、套餐浏览与购买、在线下单支付、订单管理、配送跟踪、饮食/运动/体重记录、会员中心 |
-| 管理员端 | 12项 | 后台登录、用户管理、商家管理、配送员管理、菜品分类、营养标准、AI规则、订单管理、评论管理、公告管理、数据统计、系统管理 |
-| 商家端 | 10项 | 商家入驻、店铺维护、菜品管理、套餐管理、订单处理、库存管理、营养维护、销售统计、评价管理、配送管理 |
-
-### 微信小程序端（33项）
-
-| 角色 | 功能数 | 核心功能 |
-|------|--------|----------|
-| 用户端 | 16项 | 微信登录、AI推荐、AI对话、菜品浏览、套餐购买、购物车、在线下单支付、订单管理、配送追踪、健康记录、评论反馈、会员中心 |
-| 商家端 | 8项 | 移动端登录、店铺维护、菜品/套餐管理、订单处理、库存预警、销售统计、评价管理 |
-| 配送员端 | 9项 | 配送员登录、接单管理、配送状态更新、实时定位上传、路线导航、收入统计、异常上报、评价查看 |
-
-## 数据库（43张表）
-
-| 模块 | 表数 | 说明 |
-|------|------|------|
-| 用户与权限域 | 10张 | 用户、档案、会员、商家、配送员、地址、审计 |
-| 健康记录域 | 3张 | 饮食、运动、体重 |
-| 商品域 | 4张 | 分类、菜品、套餐、关联关系 |
-| 订单与支付域 | 6张 | 购物车、订单、明细、支付、退款、库存流水 |
-| 配送与物流域 | 1张 | 配送任务 |
-| 评价与AI交互域 | 2张 | 评价、AI对话 |
-| 系统运维与配置域 | 10张 | 配置、公告、消息、日志、备份、字典、文件 |
-| 企业级扩展表 | 7张 | 报表统计、优惠券、投诉、营养详情、资金流水 |
 
 ## 快速开始
 
 ### 环境要求
 
 - JDK 17+
-- MySQL 8.0+
+- MySQL 5.7.17+
 - Redis 7.0+
-- Node.js 22+
+- Node.js 20+
 - Maven 3.9+
 - 微信开发者工具
 
-### 本地运行
+### 初始化数据库
 
 ```bash
-# 1. 创建数据库并导入脚本
 mysql -u root -p -e "CREATE DATABASE bitesmart CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-mysql -u root -p bitesmart < bitesmart.sql
+mysql -u root -p bitesmart < bitesmart_mysql57.sql
+mysql -u root -p bitesmart < test_data.sql
+```
 
-# 2. 启动后端
+`test_data.sql` 只用于导入示例数据。真实数据库数据不放入公开仓库。
+
+### 配置后端
+
+复制本地配置模板并填写本机数据库、Redis 以及第三方服务配置：
+
+```text
+BiteSmart/src/main/resources/application-local.example.yml
+```
+
+本地私有配置不要提交到 Git。支付宝回调地址、AI API Key、高德地图 Key 和微信 AppID 应使用交付方自己的账号。
+
+### 启动后端
+
+```bash
 cd BiteSmart
 mvn spring-boot:run
+```
 
-# 3. 启动前端管理后台
+### 启动 PC 前端
+
+```bash
 cd BiteSmart_front
 npm install
 npm run dev
-
-# 4. 使用微信开发者工具打开 BiteSmartMin 目录
 ```
 
-## 远程仓库
+### 启动微信小程序
 
-- Gitee: https://gitee.com/vibe-wave/bite-smart.git
-- GitHub: https://github.com/Elowen-go/BiteSmart.git
+使用微信开发者工具打开 `BiteSmartMin` 目录，并根据运行环境配置 `miniprogram/utils/request.ts` 中的后端地址。
 
-## 许可证
+## 数据库说明
 
-本项目仅用于学习交流。
+当前数据库结构包含 55 张表，覆盖用户、健康记录、菜品、套餐、订单、支付、配送、会员、优惠券、投诉和 AI 对话等模块。
+
+公开仓库只提供数据库结构文件，不包含真实账号、订单、聊天记录、微信身份数据或第三方密钥。
+
+## 开源仓库
+
+- [Gitee](https://gitee.com/vibe-wave/bite-smart)
+- [GitHub](https://github.com/Elowen-go/BiteSmart)
+
+## License
+
+本项目仅用于学习、交流和项目展示。
